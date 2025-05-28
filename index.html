@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<!--------------------------------------* 
+* - iTunes api - searching
+* - lyrics.ovh - lyrics
+* - youtube data v3 - player
+*--------------------------------------->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Music Player</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- <link rel="stylesheet" href="https://vapor.my/_a/fa/css/all.min.css" /> -->
+    <link rel="stylesheet" href="css/fontawesome.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.min.js"></script>
+    <link rel="stylesheet" href="css/all.css" />
+  </head>
+  <body>
+    <div class="search-container">
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search for any song..."
+        id="searchInput"
+      />
+    </div>
+
+    <div class="search-results" id="searchResults">
+      <!-- cappuccino assassino -->
+    </div>
+
+    <div class="player">
+      <div class="album-art">
+        <img
+          src="img/empty_art.png"
+          alt="Album"
+          id="albumCover"
+          crossorigin="anonymous"
+        />
+      </div>
+      <div class="info" id="playerInfo">
+        <div class="track-title" id="trackTitle">Not Playing</div>
+        <div class="artist" id="artistName">Not Playing</div>
+        <div class="controls">
+          <i id="playPause" class="fa-solid fa-play fa-lg control-btn"></i>
+          <i id="volumeBtn" class="fa-solid fa-volume-high control-btn"></i>
+        </div>
+        <div id="seekbar" class="seekbar"><div id="progress"></div></div>
+        <div class="timecodes">
+          <span id="currentTime">0:00</span>
+          <span id="remainingTime">-0:00</span>
+        </div>
+      </div>
+
+      <!-- TUNG TUNG TUGN TUNG TUNG TUNG TUNG SAHUR -->
+      <div class="lyrics-info" id="lyricsInfo">
+        <div class="lyrics-header">
+          <div>
+            <div class="lyrics-title" id="lyricsSongTitle">Not Playing</div>
+            <div class="lyrics-artist" id="lyricsArtistName">Not Playing</div>
+          </div>
+        </div>
+        <div class="lyrics-content" id="lyricsContent">
+          No lyrics available.
+        </div>
+      </div>
+    </div>
+
+    <!-- tralalero tralala -->
+    <div class="lyrics-toggle" id="lyricsToggle">
+      <i class="fa-solid fa-align-left"></i>
+    </div>
+
+    <!-- ballerina cappuccina -->
+    <div id="player-container">
+      <div id="ytPlayer"></div>
+    </div>
+
+    <!-- Endpoints, By Bombardino Crocodilo-->
+    <script src="js/endpoints.js"></script>
+
+    <script src="js/init.js"></script>
+    <script src="js/bg.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/search.js"></script>
+    <script src="js/play.js"></script>
+    <script src="js/lyrics.js"></script>
+    <script src="js/playback.js"></script>
+
+    <script>
+      document.addEventListener("click", function (e) {
+        if (!searchResults.contains(e.target) && e.target !== searchInput) {
+          hideSearchResults();
+        }
+      });
+    </script>
+  </body>
+</html>
