@@ -328,7 +328,6 @@
     color: white;
   }
 
-  /* Shared icon styles */
 .icon {
   font-style: normal;
   display: inline-block;
@@ -347,29 +346,28 @@
   transform: scale(0.94);
 }
 
-/* Specific icon styles using Unicode characters */
 .icon-play::before {
   content: '▶';
 }
 
 .icon-pause::before {
-  content: '⏸'; /* Unicode pause */
+  content: '⏸';
 }
 
 .icon-volume::before {
-  content: '🔊'; /* Volume high */
+  content: '🔊';
 }
 
 .icon-muted::before {
-  content: '🔇'; /* Volume muted */
+  content: '🔇';
 }
 
 
 .icon-lyrics::before {
-  content: '☰'; /* Hamburger icon for toggling lyrics on */
+  content: '☰';
 }
 
 .icon-lyrics-on::before {
-  content: '🎶'; /* Music note for toggling lyrics off */
+  content: '🎶';
 }
 
