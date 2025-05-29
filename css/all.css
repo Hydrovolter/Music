@@ -170,20 +170,7 @@
     text-overflow: ellipsis;
     max-width: 300px;
   }
-  .controls {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 18px;
-  }
-  .controls i {
-    font-size: 32px;
-    cursor: pointer;
-    transition: 0.12s ease;
-  }
-  .controls i:active {
-    transform: scale(0.94);
-  }
+ 
 
   .seekbar {
     height: 6px;
@@ -296,6 +283,24 @@
     text-overflow: ellipsis;
     max-width: 300px;
   }
+
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 18px;
+  }
+  .controls i {
+    font-size: 32px;
+    cursor: pointer;
+    transition: 0.12s ease;
+  }
+  .controls i:active {
+    transform: scale(0.94);
+  }
+
+  
   
   #volumeBtn {
     font-size: 20px;
