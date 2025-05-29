@@ -26,7 +26,7 @@ let searchTimeout;
 let currentTrack = {
   title: "Not Playing",
   artist: "Not Playing",
-  artwork: "/img/empty_art.png",
+  artwork: "img/empty_art.png",
 };
 
 const colorThief = new ColorThief();
