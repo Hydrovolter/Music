@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!--------------------------------------* 
+<!--------------------------------------*
 * - iTunes api - searching
 * - lyrics.ovh - lyrics
 * - youtube data v3 - player
@@ -16,67 +16,86 @@
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
-    />    
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.min.js"></script>
     <link rel="stylesheet" href="css/all.css" />
 
     <link rel="icon" href="img/favicon.ico" type="image/x-icon">
   </head>
   <body>
-    <div class="search-container">
-      <input
-        type="text"
-        class="search-input"
-        placeholder="Search for any song..."
-        id="searchInput"
-      />
-    </div>
+    <div class="app-container"> 
+        <div class="main-content">
+            <div class="search-container">
+            <input
+                type="text"
+                class="search-input"
+                placeholder="Search for any song..."
+                id="searchInput"
+            />
+            <div class="search-results" id="searchResults">
+            </div>
+            </div>
 
-    <div class="search-results" id="searchResults">
-    </div>
+            
 
-    <div class="player">
-      <div class="album-art">
-        <img
-          src="img/empty_art.png"
-          alt="Album"
-          id="albumCover"
-          crossorigin="anonymous"
-        />
-      </div>
-      <div class="info" id="playerInfo">
-        <div class="track-title" id="trackTitle">Not Playing</div>
-        <div class="artist" id="artistName">Not Playing</div>
-        <div class="controls">
-          <i id="playPause" class="icon icon-play"></i>
-          <i id="volumeBtn" class="icon icon-volume"></i>
-          <i id="loopBtn" class="icon icon-loop"></i>
-        </div>
-        <div id="seekbar" class="seekbar"><div id="progress"></div></div>
-        <div class="timecodes">
-          <span id="currentTime">0:00</span>
-          <span id="remainingTime">-0:00</span>
-        </div>
-      </div>
+            <div class="player-area">
+                <div class="player">
+                    <div class="album-art">
+                        <img
+                        src="img/empty_art.png"
+                        alt="Album"
+                        id="albumCover"
+                        crossorigin="anonymous"
+                        />
+                    </div>
+                    <div class="info" id="playerInfo">
+                        <div class="track-title" id="trackTitle">Not Playing</div>
+                        <div class="artist" id="artistName">Not Playing</div>
+                        <div class="controls">
+                            <i id="prevBtn" class="icon icon-prev"></i>
+                            <i id="playPause" class="icon icon-play"></i>
+                            <i id="nextBtn" class="icon icon-next"></i>
+                            <i id="volumeBtn" class="icon icon-volume"></i>
+                            <i id="loopBtn" class="icon icon-loop"></i>
+                            <i id="likeBtn" class="icon icon-heart-empty"></i>
+                        </div>
+                        <div id="seekbar" class="seekbar"><div id="progress"></div></div>
+                        <div class="timecodes">
+                        <span id="currentTime">0:00</span>
+                        <span id="remainingTime">-0:00</span>
+                        </div>
+                    </div>
 
-      <div class="lyrics-info" id="lyricsInfo">
-        <div class="lyrics-header">
-          <div>
-            <div class="lyrics-title" id="lyricsSongTitle">Not Playing</div>
-            <div class="lyrics-artist" id="lyricsArtistName">Not Playing</div>
-          </div>
+                    <div class="lyrics-info" id="lyricsInfo">
+                        <div class="lyrics-header">
+                        <div>
+                            <div class="lyrics-title" id="lyricsSongTitle">Not Playing</div>
+                            <div class="lyrics-artist" id="lyricsArtistName">Not Playing</div>
+                        </div>
+                        </div>
+                        <div class="lyrics-content" id="lyricsContent">
+                        No lyrics available.
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="lyrics-content" id="lyricsContent">
-          No lyrics available.
+
+        <div class="playlist-sidebar" id="playlistSidebar">
+            <div class="playlist-header">
+                <h3>Liked Songs</h3>
+            </div>
+            <div class="playlist-content" id="likedPlaylistContent">
+                <p class="empty-playlist-message">Like some songs to see them here!</p>
+            </div>
         </div>
-      </div>
     </div>
 
 
     <div class="lyrics-toggle" id="lyricsToggle">
       <i class="icon icon-lyrics"></i>
     </div>
-    
+
 
     <div id="player-container">
       <div id="ytPlayer"></div>
@@ -86,6 +105,7 @@
 
     <script src="js/init.js"></script>
     <script src="js/bg.js"></script>
+    <script src="js/playlist.js"></script>
     <script src="js/player.js"></script>
     <script src="js/search.js"></script>
     <script src="js/play.js"></script>
@@ -95,8 +115,18 @@
 
     <script>
       document.addEventListener("click", function (e) {
-        if (!searchResults.contains(e.target) && e.target !== searchInput) {
-          hideSearchResults();
+        // Ensure searchInput and searchResults are defined before accessing contains
+        if (typeof searchInput !== 'undefined' && typeof searchResults !== 'undefined' &&
+            !searchResults.contains(e.target) && e.target !== searchInput) {
+          if (typeof hideSearchResults === 'function') hideSearchResults();
+        }
+      });
+
+      document.addEventListener('DOMContentLoaded', () => {
+        if (typeof initializePlaylistSystem === 'function') {
+            initializePlaylistSystem();
+        } else {
+            console.error("initializePlaylistSystem function not found.");
         }
       });
     </script>
