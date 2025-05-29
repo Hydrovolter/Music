@@ -300,7 +300,7 @@
     transform: scale(0.94);
   }
 
-  
+
   
   #volumeBtn {
     font-size: 20px;
@@ -330,60 +330,75 @@
   }
   
   .lyrics-toggle i {
-    font-size: 18px;
-    color: white;
+    background-color: white;
+    width: 22px;
+    height: 22px;
   }
 
 .icon {
-  font-style: normal;
   display: inline-block;
   width: 32px;
   height: 32px;
-  font-size: 28px;
-  text-align: center;
-  line-height: 32px;
-  user-select: none;
-  cursor: pointer;
-  color: white;
-  transition: transform 0.1s ease;
+  background-color: white;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  transition: transform 0.1s ease, background-color 0.1s ease;
 }
 
 .icon:active {
   transform: scale(0.94);
 }
 
-.icon-play::before {
-  content: '▶';
-}
-
-.icon-pause::before {
-  content: '⏸';
-}
-
-.icon-volume::before {
-  content: '🔊';
-}
-
-.icon-muted::before {
-  content: '🔇';
+.icon-play {
+  mask-image: url('../img/icons/play.svg');
+  -webkit-mask-image: url('../img/icons/play.svg');
 }
 
 
-.icon-lyrics::before {
-  content: '☰';
-}
-
-.icon-lyrics-on::before {
-  content: '🎶';
+.icon-pause {
+  mask-image: url('../img/icons/pause.svg');
+  -webkit-mask-image: url('../img/icons/pause.svg');
 }
 
 
-.icon-loop::before {
-  content: '🔁';
+.icon-volume {
+  mask-image: url('../img/icons/volume-loud.svg');
+  -webkit-mask-image: url('../img/icons/volume-loud.svg');
 }
 
-.icon-loop.loop-active::before {
-  content: '🔂';
-  color: #00ff88;
+
+.icon-muted {
+  mask-image: url('../img/icons/mute.svg');
+  -webkit-mask-image: url('../img/icons/mute.svg');
+}
+
+
+
+.icon-lyrics {
+  mask-image: url('img/icons/lyrics.svg');
+  -webkit-mask-image: url('../img/icons/lyrics.svg');
+}
+
+.icon-lyrics-on {
+  mask-image: url('../img/icons/music.svg');
+  -webkit-mask-image: url('../img/icons/music.svg');
+}
+
+
+.icon-loop {
+  mask-image: url('../img/icons/repeat.svg');
+  -webkit-mask-image: url('../img/icons/repeat.svg');
+}
+
+
+.icon-loop.loop-active {
+  mask-image: url('../img/icons/repeat-1.svg'); /* with the "1" on it */
+  -webkit-mask-image: url('../img/icons/repeat-1.svg');
+  background-color: #00ff88;
   transform: scale(1.1);
 }
+
