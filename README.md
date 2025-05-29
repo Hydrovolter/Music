@@ -1,7 +1,15 @@
-# arcora
-This is arcora. A simple way to play music anywhere, at anytime.
-Simply enter a song in the search bar, click it, done.
+# Static Music Player
+A fully static music player, with a polished look.
+No ads. No faff. Just pure music.
 
-Oh, did I forget to mention: It's fully static.
+## Features
+- Cycling API fetcher to circumvent / increase quota limits
+- Pause/Play, Mute, Repeat (Loop), and Lyrics
 
-i dont feel like writing anything here just figure it out lol
+
+
+### Dependencies (APIs)
+* - iTunes api - searching
+* - lyrics.ovh - lyrics
+* - youtube data v3 - player
+* - RapidAPI (rapidapi.com/ytdlfree/api/youtube-v3-alternative) - cycling player
