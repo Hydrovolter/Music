@@ -32,28 +32,7 @@ function playSong(title, artist, artwork) {
     const searchQuery = `${title} - ${artist}`;
     getYT(searchQuery);
   }
-  
-  function getYT(query) {
-    const url = `${YT_EP}${encodeURIComponent(
-      query
-    )}&type=video&key=${YT_KEY}&maxResults=1`;
-  
-    fetch(url)
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("YouTube search results:", data);
-        if (data.items && data.items.length > 0) {
-          const videoId = data.items[0].id.videoId;
-          loadVid(videoId);
-        } else {
-          console.error("No YouTube results found");
-        }
-      })
-      .catch((error) => {
-        console.error("Error searching YouTube:", error);
-      });
-  }
-  
+
   function loadVid(videoId) {
     if (player && player.loadVideoById) {
       player.loadVideoById(videoId);
