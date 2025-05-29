@@ -184,6 +184,7 @@
   .controls i:active {
     transform: scale(0.94);
   }
+
   .seekbar {
     height: 6px;
     background: rgba(255, 255, 255, 0.25);
@@ -371,3 +372,13 @@
   content: '🎶';
 }
 
+
+.icon-loop::before {
+  content: '🔁';
+}
+
+.icon-loop.loop-active::before {
+  content: '🔂';
+  color: #00ff88;
+  transform: scale(1.1);
+}

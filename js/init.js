@@ -16,9 +16,11 @@ const lyricsInfo = document.getElementById("lyricsInfo");
 const lyricsSongTitle = document.getElementById("lyricsSongTitle");
 const lyricsArtistName = document.getElementById("lyricsArtistName");
 const lyricsContent = document.getElementById("lyricsContent");
+const loopBtn = document.getElementById("loopBtn");
 
 let showingLyrics = false;
 let isMuted = false;
+let isLooping = false;
 
 let player;
 let isPlaying = false;

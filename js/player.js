@@ -28,6 +28,7 @@ function onPlayerReady(event) {
 
   playPauseBtn.addEventListener("click", togglePlayback);
   volumeBtn.addEventListener("click", toggleMute);
+  loopBtn.addEventListener("click", toggleLoop);
 
   seekBar.addEventListener("mousedown", startSeek);
   document.addEventListener("mousemove", dragSeek);
@@ -61,15 +62,24 @@ function onPlayerStateChange(event) {
     isPlaying = true;
     playPauseBtn.classList.remove("icon-play");
     playPauseBtn.classList.add("icon-pause");
-  } else if (
-    event.data === YT.PlayerState.PAUSED ||
-    event.data === YT.PlayerState.ENDED
-  ) {
+  } else if (event.data === YT.PlayerState.PAUSED) {
     isPlaying = false;
     playPauseBtn.classList.remove("icon-pause");
     playPauseBtn.classList.add("icon-play");
+  } else if (event.data === YT.PlayerState.ENDED) {
+    isPlaying = false;
+    playPauseBtn.classList.remove("icon-pause");
+    playPauseBtn.classList.add("icon-play");
+    
+    if (isLooping && player) {
+      player.seekTo(0, true); 
+      player.playVideo();     
+    }
   }
+  
 }
+
+
 // Toggle Mute function
 function toggleMute() {
   if (!player) return;
@@ -84,5 +94,16 @@ function toggleMute() {
     volumeBtn.classList.remove("icon-volume");
     volumeBtn.classList.add("icon-muted");
     isMuted = true;
+  }
+}
+
+function toggleLoop() {
+  if (!player) return;
+
+  isLooping = !isLooping;
+  if (isLooping) {
+    loopBtn.classList.add("loop-active");
+  } else {
+    loopBtn.classList.remove("loop-active");
   }
 }
