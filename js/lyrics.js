@@ -5,12 +5,15 @@ lyricsToggle.addEventListener("click", function () {
       playerInfo.style.display = "none";
       lyricsInfo.style.display = "flex";
       fetchLyrics(currentTrack.artist, currentTrack.title);
-      lyricsToggle.innerHTML = '<i class="fa-solid fa-music"></i>';
+      lyricsIcon.classList.remove("icon-lyrics");
+      lyricsIcon.classList.add("icon-lyrics-on");
     } else {
       playerInfo.style.display = "flex";
       lyricsInfo.style.display = "none";
-      lyricsToggle.innerHTML = '<i class="fa-solid fa-align-left"></i>';
+      lyricsIcon.classList.remove("icon-lyrics-on");
+      lyricsIcon.classList.add("icon-lyrics");
     }
+    
   });
   
   function fetchLyrics(artist, title) {

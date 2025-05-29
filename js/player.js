@@ -59,15 +59,15 @@ function onPlayerStateChange(event) {
 
   if (event.data === YT.PlayerState.PLAYING) {
     isPlaying = true;
-    playPauseBtn.classList.remove("fa-play");
-    playPauseBtn.classList.add("fa-pause");
+    playPauseBtn.classList.remove("icon-play");
+    playPauseBtn.classList.add("icon-pause");
   } else if (
     event.data === YT.PlayerState.PAUSED ||
     event.data === YT.PlayerState.ENDED
   ) {
     isPlaying = false;
-    playPauseBtn.classList.remove("fa-pause");
-    playPauseBtn.classList.add("fa-play");
+    playPauseBtn.classList.remove("icon-pause");
+    playPauseBtn.classList.add("icon-play");
   }
 }
 // Toggle Mute function
@@ -76,11 +76,13 @@ function toggleMute() {
 
   if (isMuted) {
     player.unMute();
-    volumeBtn.className = "fa-solid fa-volume-high control-btn";
+    volumeBtn.classList.remove("icon-muted");
+    volumeBtn.classList.add("icon-volume");
     isMuted = false;
   } else {
     player.mute();
-    volumeBtn.className = "fa-solid fa-volume-xmark control-btn";
+    volumeBtn.classList.remove("icon-volume");
+    volumeBtn.classList.add("icon-muted");
     isMuted = true;
   }
 }

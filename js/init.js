@@ -10,6 +10,7 @@ const progressBar = document.getElementById("progress");
 const currentTimeSpan = document.getElementById("currentTime");
 const remainingTimeSpan = document.getElementById("remainingTime");
 const lyricsToggle = document.getElementById("lyricsToggle");
+const lyricsIcon = lyricsToggle.querySelector("i");
 const playerInfo = document.getElementById("playerInfo");
 const lyricsInfo = document.getElementById("lyricsInfo");
 const lyricsSongTitle = document.getElementById("lyricsSongTitle");

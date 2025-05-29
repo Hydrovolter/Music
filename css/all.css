@@ -233,33 +233,7 @@
     border-radius: 3px;
   }
   
-  .lyrics-toggle {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    backdrop-filter: blur(5px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease;
-    z-index: 100;
-  }
-  
-  .lyrics-toggle:hover {
-    background: rgba(255, 255, 255, 0.25);
-  }
-  
-  .lyrics-toggle i {
-    font-size: 18px;
-    color: white;
-  }
+
   
   /* Lyrics view */
   .lyrics-info {
@@ -325,4 +299,77 @@
   #volumeBtn {
     font-size: 20px;
   }
+
+  .lyrics-toggle {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+    z-index: 100;
+  }
   
+  .lyrics-toggle:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+  
+  .lyrics-toggle i {
+    font-size: 18px;
+    color: white;
+  }
+
+  /* Shared icon styles */
+.icon {
+  font-style: normal;
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  font-size: 28px;
+  text-align: center;
+  line-height: 32px;
+  user-select: none;
+  cursor: pointer;
+  color: white;
+  transition: transform 0.1s ease;
+}
+
+.icon:active {
+  transform: scale(0.94);
+}
+
+/* Specific icon styles using Unicode characters */
+.icon-play::before {
+  content: '▶';
+}
+
+.icon-pause::before {
+  content: '⏸'; /* Unicode pause */
+}
+
+.icon-volume::before {
+  content: '🔊'; /* Volume high */
+}
+
+.icon-muted::before {
+  content: '🔇'; /* Volume muted */
+}
+
+
+.icon-lyrics::before {
+  content: '☰'; /* Hamburger icon for toggling lyrics on */
+}
+
+.icon-lyrics-on::before {
+  content: '🎶'; /* Music note for toggling lyrics off */
+}
+

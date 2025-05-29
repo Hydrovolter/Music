@@ -17,7 +17,8 @@
       rel="stylesheet"
     />
     <!-- <link rel="stylesheet" href="https://vapor.my/_a/fa/css/all.min.css" /> -->
-    <link rel="stylesheet" href="css/fontawesome.css" />
+    <!-- <link rel="stylesheet" href="css/fontawesome.css" /> -->
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.min.js"></script>
     <link rel="stylesheet" href="css/all.css" />
   </head>
@@ -32,7 +33,6 @@
     </div>
 
     <div class="search-results" id="searchResults">
-      <!-- cappuccino assassino -->
     </div>
 
     <div class="player">
@@ -48,8 +48,10 @@
         <div class="track-title" id="trackTitle">Not Playing</div>
         <div class="artist" id="artistName">Not Playing</div>
         <div class="controls">
-          <i id="playPause" class="fa-solid fa-play fa-lg control-btn"></i>
-          <i id="volumeBtn" class="fa-solid fa-volume-high control-btn"></i>
+          <!-- <i id="playPause" class="fa-solid fa-play fa-lg control-btn"></i> -->
+          <i id="playPause" class="icon icon-play"></i>
+          <!-- <i id="volumeBtn" class="fa-solid fa-volume-high control-btn"></i> -->
+          <i id="volumeBtn" class="icon icon-volume"></i>
         </div>
         <div id="seekbar" class="seekbar"><div id="progress"></div></div>
         <div class="timecodes">
@@ -58,7 +60,6 @@
         </div>
       </div>
 
-      <!-- TUNG TUNG TUGN TUNG TUNG TUNG TUNG SAHUR -->
       <div class="lyrics-info" id="lyricsInfo">
         <div class="lyrics-header">
           <div>
@@ -72,17 +73,17 @@
       </div>
     </div>
 
-    <!-- tralalero tralala -->
-    <div class="lyrics-toggle" id="lyricsToggle">
-      <i class="fa-solid fa-align-left"></i>
-    </div>
 
-    <!-- ballerina cappuccina -->
+    <div class="lyrics-toggle" id="lyricsToggle">
+
+      <i class="icon icon-lyrics"></i>
+    </div>
+    
+
     <div id="player-container">
       <div id="ytPlayer"></div>
     </div>
 
-    <!-- Endpoints, By Bombardino Crocodilo-->
     <script src="js/endpoints.js"></script>
 
     <script src="js/init.js"></script>
