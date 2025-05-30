@@ -159,9 +159,18 @@ function onPlayerError(event) {
         playPauseBtn.classList.add("icon-play");
     }
 
-    if (event.data === 101 || event.data === 150) { // Embedding restricted
-        alert(`Error: "${currentTrack ? currentTrack.title : "This song"}" cannot be played due to embedding restrictions.`);
-    }
+    if (event.data === 101 || event.data === 150) {
+      if (typeof showGeneralModal === 'function') {
+          // Use escapeModalHtml from modals.js if available, or a local/global escapeHtml
+          const songTitle = currentTrack ? (typeof escapeModalHtml === 'function' ? escapeModalHtml(currentTrack.title) : currentTrack.title) : "This song";
+          showGeneralModal(
+              "Playback Error",
+              `"${songTitle}" cannot be played due to video embedding restrictions by the owner.`
+          );
+      } else {
+          alert(`Error: "${currentTrack ? currentTrack.title : "This song"}" cannot be played due to embedding restrictions.`);
+      }
+  }
 
     if (loopState === 'playlist' && currentPlayingPlaylistId && typeof playNextTrackInCurrentPlaylist === 'function') {
         console.warn("Player error, attempting next track due to 'loop playlist' state.");

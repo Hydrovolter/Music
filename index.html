@@ -117,10 +117,22 @@
       </div>
     </div>
 
+    <div id="generalModal" class="modal" style="display:none;">
+      <div class="modal-content">
+          <span class="close-modal-btn" id="closeGeneralModal">×</span>
+          <h4 id="generalModalTitle">Notification</h4>
+          <p id="generalModalMessage" style="text-align: center; margin-bottom: 20px;"></p>
+          <div id="generalModalActions" style="text-align: center;">
+              <!-- Buttons will be dynamically inserted here -->
+          </div>
+      </div>
+  </div>
+
 
 
     <script src="js/endpoints.js"></script>
     <script src="js/init.js"></script>
+    <script src="js/modals.js"></script>
     <script src="js/bg.js"></script>
     <script src="js/playlist.js"></script>
     <script src="js/player.js"></script>
@@ -140,11 +152,17 @@
       });
 
       document.addEventListener('DOMContentLoaded', () => {
-        if (typeof initializePlaylistSystem === 'function') {
+        if (typeof initializeModals === 'function') { // Initialize the new modal system
+            initializeModals();
+        } else {
+            console.error("initializeModals function not found.");
+        }
+        if (typeof initializePlaylistSystem === 'function') { // Initialize the playlist system
             initializePlaylistSystem();
         } else {
             console.error("initializePlaylistSystem function not found.");
         }
+
       });
     </script>
   </body>

@@ -185,27 +185,30 @@ function renamePlaylist(playlistId, newName) {
 }
 
 function deletePlaylist(playlistId) {
-    const playlistName = getPlaylistById(playlistId)?.name || "this playlist";
-    if (!confirm(`Are you sure you want to delete playlist "${escapeHtml(playlistName)}"?`)) {
-        return;
-    }
+    const playlist = getPlaylistById(playlistId);
+    if (!playlist) return;
+    const playlistName = playlist.name || "this playlist";
 
-    userPlaylists = userPlaylists.filter(p => p.id !== playlistId);
-    saveUserPlaylists();
-
-    if (selectedPlaylistToViewId === playlistId) {
-        switchSidebarView('all_playlists');
-    } else if (currentSidebarView === 'all_playlists') {
-        renderAllPlaylistsView();
-    }
-
-    if (currentPlayingPlaylistId === playlistId) {
-        clearPlaylistContext(); // Stop playback from this playlist
-        // Consider resetting player UI more explicitly here if needed
-        if (typeof playSong === 'function') { // If playSong is global
-             // playSong("Not Playing", "Not Playing", "img/empty_art.png", null); // Reset player
-        }
-    }
+    // Uses global showGeneralModal and escapeModalHtml (if needed within message)
+    showGeneralModal(
+        "Confirm Deletion",
+        `Are you sure you want to delete the playlist "<strong>${escapeModalHtml(playlistName)}</strong>"?<br>This action cannot be undone.`,
+        [
+            {
+                text: 'Delete',
+                class: 'primary',
+                callback: () => {
+                    userPlaylists = userPlaylists.filter(p => p.id !== playlistId);
+                    saveUserPlaylists();
+                    if (selectedPlaylistToViewId === playlistId) switchSidebarView('all_playlists');
+                    else if (currentSidebarView === 'all_playlists') renderAllPlaylistsView();
+                    if (currentPlayingPlaylistId === playlistId) clearPlaylistContext();
+                    console.log(`Playlist "${escapeModalHtml(playlistName)}" deleted.`);
+                }
+            },
+            { text: 'Cancel', class: 'secondary', callback: () => console.log('Deletion cancelled.') }
+        ]
+    );
 }
 
 function addSongToUserPlaylist(playlistId, songData) {
@@ -219,7 +222,7 @@ function addSongToUserPlaylist(playlistId, songData) {
             }
             console.log(`Song "${songData.title}" added to playlist "${playlist.name}"`);
         } else {
-            alert(`Song "${songData.title}" is already in playlist "${playlist.name}".`);
+            showGeneralModal("Song Exists", `"${escapeModalHtml(songData.title)}" is already in the playlist "${escapeModalHtml(playlist.name)}".`);
         }
     }
 }
@@ -512,7 +515,8 @@ function clearPlaylistContext() {
 // --- "ADD TO PLAYLIST" MODAL ---
 function openAddToPlaylistModal() {
     if (!currentTrack || currentTrack.id == null) {
-        alert("No song is currently playing to add.");
+        // Assumes showGeneralModal and escapeModalHtml are global from modals.js
+        showGeneralModal("Cannot Add Song", "No song is currently playing to add to a playlist.");
         return;
     }
     modalPlaylistListElement.innerHTML = '';
@@ -560,7 +564,7 @@ function handleCreateNewPlaylist() {
         createPlaylist(playlistName.trim());
         renderAllPlaylistsView();
     } else if (playlistName !== null) {
-        alert("Playlist name cannot be empty.");
+        showGeneralModal("Invalid Name", "Playlist name cannot be empty.");
     }
 }
 

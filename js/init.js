@@ -71,3 +71,10 @@ let closeModalAddToPlaylistBtnElement;
 let likeBtnElement; // Will be grabbed in playlist.js
 let prevBtnElement; // Will be grabbed in playlist.js
 let nextBtnElement; // Will be grabbed in playlist.js
+
+// DOM Elements for General Modal
+let generalModalElement;
+let generalModalTitleElement;
+let generalModalMessageElement;
+let generalModalActionsElement;
+let closeGeneralModalBtnElement;

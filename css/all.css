@@ -888,6 +888,42 @@ background: rgba(255,255,255,0.2);
   scrollbar-color: rgba(255, 255, 255, 0.25) rgba(255, 255, 255, 0.05);
 }
 
+/* Styles for action buttons within the general modal */
+#generalModalActions {
+  margin-top: 20px;
+  display: flex; /* For button layout */
+  justify-content: center; /* Center buttons, or space-around/space-between */
+  gap: 15px; /* Space between buttons */
+}
+
+.modal-button {
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+  min-width: 80px; /* Minimum width for buttons */
+}
+
+.modal-button.primary { /* For primary actions like "Delete", "Confirm" */
+  background-color: #e53e3e; /* Example: Red for delete */
+  color: white;
+}
+.modal-button.primary:hover {
+  background-color: #c53030;
+}
+
+.modal-button.secondary { /* For secondary actions like "Cancel", "OK" for info */
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #f0f0f0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.modal-button.secondary:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
 
 /* Responsive adjustments */
 @media (max-width: 960px) { /* Adjust breakpoint as needed */
