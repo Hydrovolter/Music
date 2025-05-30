@@ -443,6 +443,19 @@ transform: scale(0.94);
   mask-image: url('../img/icons/trash.svg');
   -webkit-mask-image: url('../img/icons/trash.svg');
 }
+
+/* Add near other icon definitions */
+.icon-shuffle {
+  mask-image: url('../img/icons/shuffle.svg');
+  -webkit-mask-image: url('../img/icons/shuffle.svg');
+}
+
+/* Add near .icon-loop.loop-active for active state styling */
+.icon-shuffle.shuffle-active {
+  background-color: #00ff88; /* Green color, same as active loop */
+  transform: scale(1.1); /* Optional: visual feedback */
+}
+
 /* Adjust size for these small action buttons if needed */
 .playlist-item-actions .icon {
     width: 1em; /* Or a fixed px value like 14px */
@@ -458,7 +471,7 @@ transform: scale(0.94);
 .icon-plus-circle {
   mask-image: url('../img/icons/plus-circle.svg');
   -webkit-mask-image: url('../img/icons/plus-circle.svg');
-  width: 22px; height: 22px; /* Match likeBtn */
+
 }
 .icon-loop { /* Base style for the loop button - uses repeat.svg */
   mask-image: url('../img/icons/repeat.svg');
@@ -484,23 +497,23 @@ transform: scale(0.94);
 .icon-heart-empty {
 mask-image: url('../img/icons/heart-empty.svg');
 -webkit-mask-image: url('../img/icons/heart-empty.svg');
-width: 22px; height: 22px;
+
 }
 .icon-heart-filled {
 mask-image: url('../img/icons/heart-filled.svg');
 -webkit-mask-image: url('../img/icons/heart-filled.svg');
 background-color: #ff6b6b; /* Liked color */
-width: 22px; height: 22px;
+
 }
 .icon-prev {
 mask-image: url('../img/icons/prev.svg');
 -webkit-mask-image: url('../img/icons/prev.svg');
-width: 26px; height: 26px;
+
 }
 .icon-next {
 mask-image: url('../img/icons/next.svg');
 -webkit-mask-image: url('../img/icons/next.svg');
-width: 26px; height: 26px;
+
 }
 
 /* Playlist Sidebar Styles - Focus here */

@@ -36,6 +36,7 @@ function onPlayerReady(event) {
   playPauseBtn.addEventListener("click", togglePlayback); // togglePlayback is global from playback.js
   volumeBtn.addEventListener("click", toggleMute);
   loopBtn.addEventListener("click", toggleLoop);
+  if (shuffleBtn) shuffleBtn.addEventListener("click", toggleShuffle);
 
   seekBar.addEventListener("mousedown", startSeek); // startSeek from playback.js
   document.addEventListener("mousemove", dragSeek); // dragSeek from playback.js
@@ -43,6 +44,7 @@ function onPlayerReady(event) {
 
   setInterval(updateProgress, 500); // updateProgress from playback.js
   updateLoopButtonIcon(); // Initialize loop button icon based on global loopState
+  updateShuffleButtonIcon();
 
   // Initial color logic - unchanged
   if (albumCover.complete && albumCover.src && !albumCover.src.endsWith('img/empty_art.png')) {
@@ -93,12 +95,10 @@ function toggleLoop() {
 }
 
 function onPlayerStateChange(event) {
-  // loopState, currentPlayingPlaylistId, currentPlaylistTrackIndex are global
-  // getPlaylistById, playNextTrackInCurrentPlaylist are from playlist.js
-  console.log("Player state:", event.data, "| Loop:", loopState, "| PlaylistID:", currentPlayingPlaylistId, "| TrackIdx:", currentPlaylistTrackIndex);
+  console.log("Player state:", event.data, "| Loop:", loopState, "| Shuffle:", isShuffleActive, "| PlaylistID:", currentPlayingPlaylistId, "| TrackIdx:", currentPlaylistTrackIndex);
 
   if (event.data === YT.PlayerState.PLAYING) {
-    isPlaying = true; // isPlaying is global
+    isPlaying = true;
     playPauseBtn.classList.remove("icon-play");
     playPauseBtn.classList.add("icon-pause");
   } else if (event.data === YT.PlayerState.PAUSED) {
@@ -113,22 +113,24 @@ function onPlayerStateChange(event) {
     if (loopState === 'song' && player) {
       player.seekTo(0, true);
       player.playVideo();
+    } else if (isShuffleActive && currentPlayingPlaylistId) { // SHUFFLE takes precedence over simple playlist next
+        playNextTrackInCurrentPlaylist(); // This will use shuffle logic
     } else if (currentPlayingPlaylistId && typeof getPlaylistById === 'function' && typeof playNextTrackInCurrentPlaylist === 'function') {
+        // Non-shuffled playlist logic
         const currentPlaylist = getPlaylistById(currentPlayingPlaylistId);
         if (currentPlaylist && currentPlaylist.songs && currentPlaylist.songs.length > 0) {
             const isLastTrack = currentPlaylistTrackIndex >= currentPlaylist.songs.length - 1;
-
             if (loopState === 'playlist') {
-                playNextTrackInCurrentPlaylist(); // Will wrap to start if it was the last track
+                playNextTrackInCurrentPlaylist();
             } else if (loopState === 'none' && !isLastTrack) {
-                playNextTrackInCurrentPlaylist(); // Proceed to next song in playlist
-            } else { // loopState is 'none' AND it was the last track, or playlist became invalid
+                playNextTrackInCurrentPlaylist();
+            } else {
                 clearPlayerStateOnEnd();
             }
-        } else { // Playlist might have become empty or invalid
+        } else {
              clearPlayerStateOnEnd();
         }
-    } else { // Not in a playlist or song not set to loop
+    } else {
       clearPlayerStateOnEnd();
     }
   } else if (event.data === YT.PlayerState.CUED && currentTrack && currentTrack.id !== null && !isPlaying) {
@@ -204,4 +206,47 @@ function toggleMute() {
     volumeBtn.classList.add("icon-muted");
     isMuted = true;
   }
+}
+
+// --- SHUFFLE FUNCTIONS ---
+function updateShuffleButtonIcon() {
+  if (!shuffleBtn) return;
+  if (isShuffleActive) {
+      shuffleBtn.classList.add('shuffle-active');
+  } else {
+      shuffleBtn.classList.remove('shuffle-active');
+  }
+}
+
+function toggleShuffle() {
+  if (!currentPlayingPlaylistId) { // Shuffle only makes sense with an active playlist
+      // Optionally inform user or just do nothing
+      console.warn("Shuffle toggled but no active playlist.");
+      isShuffleActive = false; // Ensure it's off
+      updateShuffleButtonIcon();
+      return;
+  }
+
+  isShuffleActive = !isShuffleActive;
+  console.log("Shuffle state changed to:", isShuffleActive);
+
+  if (isShuffleActive) {
+      // If shuffle is activated, and a playlist is playing, initialize shuffle queues
+      const playlist = getPlaylistById(currentPlayingPlaylistId);
+      if (playlist && playlist.songs.length > 0) {
+          // Pass the currently playing track's ID so it can be handled correctly
+          const currentTrackIdForShuffle = currentTrack && currentTrack.id ? currentTrack.id : null;
+          initializeShuffleQueues(playlist.songs, currentTrackIdForShuffle);
+      } else {
+          // Playlist became empty or invalid, turn shuffle off
+          isShuffleActive = false;
+      }
+  } else {
+      // Shuffle turned off, clear queues
+      shuffleUpcomingQueue = [];
+      shufflePlayedQueue = [];
+  }
+  updateShuffleButtonIcon();
+  // No need to immediately play next song; current song continues.
+  // The next/prev or song end logic will use the new shuffle state.
 }

@@ -19,11 +19,13 @@ const lyricsSongTitle = document.getElementById("lyricsSongTitle");
 const lyricsArtistName = document.getElementById("lyricsArtistName");
 const lyricsContent = document.getElementById("lyricsContent");
 const loopBtn = document.getElementById("loopBtn");
-// Note: likeBtn, prevBtn, nextBtn are primarily handled in playlist.js init
+const shuffleBtn = document.getElementById("shuffleBtn");
+
 
 let showingLyrics = false;
 let isMuted = false;
 let loopState = 'none';
+let isShuffleActive = false;
 
 let player; // YouTube player instance
 let isPlaying = false; // Player's playing state

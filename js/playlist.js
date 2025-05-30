@@ -449,37 +449,110 @@ function renderSinglePlaylistView(playlistId) {
 }
 
 // --- PLAYBACK LOGIC ADAPTATIONS ---
-function playSongFromCurrentPlaylist(playlistId, songIndex) {
-    const playlist = getPlaylistById(playlistId); // This now gets a full playlist object
-    if (!playlist || !playlist.songs || songIndex < 0 || songIndex >= playlist.songs.length) {
-        console.warn(`Cannot play song: invalid playlist or index. Playlist ID: ${playlistId}, Index: ${songIndex}`);
+function playSongFromCurrentPlaylist(playlistId, songIndexInOriginalPlaylist) {
+    const playlist = getPlaylistById(playlistId);
+    if (!playlist || !playlist.songs || songIndexInOriginalPlaylist < 0 || songIndexInOriginalPlaylist >= playlist.songs.length) {
+        console.warn(`Cannot play song: invalid playlist or index. Playlist ID: ${playlistId}, Index: ${songIndexInOriginalPlaylist}`);
         clearPlaylistContext();
         return;
     }
 
-    const songToPlay = playlist.songs[songIndex];
-    currentPlayingPlaylistId = playlistId;
-    currentPlaylistTrackIndex = songIndex;
+    const songToPlay = playlist.songs[songIndexInOriginalPlaylist];
 
-    // Call the global playSong function (defined in play.js)
+    if (isShuffleActive && currentPlayingPlaylistId === playlistId) {
+        // User manually selected a song from the playlist view while shuffle is on.
+        // This song "jumps the queue" and becomes the current one.
+        // It should be removed from upcoming and added to played.
+
+        const upcomingIndex = shuffleUpcomingQueue.findIndex(s => s.id === songToPlay.id);
+        if (upcomingIndex > -1) {
+            shuffleUpcomingQueue.splice(upcomingIndex, 1);
+        }
+
+        const playedIndex = shufflePlayedQueue.findIndex(s => s.id === songToPlay.id);
+        if (playedIndex > -1) {
+            // If it was already played, remove it to avoid duplicate in playedQueue later
+            // (though push will add it as most recent)
+            shufflePlayedQueue.splice(playedIndex, 1);
+        }
+        shufflePlayedQueue.push(songToPlay); // Add to end of played queue (most recent)
+        console.log(`Shuffle: User selected "${songToPlay.title}". Upcoming: ${shuffleUpcomingQueue.length}, Played: ${shufflePlayedQueue.length}`);
+    } else if (isShuffleActive && currentPlayingPlaylistId !== playlistId) {
+        // User started a new playlist while shuffle was on from a previous one.
+        // Or, shuffle was just turned on by toggleShuffle before this call (less likely path here)
+        initializeShuffleQueues(playlist.songs, songToPlay.id);
+    }
+    // If shuffle is NOT active OR shuffle was just initialized for THIS song:
+    // The currentTrack, currentPlayingPlaylistId, currentPlaylistTrackIndex will be set below.
+
+    currentPlayingPlaylistId = playlistId;
+    currentPlaylistTrackIndex = songIndexInOriginalPlaylist; // Always store original index
+
     if (typeof playSong === 'function') {
         playSong(songToPlay.title, songToPlay.artist, songToPlay.artwork, songToPlay.id.toString());
     } else {
         console.error("Global playSong function not found!");
     }
 
-    renderSidebar(); // Re-render to highlight playing song
-    updatePlaylistControlsVisibility();
+    renderSidebar();
+    updatePlaylistControlsVisibility(); // This now also updates shuffle button visibility
 }
 
 function playNextTrackInCurrentPlaylist() {
     if (!currentPlayingPlaylistId) return;
-    const playlist = getPlaylistById(currentPlayingPlaylistId);
 
-    if (playlist && playlist.songs.length > 0) {
+    const playlist = getPlaylistById(currentPlayingPlaylistId);
+    if (!playlist || !playlist.songs || playlist.songs.length === 0) {
+        clearPlaylistContext(); // Playlist is empty
+        return;
+    }
+
+    if (isShuffleActive) {
+        if (shuffleUpcomingQueue.length === 0) { // No more songs in upcoming queue
+            if (loopState === 'playlist') {
+                console.log("Shuffle: Upcoming empty, looping playlist.");
+                initializeShuffleQueues(playlist.songs); // Reshuffle ALL songs from original playlist
+                // shufflePlayedQueue is already reset by initializeShuffleQueues
+            } else {
+                console.log("Shuffle: Upcoming empty, no loop. Stopping.");
+                // clearPlayerStateOnEnd() will be called by player if song truly ends
+                // Or we can explicitly stop / clear context. For now, let player handle.
+                // If player naturally stops, onPlayerStateChange -> ENDED will trigger this again,
+                // so we might need a more robust stop signal or state.
+                // For now, if upcoming is empty and no loop, do nothing more here.
+                // The player will hit ENDED and then if no more logic, it stops.
+                return;
+            }
+        }
+
+        if (shuffleUpcomingQueue.length > 0) {
+            const nextSongToPlay = shuffleUpcomingQueue.shift(); // Get and remove first from upcoming
+            shufflePlayedQueue.push(nextSongToPlay);       // Add to played
+
+            const originalIndexOfNextSong = playlist.songs.findIndex(s => s.id === nextSongToPlay.id);
+            
+            currentPlaylistTrackIndex = originalIndexOfNextSong; // Update for consistency
+            currentPlayingPlaylistId = playlist.id; // Ensure it's set
+
+            console.log(`Shuffle: Playing next "${nextSongToPlay.title}". Upcoming: ${shuffleUpcomingQueue.length}, Played: ${shufflePlayedQueue.length}`);
+            if (typeof playSong === 'function') {
+                playSong(nextSongToPlay.title, nextSongToPlay.artist, nextSongToPlay.artwork, nextSongToPlay.id.toString());
+            }
+            renderSidebar(); // To update playing highlight
+            updatePlaylistControlsVisibility();
+        } else {
+            console.log("Shuffle: Still no upcoming songs after attempting loop. Playlist might be empty.");
+            clearPlaylistContext(); // Safety clear
+        }
+    } else { // Original non-shuffle logic
         let nextIndex = currentPlaylistTrackIndex + 1;
         if (nextIndex >= playlist.songs.length) {
-            nextIndex = 0; // Loop for 'playlist' loop state, or if user clicks next on last song
+            if (loopState === 'playlist') { // Only loop if loop playlist is active
+                nextIndex = 0;
+            } else {
+                 // No loop or last song reached without playlist loop, let player end.
+                return;
+            }
         }
         playSongFromCurrentPlaylist(currentPlayingPlaylistId, nextIndex);
     }
@@ -487,25 +560,60 @@ function playNextTrackInCurrentPlaylist() {
 
 function playPreviousTrackInCurrentPlaylist() {
     if (!currentPlayingPlaylistId) return;
-    const playlist = getPlaylistById(currentPlayingPlaylistId);
 
-    if (playlist && playlist.songs.length > 0) {
+    const playlist = getPlaylistById(currentPlayingPlaylistId);
+     if (!playlist || !playlist.songs || playlist.songs.length === 0) {
+        clearPlaylistContext();
+        return;
+    }
+
+    if (isShuffleActive) {
+        if (shufflePlayedQueue.length < 2) { // Need at least 2 songs in played: one current, one previous
+            console.log("Shuffle: Not enough played history to go previous.");
+            return; // Or play the first song of the shuffle cycle if desired
+        }
+
+        const currentSongFromPlayed = shufflePlayedQueue.pop(); // Remove current from played
+        shuffleUpcomingQueue.unshift(currentSongFromPlayed); // Add it back to start of upcoming
+
+        const previousSongToPlay = shufflePlayedQueue[shufflePlayedQueue.length - 1]; // Peek at new last (actual prev)
+        
+        const originalIndexOfPrevSong = playlist.songs.findIndex(s => s.id === previousSongToPlay.id);
+
+        currentPlaylistTrackIndex = originalIndexOfPrevSong;
+        currentPlayingPlaylistId = playlist.id;
+
+        console.log(`Shuffle: Playing previous "${previousSongToPlay.title}". Upcoming: ${shuffleUpcomingQueue.length}, Played: ${shufflePlayedQueue.length}`);
+        if (typeof playSong === 'function') {
+            playSong(previousSongToPlay.title, previousSongToPlay.artist, previousSongToPlay.artwork, previousSongToPlay.id.toString());
+        }
+        renderSidebar();
+        updatePlaylistControlsVisibility();
+
+    } else { // Original non-shuffle logic
         let prevIndex = currentPlaylistTrackIndex - 1;
         if (prevIndex < 0) {
-            prevIndex = playlist.songs.length - 1;
+            // If loop playlist is active, wrap to last song, otherwise stop at first.
+            if (loopState === 'playlist') {
+                 prevIndex = playlist.songs.length - 1;
+            } else {
+                return; // Don't wrap if not looping playlist
+            }
         }
         playSongFromCurrentPlaylist(currentPlayingPlaylistId, prevIndex);
     }
 }
-
 function updatePlaylistControlsVisibility() {
-    if (!prevBtnElement || !nextBtnElement) return;
+    if (!prevBtnElement || !nextBtnElement || !shuffleBtn) return; // Add shuffleBtn check
     const playlist = getPlaylistById(currentPlayingPlaylistId);
-    const showControls = playlist && playlist.songs && playlist.songs.length > 0; // Show if any playlist has songs
+    const showControls = playlist && playlist.songs && playlist.songs.length > 0;
+
     prevBtnElement.style.display = showControls ? 'inline-block' : 'none';
     nextBtnElement.style.display = showControls ? 'inline-block' : 'none';
+    shuffleBtn.style.display = showControls ? 'inline-block' : 'none'; // <<< ADD THIS
 
-    if (typeof updateLoopButtonIcon === 'function') updateLoopButtonIcon(); // Defined in player.js
+    if (typeof updateLoopButtonIcon === 'function') updateLoopButtonIcon();
+    if (typeof updateShuffleButtonIcon === 'function') updateShuffleButtonIcon(); // <<< ADD THIS
 }
 
 function clearPlaylistContext() {
@@ -513,18 +621,20 @@ function clearPlaylistContext() {
     currentPlayingPlaylistId = null;
     currentPlaylistTrackIndex = -1;
 
+    isShuffleActive = false; // <<< ADD THIS
+    shuffleUpcomingQueue = []; // <<< ADD THIS
+    shufflePlayedQueue = [];   // <<< ADD THIS
+    if(typeof updateShuffleButtonIcon === 'function') updateShuffleButtonIcon(); // <<< ADD THIS
+
     if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId) {
          const playlistBeingViewed = getPlaylistById(selectedPlaylistToViewId);
-         if(playlistBeingViewed) renderSinglePlaylistView(selectedPlaylistToViewId); // Re-render to remove playing highlight
-    } else if (currentSidebarView === 'all_playlists') {
-        // If playing from "All Playlists" view (e.g. clicking play on a playlist overview - future feature)
-        // For now, this else if might not be strictly necessary.
+         if(playlistBeingViewed) renderSinglePlaylistView(selectedPlaylistToViewId);
     }
 
     updatePlaylistControlsVisibility();
 
     if (wasPlayingPlaylist && typeof loopState !== 'undefined' && loopState === 'playlist') {
-        loopState = 'none';
+        loopState = 'none'; // If playlist context cleared, playlist loop should also conceptually reset
         if (typeof updateLoopButtonIcon === 'function') updateLoopButtonIcon();
     }
 }
@@ -692,6 +802,47 @@ function clearGapIndicators() {
         item.classList.remove('show-gap-above', 'show-gap-below');
     });
 }
+
+// --- SHUFFLE HELPER ---
+function shuffleArray(array) {
+    let newArray = [...array]; // Create a copy
+    for (let i = newArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+}
+
+// --- SHUFFLE QUEUE MANAGEMENT ---
+function initializeShuffleQueues(playlistSongs, currentlyPlayingSongId = null) {
+    if (!isShuffleActive || !playlistSongs || playlistSongs.length === 0) {
+        shuffleUpcomingQueue = [];
+        shufflePlayedQueue = [];
+        isShuffleActive = false; // Turn off if no songs
+        if (typeof updateShuffleButtonIcon === 'function') updateShuffleButtonIcon();
+        return;
+    }
+
+    // Create a queue of song *objects* or just *IDs*. IDs are simpler for queue management.
+    // Let's use song objects for now to easily access details later.
+    shuffleUpcomingQueue = shuffleArray(playlistSongs);
+    shufflePlayedQueue = [];
+
+    if (currentlyPlayingSongId) {
+        const currentSongIndexInUpcoming = shuffleUpcomingQueue.findIndex(s => s.id === currentlyPlayingSongId);
+        if (currentSongIndexInUpcoming > -1) {
+            const currentSongObject = shuffleUpcomingQueue.splice(currentSongIndexInUpcoming, 1)[0];
+            shufflePlayedQueue.push(currentSongObject); // Current song is first in played queue
+        } else {
+            // If current song wasn't in the list for some reason, just proceed.
+        }
+    }
+    console.log("Shuffle queues initialized. Upcoming:", shuffleUpcomingQueue.map(s=>s.title), "Played:", shufflePlayedQueue.map(s=>s.title));
+}
+
+
+
+
 
 // Helper to prevent XSS
 function escapeHtml(unsafe) {
