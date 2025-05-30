@@ -143,6 +143,21 @@
     </div>
   </div>
 
+  <div id="renamePlaylistModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close-modal-btn" id="closeRenamePlaylistModal">×</span>
+        <h4 id="renamePlaylistModalTitle">Rename Playlist</h4>
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label for="renamePlaylistNameInput" style="display: block; margin-bottom: 8px; font-weight: 500;">New Playlist Name:</label>
+            <input type="text" id="renamePlaylistNameInput" class="modal-input" placeholder="Enter new name">
+        </div>
+        <div id="renamePlaylistModalActions" style="text-align: right;">
+            <button id="cancelRenamePlaylistBtn" class="modal-button secondary" style="margin-right: 10px;">Cancel</button>
+            <button id="confirmRenamePlaylistBtn" class="modal-button success">Save</button>
+        </div>
+    </div>
+  </div>
+
 
 
     <script src="js/endpoints.js"></script>

@@ -86,3 +86,12 @@ let newPlaylistNameInputElement;
 let confirmCreatePlaylistBtnElement;
 let cancelCreatePlaylistBtnElement;
 let closeCreatePlaylistModalBtnElement;
+
+// DOM Elements for Rename Playlist Modal
+let renamePlaylistModalElement;
+let renamePlaylistModalTitleElement; // If you want to include the old name in the title
+let renamePlaylistNameInputElement;
+let confirmRenamePlaylistBtnElement;
+let cancelRenamePlaylistBtnElement;
+let closeRenamePlaylistModalBtnElement;
+let playlistIdToRename = null; // To store the ID of the playlist being renamed

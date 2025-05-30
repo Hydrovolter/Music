@@ -3,6 +3,7 @@ let generalModalConfirmCallback = null; // Not strictly needed if callbacks are 
 let generalModalCancelCallback = null;  // Same as above
 
 function initializeModals() {
+    // Initialize General Modal Elements
     generalModalElement = document.getElementById('generalModal');
     generalModalTitleElement = document.getElementById('generalModalTitle');
     generalModalMessageElement = document.getElementById('generalModalMessage');
@@ -53,6 +54,35 @@ function initializeModals() {
             }
         });
         console.log("Create Playlist Modal system initialized.");
+    }
+
+    // Initialize Rename Playlist Modal Elements
+    renamePlaylistModalElement = document.getElementById('renamePlaylistModal');
+    renamePlaylistModalTitleElement = document.getElementById('renamePlaylistModalTitle'); // Get the title element
+    renamePlaylistNameInputElement = document.getElementById('renamePlaylistNameInput');
+    confirmRenamePlaylistBtnElement = document.getElementById('confirmRenamePlaylistBtn');
+    cancelRenamePlaylistBtnElement = document.getElementById('cancelRenamePlaylistBtn');
+    closeRenamePlaylistModalBtnElement = document.getElementById('closeRenamePlaylistModal');
+
+    if (!renamePlaylistModalElement || !renamePlaylistNameInputElement || !confirmRenamePlaylistBtnElement ||
+        !cancelRenamePlaylistBtnElement || !closeRenamePlaylistModalBtnElement || !renamePlaylistModalTitleElement) {
+        console.error("Rename Playlist modal DOM elements not found. This functionality will be limited.");
+    } else {
+        closeRenamePlaylistModalBtnElement.addEventListener('click', closeRenamePlaylistModal);
+        cancelRenamePlaylistBtnElement.addEventListener('click', closeRenamePlaylistModal);
+        confirmRenamePlaylistBtnElement.addEventListener('click', handleConfirmRenamePlaylist);
+        renamePlaylistModalElement.addEventListener('click', (event) => {
+            if (event.target === renamePlaylistModalElement) {
+                closeRenamePlaylistModal();
+            }
+        });
+        renamePlaylistNameInputElement.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                handleConfirmRenamePlaylist();
+            }
+        });
+        console.log("Rename Playlist Modal system initialized.");
     }
 }
 
@@ -144,6 +174,54 @@ function handleConfirmCreatePlaylist() {
         // Optionally, re-focus the input: newPlaylistNameInputElement.focus();
     }
 }
+
+function openRenamePlaylistModal(currentPlaylistId, currentName) {
+    if (!renamePlaylistModalElement || !renamePlaylistNameInputElement || !renamePlaylistModalTitleElement) return;
+
+    playlistIdToRename = currentPlaylistId; // Store the ID
+    renamePlaylistModalTitleElement.textContent = `Rename "${escapeModalHtml(currentName)}"`; // Set dynamic title
+    renamePlaylistNameInputElement.value = currentName; // Pre-fill with current name
+    renamePlaylistModalElement.style.display = 'flex';
+    renamePlaylistNameInputElement.focus();
+    renamePlaylistNameInputElement.select();
+}
+
+function closeRenamePlaylistModal() {
+    if (!renamePlaylistModalElement) return;
+    renamePlaylistModalElement.style.display = 'none';
+    if(renamePlaylistNameInputElement) renamePlaylistNameInputElement.value = '';
+    playlistIdToRename = null; // Clear stored ID
+}
+
+function handleConfirmRenamePlaylist() {
+    if (!renamePlaylistNameInputElement || !playlistIdToRename) return;
+
+    const newPlaylistName = renamePlaylistNameInputElement.value.trim();
+    const oldPlaylistData = typeof getPlaylistById === 'function' ? getPlaylistById(playlistIdToRename) : null; // getPlaylistById from playlist.js
+    const oldName = oldPlaylistData ? oldPlaylistData.name : "";
+
+
+    if (newPlaylistName && newPlaylistName !== oldName) {
+        // Call the actual renamePlaylist function (which should be in playlist.js)
+        if (typeof renamePlaylist === 'function') { // renamePlaylist is from playlist.js
+            renamePlaylist(playlistIdToRename, newPlaylistName);
+            // renderAllPlaylistsView() or renderSinglePlaylistView() will be called by renamePlaylist
+            closeRenamePlaylistModal();
+        } else {
+            console.error("renamePlaylist function not found.");
+            showGeneralModal("Error", "Could not rename playlist. Functionality missing.");
+        }
+    } else if (!newPlaylistName) {
+        showGeneralModal("Invalid Name", "Playlist name cannot be empty.");
+        // Optionally, re-focus: renamePlaylistNameInputElement.focus();
+    } else { // Name is the same, or something else went wrong
+        closeRenamePlaylistModal(); // Just close if name hasn't changed
+    }
+}
+
+
+
+
 
 // Helper function for escaping HTML (can live here or in a general utils.js)
 // Make sure this is accessible if other files need it, or they have their own.

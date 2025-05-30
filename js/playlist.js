@@ -176,10 +176,19 @@ function renamePlaylist(playlistId, newName) {
     if (playlist && newName.trim() !== "") {
         playlist.name = newName.trim();
         saveUserPlaylists();
+       // Always re-render the current sidebar view to reflect the name change
         if (currentSidebarView === 'all_playlists') {
             renderAllPlaylistsView();
-        } else if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === playlistId) {
-            sidebarTitleElement.textContent = escapeHtml(playlist.name);
+        } else if (currentSidebarView === 'single_playlist_view') {
+            if (selectedPlaylistToViewId === playlistId) {
+                // If viewing the renamed playlist, update its title and re-render its content
+                if (sidebarTitleElement) sidebarTitleElement.textContent = escapeHtml(playlist.name);
+                renderSinglePlaylistView(playlistId); // Re-render to show updated name potentially in header or list item
+            }
+            // If viewing a different playlist, but the renamed one is in the overview,
+            // renderAllPlaylistsView would be needed if the change should reflect there immediately
+            // without navigating back. For simplicity now, it will update when navigating back.
+            // A more robust solution would be a pub/sub or state management.
         }
     }
 }
@@ -582,36 +591,30 @@ function handleCreateNewPlaylist() {
     }
 }
 
-function handleRenamePlaylist(playlistId, listItemElement) {
-    const playlist = getPlaylistById(playlistId);
-    if (!playlist || playlist.id === LIKED_SONGS_PLAYLIST_ID) return;
+function handleRenamePlaylist(playlistIdToEdit /*, listItemElement - no longer needed */) {
+    const playlist = getPlaylistById(playlistIdToEdit); // getPlaylistById is in this file
+    if (!playlist || playlist.id === LIKED_SONGS_PLAYLIST_ID) { // Can't rename Liked Songs
+        console.warn("Attempted to rename Liked Songs or non-existent playlist.");
+        return;
+    }
 
-    const nameDiv = listItemElement.querySelector('.playlist-overview-item-name');
-    const currentName = playlist.name;
-    nameDiv.innerHTML = `<input type="text" class="playlist-name-input" value="${escapeHtml(currentName)}">`;
-    const inputField = nameDiv.querySelector('input');
-    inputField.focus();
-    inputField.select();
-
-    const saveRename = () => {
-        const newName = inputField.value.trim();
-        if (newName && newName !== currentName) {
-            renamePlaylist(playlistId, newName);
-        } else { // If name is empty or same, revert to original
-            nameDiv.textContent = escapeHtml(currentName); // Or just re-render
+    // NEW: Call the function to open the dedicated modal
+    // openRenamePlaylistModal is from modals.js
+    if (typeof openRenamePlaylistModal === 'function') {
+        openRenamePlaylistModal(playlist.id, playlist.name);
+    } else {
+        console.error("openRenamePlaylistModal function not found!");
+        // Fallback to prompt if modal function isn't available (optional)
+        const newNameFallback = prompt(`Enter new name for "${escapeHtml(playlist.name)}":`, playlist.name);
+        if (newNameFallback && newNameFallback.trim() !== "" && newNameFallback.trim() !== playlist.name) {
+            renamePlaylist(playlist.id, newNameFallback.trim());
+            // renamePlaylist itself will call renderAllPlaylistsView or update title
+        } else if (newNameFallback && newNameFallback.trim() === "") {
+            // Using global showGeneralModal for error
+            if(typeof showGeneralModal === 'function') showGeneralModal("Invalid Name", "Playlist name cannot be empty.");
+            else alert("Playlist name cannot be empty.");
         }
-        renderAllPlaylistsView(); // Re-render to ensure proper display and remove input
-    };
-
-    inputField.addEventListener('blur', saveRename, { once: true }); // Use {once: true} to avoid multiple fires if re-focused
-    inputField.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            inputField.blur(); // Trigger the blur event to save
-        } else if (e.key === 'Escape') {
-            nameDiv.textContent = escapeHtml(currentName); // Revert on escape
-             renderAllPlaylistsView(); // And re-render
-        }
-    });
+    }
 }
 
 // --- DRAG AND DROP FOR SONGS (within a single playlist view) ---
