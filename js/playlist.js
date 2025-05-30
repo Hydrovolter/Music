@@ -34,7 +34,7 @@ function initializePlaylistSystem() {
     prevBtnElement.addEventListener('click', playPreviousTrackInCurrentPlaylist);
     backToPlaylistsBtnElement.addEventListener('click', () => switchSidebarView('all_playlists'));
     createNewPlaylistBtnElement.addEventListener('click', handleCreateNewPlaylist);
-    addToPlaylistBtnElement.addEventListener('click', openAddToPlaylistModal);
+    addToPlaylistBtnElement.addEventListener('click', () => { openAddToPlaylistModal(); });
     closeModalAddToPlaylistBtnElement.addEventListener('click', closeAddToPlaylistModal);
 
     window.addEventListener('click', (event) => {
@@ -59,17 +59,31 @@ function saveLikedPlaylist() {
 function addSongToLikedPlaylist(songData) {
     if (!songData || !songData.id) {
         console.error("Cannot add to liked: missing song data or ID.", songData);
+        // Optionally show an error toast here too if desired using showGeneralModal or showToast for errors
         return;
     }
     if (!likedPlaylist.find(s => s.id === songData.id)) {
         likedPlaylist.push(songData);
         saveLikedPlaylist();
+
+        // Show success toast
+        if (typeof showToast === 'function') { // Ensure showToast is available
+            const message = `"${escapeHtml(songData.title)}" added to Liked Songs!`;
+            showToast(message, 3000);
+        }
+
         if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === LIKED_SONGS_PLAYLIST_ID) {
             renderSinglePlaylistView(LIKED_SONGS_PLAYLIST_ID);
         }
-        // If Liked Songs playlist is currently playing, this new song is now at the end of its queue.
-        // No specific index adjustment needed here unless we want to auto-play it.
-        updateLikeButtonState(true); // Update the like button for the current track
+        updateLikeButtonState(true); // Update the like button for the current track if it's the one being liked
+    } else {
+        // Song is already liked - show an informational toast or general modal
+        if (typeof showToast === 'function') {
+            const message = `"${escapeHtml(songData.title)}" is already in Liked Songs.`;
+            showToast(message, 3000);
+        }
+        // Or use showGeneralModal for a more prominent message:
+        // showGeneralModal("Already Liked", `"${escapeHtml(songData.title)}" is already in your Liked Songs.`);
     }
 }
 
@@ -226,12 +240,34 @@ function addSongToUserPlaylist(playlistId, songData) {
         if (!playlist.songs.find(s => s.id === songData.id)) {
             playlist.songs.push(songData);
             saveUserPlaylists();
+
+            // Show success toast
+            if (typeof showToast === 'function') { // Ensure showToast is available
+                const message = `"${escapeHtml(songData.title)}" added to ${escapeHtml(playlist.name)}!`;
+                showToast(message, 3000);
+            }
+
             if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === playlistId) {
                 renderSinglePlaylistView(playlistId);
             }
             console.log(`Song "${songData.title}" added to playlist "${playlist.name}"`);
         } else {
-            showGeneralModal("Song Exists", `"${escapeModalHtml(songData.title)}" is already in the playlist "${escapeModalHtml(playlist.name)}".`);
+            // Song already exists in this specific user playlist
+            if (typeof showToast === 'function') {
+                const message = `"${escapeHtml(songData.title)}" is already in ${escapeHtml(playlist.name)}.`;
+                showToast(message, 3000);
+            }
+            // Original showGeneralModal for this case:
+            // showGeneralModal("Song Exists", `"${escapeHtml(songData.title)}" is already in the playlist "${escapeHtml(playlist.name)}".`);
+            // You can choose whether a toast or a modal is better for this "already exists" message.
+            // Toasts are less intrusive.
+        }
+    } else {
+        if (!playlist) console.error("Playlist not found for ID:", playlistId);
+        if (!songData || !songData.id) console.error("Invalid song data for addSongToUserPlaylist:", songData);
+        // Optionally show an error toast/modal if playlist or songData is invalid
+        if (typeof showToast === 'function') {
+             showToast("Error: Could not add song to playlist.", 3000);
         }
     }
 }
