@@ -58,7 +58,7 @@ function onPlayerReady(event) {
 }
 
 function onPlayerStateChange(event) {
-  console.log("Player state changed:", event.data, "| Loop state:", loopState);
+  console.log("Player state changed:", event.data, "| Loop state:", loopState, "| Current Playlist Track Index:", currentPlaylistTrackIndex, "| Liked Playlist Length:", (typeof likedPlaylist !== 'undefined' ? likedPlaylist.length : 'N/A'));
 
   if (event.data === YT.PlayerState.PLAYING) {
     isPlaying = true;
@@ -73,19 +73,31 @@ function onPlayerStateChange(event) {
     playPauseBtn.classList.remove("icon-pause");
     playPauseBtn.classList.add("icon-play");
 
-    if (loopState === 'song' && player) { // Loop current song
+    if (loopState === 'song' && player) { // Loop current song - PRIORITY 1
       player.seekTo(0, true);
       player.playVideo();
-    } else if (loopState === 'playlist' &&
-               currentPlayingPlaylistType === 'liked' && // Check if it's the liked playlist
-               typeof playNextTrackInCurrentPlaylist === 'function' &&
-               likedPlaylist && likedPlaylist.length > 0) {
-        console.log("Song ended, looping liked playlist. Playing next.");
-        playNextTrackInCurrentPlaylist(); // This function will handle looping to start
+    } else if (currentPlayingPlaylistType === 'liked' && // Check if it's the liked playlist - PRIORITY 2 (for playlist progression)
+               typeof likedPlaylist !== 'undefined' && likedPlaylist.length > 0 &&
+               typeof playNextTrackInCurrentPlaylist === 'function') {
+
+        const isLastTrackInPlaylist = (currentPlaylistTrackIndex >= likedPlaylist.length - 1);
+
+        if (loopState === 'playlist') { // Loop the entire playlist
+            console.log("Song ended, looping liked playlist (loopState='playlist'). Playing next/first.");
+            playNextTrackInCurrentPlaylist(); // This will handle wrapping from last to first
+        } else if (loopState === 'none' && !isLastTrackInPlaylist) { // No loop, but not the last song
+            console.log("Song ended, playing next in liked playlist (loopState='none', not last track).");
+            playNextTrackInCurrentPlaylist();
+        } else {
+            // loopState is 'none' AND it was the last track OR
+            // it's some other playlist type not explicitly handled for progression
+            console.log("Song ended. Playlist finished (or not configured for auto-advance) and no loop active.");
+            clearPlayerStateOnEnd();
+        }
     } else {
-      // loopState is 'none' OR playlist ended and not looping playlist (or other playlist type not handled for looping).
-      // This will stop playback at the end of the liked playlist if loopState is 'none'.
-      console.log("Song ended. No specific loop active or playlist finished without playlist loop.");
+      // Not in a 'liked' playlist context, or likedPlaylist is empty/undefined
+      // AND not looping the current song (already handled by 'if loopState === song')
+      console.log("Song ended. Not in a playlist or not looping song.");
       clearPlayerStateOnEnd();
     }
   } else if (event.data === YT.PlayerState.CUED && currentTrack && currentTrack.id !== null && !isPlaying) {
