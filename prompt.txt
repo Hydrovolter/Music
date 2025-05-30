@@ -1,26 +1,9 @@
-i have a static music player app which works perfectly right now. however, i want to add a playlist system which uses local storage to store different playlists, which has different songs in a queue. for now, i want you to code me the playlist system but first start with just a liked playlist (empty) on the side. whenever on a song, there should be the option to "heart" the song, which automatically puts it in the liked playlist. in the liked playlist you should be able to play it (with the queue system), so when 1 song ends it moves on to the next song in the playlist queue. you should be able to reorder songs in the list. can you please give me the code to add + change, and I would like to keep my "modular" format (as in having multiple files for each thing which makes it easier to manage). heres my current codebase:
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+I have a static music play web app. I am going to paste in the files alongside their structure (e.g. their location) all below, so you can understand my codebase thoroughly. Then I will ask you to help me add more features in the following prompts. But for now, just understand the codebase and then I will ask you to help me develop and add features.
 
 index.html
 ```html
 <!DOCTYPE html>
-<!--------------------------------------* 
+<!--------------------------------------*
 * - iTunes api - searching
 * - lyrics.ovh - lyrics
 * - youtube data v3 - player
@@ -37,76 +20,155 @@ index.html
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
-    />    
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.min.js"></script>
     <link rel="stylesheet" href="css/all.css" />
 
     <link rel="icon" href="img/favicon.ico" type="image/x-icon">
   </head>
   <body>
-    <div class="search-container">
-      <input
-        type="text"
-        class="search-input"
-        placeholder="Search for any song..."
-        id="searchInput"
-      />
-    </div>
+    <div class="app-container"> 
+        <div class="main-content">
+            <div class="search-container">
+            <input
+                type="text"
+                class="search-input"
+                placeholder="Search for any song..."
+                id="searchInput"
+            />
+            <div class="search-results" id="searchResults">
+            </div>
+            </div>
 
-    <div class="search-results" id="searchResults">
-    </div>
+            
 
-    <div class="player">
-      <div class="album-art">
-        <img
-          src="img/empty_art.png"
-          alt="Album"
-          id="albumCover"
-          crossorigin="anonymous"
-        />
-      </div>
-      <div class="info" id="playerInfo">
-        <div class="track-title" id="trackTitle">Not Playing</div>
-        <div class="artist" id="artistName">Not Playing</div>
-        <div class="controls">
-          <i id="playPause" class="icon icon-play"></i>
-          <i id="volumeBtn" class="icon icon-volume"></i>
-          <i id="loopBtn" class="icon icon-loop"></i>
+            <div class="player-area">
+                <div class="player">
+                    <div class="album-art">
+                        <img
+                        src="img/empty_art.png"
+                        alt="Album"
+                        id="albumCover"
+                        crossorigin="anonymous"
+                        />
+                    </div>
+                    <div class="info" id="playerInfo">
+                        <div class="track-title" id="trackTitle">Not Playing</div>
+                        <div class="artist" id="artistName">Not Playing</div>
+                        <div class="controls">
+                            <i id="prevBtn" class="icon icon-prev"></i>
+                            <i id="playPause" class="icon icon-play"></i>
+                            <i id="nextBtn" class="icon icon-next"></i>
+                            <i id="volumeBtn" class="icon icon-volume"></i>
+                            <i id="loopBtn" class="icon icon-loop"></i>
+                            <i id="likeBtn" class="icon icon-heart-empty"></i>
+                            <i id="addToPlaylistBtn" class="icon icon-plus-circle"></i>
+                        </div>
+                        <div id="seekbar" class="seekbar"><div id="progress"></div></div>
+                        <div class="timecodes">
+                        <span id="currentTime">0:00</span>
+                        <span id="remainingTime">-0:00</span>
+                        </div>
+                    </div>
+
+                    <div class="lyrics-info" id="lyricsInfo">
+                        <div class="lyrics-header">
+                        <div>
+                            <div class="lyrics-title" id="lyricsSongTitle">Not Playing</div>
+                            <div class="lyrics-artist" id="lyricsArtistName">Not Playing</div>
+                        </div>
+                        </div>
+                        <div class="lyrics-content" id="lyricsContent">
+                        No lyrics available.
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div id="seekbar" class="seekbar"><div id="progress"></div></div>
-        <div class="timecodes">
-          <span id="currentTime">0:00</span>
-          <span id="remainingTime">-0:00</span>
-        </div>
-      </div>
 
-      <div class="lyrics-info" id="lyricsInfo">
-        <div class="lyrics-header">
-          <div>
-            <div class="lyrics-title" id="lyricsSongTitle">Not Playing</div>
-            <div class="lyrics-artist" id="lyricsArtistName">Not Playing</div>
+        <div class="playlist-sidebar" id="playlistSidebar">
+          <div class="playlist-sidebar-header">
+              <button id="backToPlaylistsBtn" class="sidebar-back-button icon-button" title="Back to playlists" style="display: none;">
+                <i class="icon icon-arrow-left"></i>
+              </button>
+              <h3 id="sidebarTitle">Your Playlists</h3>
+              <button id="createNewPlaylistBtn" class="create-playlist-btn">+</button>
           </div>
-        </div>
-        <div class="lyrics-content" id="lyricsContent">
-          No lyrics available.
-        </div>
+          <div class="playlist-content" id="playlistDisplayArea">
+          </div>
       </div>
+
+
     </div>
 
 
     <div class="lyrics-toggle" id="lyricsToggle">
       <i class="icon icon-lyrics"></i>
     </div>
-    
+
 
     <div id="player-container">
       <div id="ytPlayer"></div>
     </div>
 
-    <script src="js/endpoints.js"></script>
+    <div id="addToPlaylistModal" class="modal" style="display:none;">
+      <div class="modal-content">
+          <span class="close-modal-btn" id="closeAddToPlaylistModal">×</span>
+          <h4>Add to Playlist</h4>
+          <div id="modalPlaylistList">
+              <!-- Playlists will be dynamically inserted here -->
+          </div>
+      </div>
+    </div>
 
+    <div id="generalModal" class="modal" style="display:none;">
+      <div class="modal-content">
+          <span class="close-modal-btn" id="closeGeneralModal">×</span>
+          <h4 id="generalModalTitle">Notification</h4>
+          <p id="generalModalMessage" style="text-align: center; margin-bottom: 20px;"></p>
+          <div id="generalModalActions" style="text-align: center;">
+              <!-- Buttons will be dynamically inserted here -->
+          </div>
+      </div>
+  </div>
+
+  <div id="createPlaylistModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close-modal-btn" id="closeCreatePlaylistModal">×</span>
+        <h4 id="createPlaylistModalTitle">Create New Playlist</h4>
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label for="newPlaylistNameInput" style="display: block; margin-bottom: 8px; font-weight: 500;">Playlist Name:</label>
+            <input type="text" id="newPlaylistNameInput" class="modal-input" placeholder="My Awesome Playlist">
+        </div>
+        <div id="createPlaylistModalActions" style="text-align: right;">
+            <button id="cancelCreatePlaylistBtn" class="modal-button secondary" style="margin-right: 10px;">Cancel</button>
+            <button id="confirmCreatePlaylistBtn" class="modal-button success">Create</button>
+        </div>
+    </div>
+  </div>
+
+  <div id="renamePlaylistModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close-modal-btn" id="closeRenamePlaylistModal">×</span>
+        <h4 id="renamePlaylistModalTitle">Rename Playlist</h4>
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label for="renamePlaylistNameInput" style="display: block; margin-bottom: 8px; font-weight: 500;">New Playlist Name:</label>
+            <input type="text" id="renamePlaylistNameInput" class="modal-input" placeholder="Enter new name">
+        </div>
+        <div id="renamePlaylistModalActions" style="text-align: right;">
+            <button id="cancelRenamePlaylistBtn" class="modal-button secondary" style="margin-right: 10px;">Cancel</button>
+            <button id="confirmRenamePlaylistBtn" class="modal-button success">Save</button>
+        </div>
+    </div>
+  </div>
+
+
+
+    <script src="js/endpoints.js"></script>
     <script src="js/init.js"></script>
+    <script src="js/modals.js"></script>
     <script src="js/bg.js"></script>
+    <script src="js/playlist.js"></script>
     <script src="js/player.js"></script>
     <script src="js/search.js"></script>
     <script src="js/play.js"></script>
@@ -116,14 +178,1070 @@ index.html
 
     <script>
       document.addEventListener("click", function (e) {
-        if (!searchResults.contains(e.target) && e.target !== searchInput) {
-          hideSearchResults();
+        // Ensure searchInput and searchResults are defined before accessing contains
+        if (typeof searchInput !== 'undefined' && typeof searchResults !== 'undefined' &&
+            !searchResults.contains(e.target) && e.target !== searchInput) {
+          if (typeof hideSearchResults === 'function') hideSearchResults();
         }
+      });
+
+      document.addEventListener('DOMContentLoaded', () => {
+        if (typeof initializeModals === 'function') { // Initialize the new modal system
+            initializeModals();
+        } else {
+            console.error("initializeModals function not found.");
+        }
+        if (typeof initializePlaylistSystem === 'function') { // Initialize the playlist system
+            initializePlaylistSystem();
+        } else {
+            console.error("initializePlaylistSystem function not found.");
+        }
+
       });
     </script>
   </body>
 </html>
 ```
+
+css/all.css
+```css
+:root {
+  --bg-start: #747474;
+  --bg-end: #4b4b4b;
+  --card-width: 540px; /* Not directly used by player anymore, but keep for reference */
+  --card-height: 220px; /* Not directly used by player anymore */
+  --sidebar-width: 300px; /* New variable for playlist sidebar */
+}
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+  color: #fff;
+  transition: background 0.8s ease;
+  overflow-x: hidden; /* Prevent horizontal scroll if content is too wide */
+}
+
+.app-container {
+  display: flex;
+  padding: 20px;
+  width: 100%;
+  /* min-height: calc(100vh - 40px); /* This sets a minimum, but flex items can still grow it */
+  height: calc(100vh - 40px); /* Try setting a fixed height for the container */
+  max-height: calc(100vh - 40px); /* And a max-height to prevent overflow */
+  gap: 20px;
+  box-sizing: border-box; /* Ensure padding is included in height calculation */
+}
+
+.main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Crucial: Allow main content to scroll if its content is too tall,
+     but try to keep it from expanding app-container beyond viewport height. */
+  overflow-y: auto;
+  min-height: 0; /* Fix for flex item overflow issues in some browsers */
+}
+
+.search-container {
+  width: 100%;
+  max-width: 560px;
+  margin-bottom: 20px;
+  z-index: 100;
+  position: relative; /* Changed from absolute */
+}
+.search-input {
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: none;
+  font-family: "Inter", sans-serif;
+  font-size: 16px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  outline: none;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(5px);
+}
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+.search-input:focus {
+  background: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+.search-results {
+  width: 100%; /* Match search input width */
+  max-width: 560px; /* Match search input width */
+  max-height: 400px;
+  background: rgba(30, 30, 30, 0.65);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  overflow-y: auto;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 99;
+  position: absolute;
+  top: calc(100% + 5px); /* Position below search input */
+  left: 0;
+  transform: translateY(-7px);
+}
+.search-results.active {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+.result-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+  overflow: hidden;
+}
+.result-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+.result-img {
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-right: 16px;
+  flex-shrink: 0;
+}
+.result-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.result-info {
+  flex: 1;
+  overflow: hidden; /* Ensure text ellipsis works */
+}
+.result-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.result-artist {
+  font-size: 14px;
+  opacity: 0.7;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.player-area {
+  display: flex;
+  justify-content: center; /* Center the player itself */
+  align-items: center; /* Vertically center if player-area has more height */
+  width: 100%;
+  margin-top: 20px; /* Space from search results or search bar */
+  flex-grow: 1; /* Allow it to take space if main-content is taller */
+}
+
+.player {
+  width: 570px; /* Fixed width for player */
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 24px; /* Padding inside the player card */
+  /* background: rgba(0,0,0,0.1); Optional: subtle background for player card */
+  /* border-radius: 12px; Optional: rounded corners for player card */
+}
+.album-art {
+  flex: 0 0 220px;
+  height: 220px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+.album-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 0px;
+  text-shadow: 0px 0px 12px rgba(0, 0, 0, 0.3);
+  min-width: 0; /* Fix for flex item text overflow */
+}
+
+.track-title {
+  font-size: 34px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* max-width: 300px; /* Let flexbox handle width */
+}
+.artist {
+  font-size: 20px;
+  opacity: 0.75;
+  margin-bottom: 45px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* max-width: 300px; Let flexbox handle width */
+}
+
+.seekbar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  position: relative;
+  cursor: pointer;
+  transition: height 0.2s ease;
+}
+.seekbar.active {
+  height: 8px;
+}
+#progress {
+  height: 100%;
+  width: 0%;
+  background: #fff;
+  border-radius: 3px;
+}
+.timecodes {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 4px;
+}
+#ytPlayer {
+  position: absolute;
+  top: -9999px; /* Move way off screen */
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0; /* Keep hidden */
+}
+.loading {
+  text-align: center;
+  padding: 20px;
+  color: rgba(255, 255, 255, 0.7);
+}
+/* Custom Scrollbar Styles (these should already be present and apply to .playlist-content) */
+.search-results::-webkit-scrollbar,
+.lyrics-content::-webkit-scrollbar,
+.playlist-content::-webkit-scrollbar {
+  width: 8px; /* Slightly wider for better grab-ability if desired */
+}
+.search-results::-webkit-scrollbar-track,
+.lyrics-content::-webkit-scrollbar-track,
+.playlist-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px; /* Match thumb radius */
+}
+.search-results::-webkit-scrollbar-thumb,
+.lyrics-content::-webkit-scrollbar-thumb,
+.playlist-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.35); /* Slightly more visible thumb */
+  border-radius: 4px;
+}
+
+/*
+.playlist-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+*/
+
+
+/* Lyrics view */
+.lyrics-info {
+  flex: 1;
+  display: none;
+  flex-direction: column;
+  justify-content: flex-start;
+  text-shadow: 0px 0px 12px rgba(0, 0, 0, 0.3);
+  min-width: 0;
+  max-height: 220px; /* This should already be set to match album art */
+  overflow: hidden; /* Ensures content that overflows max-height doesn't push parent */
+}
+
+.lyrics-content {
+  flex-grow: 1;
+  overflow-y: auto; /* This should already be there for lyrics scrolling */
+  text-align: left;
+  white-space: pre-line;
+  padding-right: 10px;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.lyrics-header {
+  /* display: flex; */ /* Already flex from .lyrics-info if shown */
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  /* display: none; */ /* Control via .lyrics-info display */
+}
+
+.lyrics-title {
+  font-size: 30px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* max-width: 300px; */
+}
+
+.lyrics-artist {
+  font-size: 16px;
+  opacity: 0.75;
+  margin-bottom: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* max-width: 300px; */
+}
+
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 16px; /* Adjusted gap if needed */
+  margin-bottom: 18px;
+}
+.controls i { /* Base icon style in controls */
+  cursor: pointer;
+  transition: 0.12s ease;
+}
+.controls i:active {
+  transform: scale(0.94);
+}
+
+#playPause { font-size: 32px; }
+#prevBtn, #nextBtn { font-size: 26px; display: none; }
+#volumeBtn { font-size: 20px; }
+#loopBtn { font-size: 22px; } /* Assuming you want loop button size */
+#likeBtn { font-size: 22px; }
+#addToPlaylistBtn { font-size: 22px; } /* New Add to Playlist button */
+
+.lyrics-toggle {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+  z-index: 100;
+}
+
+.lyrics-toggle:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.lyrics-toggle i {
+  background-color: white;
+  width: 22px;
+  height: 22px;
+}
+
+
+
+.icon {
+display: inline-block;
+width: 32px; /* Default width, can be overridden by ID */
+height: 32px; /* Default height, can be overridden by ID */
+background-color: white;
+mask-repeat: no-repeat;
+mask-position: center;
+mask-size: contain;
+-webkit-mask-repeat: no-repeat;
+-webkit-mask-position: center;
+-webkit-mask-size: contain;
+transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+.icon:active {
+transform: scale(0.94);
+}
+
+/* Optional: common styling for icon-only buttons if you have more */
+.icon-button { /* You added this class to the button in HTML */
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px; /* Example padding */
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+.icon-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+.icon-button .icon {
+  width: 20px; /* Default icon size for icon-buttons */
+  height: 20px;
+  background-color: white;
+}
+
+/* New/Refined Styles for Action Buttons within list items */
+.icon-action-btn { /* Common style for small icon buttons like remove/edit */
+  background: none;
+  border: none;
+  padding: 5px; /* Adjust padding to control clickable area and spacing */
+  cursor: pointer;
+  display: inline-flex; /* Helps align icon inside */
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%; /* Make it circular */
+  transition: background-color 0.2s ease;
+  /* Position it to the right if desired within the playlist item flex layout */
+  margin-left: auto; /* Pushes button to the far right of its flex container if .playlist-item is display:flex */
+}
+
+.icon-action-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1); /* Subtle hover effect */
+}
+
+
+.icon-action-btn .icon { /* Style for the icon INSIDE these action buttons */
+  width: 16px;
+  height: 16px;
+  background-color: rgba(255, 255, 255, 0.7);
+  transition: background-color 0.2s ease;
+  pointer-events: none; /* <<<<<<<<<<<<<<<<<<< ADD THIS LINE */
+}
+
+.icon-action-btn:hover .icon {
+  background-color: #ff6b6b; /* Change icon color on hover - e.g., red for delete */
+}
+
+
+.icon-arrow-left {
+  mask-image: url('../img/icons/arrow-left.svg');
+  -webkit-mask-image: url('../img/icons/arrow-left.svg');
+  /* background-color will be inherited or set by .sidebar-back-button .icon */
+}
+.icon-edit {
+  mask-image: url('../img/icons/edit.svg');
+  -webkit-mask-image: url('../img/icons/edit.svg');
+}
+.icon-trash {
+  mask-image: url('../img/icons/trash.svg');
+  -webkit-mask-image: url('../img/icons/trash.svg');
+}
+/* Adjust size for these small action buttons if needed */
+.playlist-item-actions .icon {
+    width: 1em; /* Or a fixed px value like 14px */
+    height: 1em;
+    background-color: currentColor; /* Inherit color from button */
+}
+.icon-play { mask-image: url('../img/icons/play.svg'); -webkit-mask-image: url('../img/icons/play.svg'); }
+.icon-pause { mask-image: url('../img/icons/pause.svg'); -webkit-mask-image: url('../img/icons/pause.svg'); }
+.icon-volume { mask-image: url('../img/icons/volume-loud.svg'); -webkit-mask-image: url('../img/icons/volume-loud.svg'); }
+.icon-muted { mask-image: url('../img/icons/mute.svg'); -webkit-mask-image: url('../img/icons/mute.svg'); }
+.icon-lyrics { mask-image: url('../img/icons/lyrics.svg'); -webkit-mask-image: url('../img/icons/lyrics.svg'); }
+.icon-lyrics-on { mask-image: url('../img/icons/music.svg'); -webkit-mask-image: url('../img/icons/music.svg'); }
+.icon-plus-circle {
+  mask-image: url('../img/icons/plus-circle.svg');
+  -webkit-mask-image: url('../img/icons/plus-circle.svg');
+  width: 22px; height: 22px; /* Match likeBtn */
+}
+.icon-loop { /* Base style for the loop button - uses repeat.svg */
+  mask-image: url('../img/icons/repeat.svg');
+  -webkit-mask-image: url('../img/icons/repeat.svg');
+  /* Default color is white (from .icon) */
+}
+
+/* New: Loop Playlist State (repeat.svg but green) */
+.icon-loop.loop-playlist-active {
+  /* Uses the default repeat.svg mask from .icon-loop */
+  background-color: #00ff88; /* Green color */
+  transform: scale(1.1); /* Optional: visual feedback, matches loop-song */
+}
+
+.icon-loop.loop-active { /* This class now specifically means "loop current song" */
+  mask-image: url('../img/icons/repeat-1.svg'); /* with the "1" on it */
+  -webkit-mask-image: url('../img/icons/repeat-1.svg');
+  background-color: #00ff88; /* Green color */
+  transform: scale(1.1); /* You already had this, good */
+}
+
+/* New Playlist Icons */
+.icon-heart-empty {
+mask-image: url('../img/icons/heart-empty.svg');
+-webkit-mask-image: url('../img/icons/heart-empty.svg');
+width: 22px; height: 22px;
+}
+.icon-heart-filled {
+mask-image: url('../img/icons/heart-filled.svg');
+-webkit-mask-image: url('../img/icons/heart-filled.svg');
+background-color: #ff6b6b; /* Liked color */
+width: 22px; height: 22px;
+}
+.icon-prev {
+mask-image: url('../img/icons/prev.svg');
+-webkit-mask-image: url('../img/icons/prev.svg');
+width: 26px; height: 26px;
+}
+.icon-next {
+mask-image: url('../img/icons/next.svg');
+-webkit-mask-image: url('../img/icons/next.svg');
+width: 26px; height: 26px;
+}
+
+/* Playlist Sidebar Styles - Focus here */
+.playlist-sidebar {
+  width: var(--sidebar-width);
+  min-width: 280px;
+  /* Important: Set a specific height or max-height for the sidebar.
+     It should take available space in the flex container but not exceed it. */
+  display: flex; /* Keep this to allow flex-grow on playlist-content */
+  flex-direction: column; /* Keep this */
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  /* Core change: ensure sidebar doesn't grow beyond available vertical space */
+  height: 100%; /* Take full height of its flex container slot if possible */
+  max-height: 100%; /* Prevent it from exceeding the allocated height */
+  overflow: hidden; /* This will hide any direct children overflow, forcing .playlist-content to scroll */
+  min-height: 0; /* Another flexbox fix for potential overflow issues */
+}
+
+.playlist-sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.playlist-sidebar-header h3 {
+  font-size: 18px; /* Slightly smaller to fit buttons */
+  font-weight: 600;
+  margin: 0 auto; /* Center title if back button is hidden */
+}
+
+/* Styles for the sidebar back button - REFINED */
+.playlist-sidebar-header .sidebar-back-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-right: auto; /* Pushes title and create button to the right */
+  
+  /* --- Key changes for perfect circle and centering --- */
+  width: 32px;  /* Explicit width - adjust as desired for button size */
+  height: 32px; /* Explicit height - MUST BE EQUAL TO WIDTH for a circle */
+  padding: 0;   /* Reset padding if using explicit width/height for the button itself */
+  border-radius: 50%; /* This makes it a circle */
+  
+  display: flex; /* Use flex to center the icon child */
+  align-items: center; /* Vertical centering */
+  justify-content: center; /* Horizontal centering */
+  
+  transition: background-color 0.2s ease;
+}
+
+.playlist-sidebar-header .sidebar-back-button:hover {
+  /* opacity: 0.8; Remove this, use background-color change instead for icon buttons */
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.playlist-sidebar-header .sidebar-back-button .icon {
+  /* Icon size should be smaller than the button's width/height
+     to fit comfortably within the circle. */
+  width: 18px;  /* Adjust icon size */
+  height: 18px; /* Adjust icon size */
+  background-color: white; /* Icon color */
+  /* No need for margins on the icon if the button is using flex to center it */
+}
+
+
+.playlist-sidebar-header .create-playlist-btn {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  line-height: 28px; /* Align plus vertically */
+  text-align: center;
+}
+
+/* General list display for playlists and songs in playlist */
+.playlist-list-container { /* Wrapper for the ul if needed, or style #playlistDisplayArea directly */
+  flex-grow: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 8px; /* Gap for scrollbar */
+}
+.playlist-list-container ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+
+.create-playlist-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* Individual Playlist Item (in the list of playlists) */
+.playlist-overview-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 8px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  position: relative; /* For delete/rename buttons */
+}
+.playlist-overview-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+.playlist-overview-item-artwork {
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  margin-right: 15px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.playlist-overview-item-info {
+  flex-grow: 1;
+  overflow: hidden;
+}
+.playlist-overview-item-name {
+  font-size: 16px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 3px;
+}
+.playlist-overview-item-count {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+.playlist-item-actions button { /* For delete/rename buttons on playlist overview */
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    padding: 3px;
+    font-size: 14px;
+    margin-left: 5px;
+}
+.playlist-item-actions button:hover {
+    color: white;
+}
+
+/* Styling for input field when creating/renaming */
+.playlist-name-input {
+  width: calc(100% - 60px); /* Adjust based on sibling elements if any */
+  padding: 8px;
+  margin-bottom: 5px;
+  background-color: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  border-radius: 4px;
+  font-size: 16px;
+}
+.playlist-overview-item-info .playlist-name-input { /* When renaming inline */
+  font-size: 16px;
+  font-weight: 500;
+  width: 100%;
+}
+
+/* Playlist content scrollbar (ensure it's styled nicely) */
+#playlistDisplayArea::-webkit-scrollbar { width: 8px; }
+#playlistDisplayArea::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 4px; }
+#playlistDisplayArea::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.35); border-radius: 4px; }
+#playlistDisplayArea {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) rgba(255, 255, 255, 0.05);
+}
+
+.playlist-content {
+  flex-grow: 1; /* Allows this to take up remaining space in .playlist-sidebar - GOOD */
+  overflow-y: auto; /* This enables the internal scrollbar - GOOD */
+  min-height: 0; /* Flex item fix, ensures it can shrink and show scrollbar */
+  padding-right: 8px; /* Adjust if scrollbar overlaps content slightly */
+  scrollbar-width: thin; /* "auto" or "thin" */
+  scrollbar-color: rgba(255, 255, 255, 0.35) rgba(255, 255, 255, 0.05); /* thumb track */
+}
+
+
+.playlist-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 5px; /* Base padding */
+  margin-bottom: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: transparent;
+  user-select: none;
+  /* Add transitions for smooth "sliding" and opacity change */
+  transition: padding-top 0.15s ease-out, 
+              padding-bottom 0.15s ease-out, 
+              background-color 0.2s ease,
+              opacity 0.15s ease-out; /* Added opacity transition */
+}
+
+.playlist-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.playlist-item.playing {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+.playlist-item.playing .playlist-item-title {
+    color: #00ff88;
+}
+
+.playlist-item-artwork {
+  width: 45px;
+  height: 45px;
+  border-radius: 4px;
+  margin-right: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+  pointer-events: none; /* Make sure drag events go to the li */
+}
+
+.playlist-item-info {
+  flex-grow: 1;
+  overflow: hidden;
+  pointer-events: none; /* Make sure drag events go to the li */
+}
+
+/* Styles for the item being dragged */
+.playlist-item.dragging {
+  opacity: 0.5; /* Make it semi-transparent */
+  background: rgba(255,255,255,0.1); /* Optional: slight background change */
+  /* box-shadow: 0 4px 8px rgba(0,0,0,0.3); /* Optional: lift effect */
+}
+
+/* Styles to create visual space when dragging over an item */
+.playlist-item.show-gap-above {
+  padding-top: 55px; /* Adjust this value: item height (approx 45px) + margin (8px) + small buffer */
+                      /* This pushes the content of *this* item down, making space above it. */
+}
+
+.playlist-item.show-gap-below {
+  padding-bottom: 55px; /* Same logic, makes space below this item's content. */
+}
+
+.playlist-item-title {
+font-size: 15px;
+font-weight: 500;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+margin-bottom: 2px;
+}
+
+.playlist-item-artist {
+font-size: 13px;
+color: rgba(255, 255, 255, 0.7);
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+
+.empty-playlist-message {
+text-align: center;
+color: rgba(255, 255, 255, 0.6);
+margin-top: 30px;
+font-style: italic;
+}
+
+.playlist-item.dragging {
+opacity: 0.5;
+background: rgba(255,255,255,0.2);
+}
+
+/* Modal Styles - Updated for Glassmorphism */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  /* The overlay itself remains semi-transparent black to dim the background */
+  background-color: rgba(0,0,0,0.4); /* Slightly less dark overlay maybe */
+  /* backdrop-filter: blur(2px); /* Optional: blur the entire page behind the modal - can be performance heavy */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px; /* Add some padding so modal doesn't hit screen edges on small viewports */
+}
+
+.modal-content {
+  /* Glassmorphism Background */
+  background-color: rgba(255, 255, 255, 0.1); /* Very light, semi-transparent white */
+  backdrop-filter: blur(15px) saturate(150%); /* Key for the frosted glass effect, adjust blur amount */
+  -webkit-backdrop-filter: blur(15px) saturate(150%); /* For Safari */
+
+  color: #f0f0f0; /* Adjust text color for readability on the new background */
+  
+  padding: 25px 30px;
+  border-radius: 12px; /* Slightly larger radius can look nice */
+  
+  /* Subtle Border to define edges */
+  border: 1px solid rgba(255, 255, 255, 0.18);
+
+  width: 90%;
+  max-width: 380px;
+  
+  /* Softer Shadow */
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.17); /* Softer, more diffused shadow */
+  /* Or a simpler one: box-shadow: 0 4px 15px rgba(0,0,0,0.2); */
+
+  position: relative;
+  text-align: left;
+  /* overflow: hidden; /* Can help if content inside tries to break border-radius with its own bg */
+}
+
+.close-modal-btn {
+  color: rgba(255, 255, 255, 0.7); /* Adjust for new background */
+  position: absolute;
+  top: 12px; /* Adjust position slightly if needed */
+  right: 15px;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+.close-modal-btn:hover,
+.close-modal-btn:focus {
+  color: white;
+}
+
+.modal-content h4 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  color: #ffffff; /* Ensure title is clearly visible */
+}
+
+#modalPlaylistList {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 10px;
+  padding-right: 5px; /* Space for scrollbar if items are wide */
+}
+
+#modalPlaylistList .modal-playlist-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-radius: 6px; /* Match overall aesthetic */
+  margin-bottom: 6px;
+  font-size: 15px;
+  color: #e0e0e0; /* Slightly softer than pure white */
+  transition: background-color 0.2s ease, color 0.2s ease;
+  /* Optional: add a very subtle divider if needed, or rely on hover */
+  /* border-bottom: 1px solid rgba(255,255,255,0.05); */
+}
+/* #modalPlaylistList .modal-playlist-item:last-child {
+  border-bottom: none; 
+} */
+
+#modalPlaylistList .modal-playlist-item:hover {
+  background-color: rgba(255,255,255,0.15); /* Slightly lighter hover */
+  color: #ffffff;
+}
+
+/* Scrollbar for modal playlist list - keep it subtle */
+#modalPlaylistList::-webkit-scrollbar { width: 6px; }
+#modalPlaylistList::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 3px; }
+#modalPlaylistList::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 3px; } /* Slightly lighter thumb */
+#modalPlaylistList::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+#modalPlaylistList {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) rgba(255, 255, 255, 0.05);
+}
+
+/* Styles for action buttons within the general modal */
+#generalModalActions {
+  margin-top: 20px;
+  display: flex; /* For button layout */
+  justify-content: center; /* Center buttons, or space-around/space-between */
+  gap: 15px; /* Space between buttons */
+}
+
+.modal-button {
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
+  min-width: 80px; /* Minimum width for buttons */
+}
+
+.modal-button.primary { /* For primary actions like "Delete", "Confirm" */
+  background-color: #e53e3e; /* Example: Red for delete */
+  color: white;
+}
+.modal-button.primary:hover {
+  background-color: #c53030;
+}
+
+.modal-button.success { /* NEW: For positive actions like "Create", "Save" */
+  background-color: #38A169; /* Green (Tailwind's green-600) */
+  color: white;
+}
+.modal-button.success:hover {
+  background-color: #2F855A; /* Darker Green (Tailwind's green-700) */
+}
+
+.modal-button.secondary { /* For secondary actions like "Cancel", "OK" for info */
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #f0f0f0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.modal-button.secondary:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Styles for input fields within modals */
+.modal-input {
+  width: 100%;
+  padding: 10px 12px;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f0f0f0;
+  border-radius: 6px;
+  font-size: 15px;
+  box-sizing: border-box; /* Ensure padding and border don't add to width */
+}
+.modal-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.4);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Specific styling for the create playlist modal actions if needed,
+   otherwise the general #generalModalActions styling might be sufficient if adapted.
+   The HTML above used text-align: right directly on #createPlaylistModalActions.
+*/
+#createPlaylistModalActions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end; /* Align buttons to the right */
+  gap: 10px;
+}
+
+.form-group label { /* Style for labels above inputs */
+    color: #ccc; /* Lighter than main text */
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 960px) { /* Adjust breakpoint as needed */
+  .app-container {
+    flex-direction: column;
+    height: auto; /* Allow app container to grow if content is very tall */
+    min-height: 100vh;
+  }
+.main-content {
+  max-width: 100%; /* Allow main content to use full width */
+  order: 1; /* Player first */
+}
+.playlist-sidebar {
+  width: 100%;
+  max-width: 570px; /* Or match player width */
+  margin: 20px auto 0 auto; /* Center sidebar below player */
+  order: 2; /* Playlist below player */
+  height: auto; /* Auto height */
+  max-height: 40vh; /* Limit height to prevent excessive scrolling */
+}
+.player {
+  width: 100%; /* Make player responsive */
+  max-width: 570px; /* Max width for player */
+}
+.search-container {
+    max-width: 570px; /* Match player width */
+}
+.search-results {
+    max-width: 570px; /* Match player width */
+}
+
+
+
+}
+
+@media (max-width: 600px) {
+  .player {
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 20px;
+  }
+  .album-art {
+      flex-basis: auto; /* Allow it to shrink if needed */
+      width: 180px;
+      height: 180px;
+  }
+  .info {
+      align-items: center; /* Center info content */
+      text-align: center;
+  }
+  .track-title {
+      font-size: 28px;
+  }
+  .artist {
+      font-size: 18px;
+      margin-bottom: 30px;
+  }
+  .lyrics-info {
+      align-items: center;
+      text-align: center;
+  }
+  .lyrics-title {
+      font-size: 26px;
+  }
+  .lyrics-artist {
+      font-size: 16px;
+  }
+}
+```
+
 
 js/bg.js
 ```js
@@ -179,7 +1297,8 @@ function applyColors(color) {
       currentColor = { ...targetColor };
     }
   }
-  ```
+  
+```
 
 js/endpoints.js
 ```js
@@ -217,9 +1336,7 @@ const SEARCH_EP = "https://itunes.apple.com/search?term=";
 
 ```
 
-
 js/getYT.js
-
 ```js
 // --- Global Counters and API Keys (ensure these are defined globally) ---
 // ... (Your existing global definitions for YT_EP, RAPIDAPI_HOST, YT_KEYS, RAPIDAPI_KEYS) ...
@@ -399,8 +1516,9 @@ async function getYT(query) {
 ```
 
 js/init.js
-
 ```js
+// js/init.js
+
 const searchInput = document.getElementById("searchInput");
 const searchResults = document.getElementById("searchResults");
 const trackTitle = document.getElementById("trackTitle");
@@ -420,31 +1538,85 @@ const lyricsSongTitle = document.getElementById("lyricsSongTitle");
 const lyricsArtistName = document.getElementById("lyricsArtistName");
 const lyricsContent = document.getElementById("lyricsContent");
 const loopBtn = document.getElementById("loopBtn");
+// Note: likeBtn, prevBtn, nextBtn are primarily handled in playlist.js init
 
 let showingLyrics = false;
 let isMuted = false;
-let isLooping = false;
+let loopState = 'none';
 
-let player;
-let isPlaying = false;
-let isDragging = false;
+let player; // YouTube player instance
+let isPlaying = false; // Player's playing state
+let isDragging = false; // Seekbar dragging state
 let searchTimeout;
+
+// currentTrack will store details of the song currently loaded OR playing
 let currentTrack = {
+  id: null,       // Unique ID (e.g., iTunes trackId, crucial for liking)
   title: "Not Playing",
   artist: "Not Playing",
-  artwork: "img/empty_art.png",
+  artwork: "img/empty_art.png",    // URL to 100x100 artwork (for playlists, like button context)
+  artworkLarge: "img/empty_art.png" // URL to 600x600 artwork (for main player display)
 };
 
 const colorThief = new ColorThief();
 
-let currentColor = { r: 115, g: 98, b: 86 };
-let targetColor = { r: 115, g: 98, b: 86 };
+let currentColor = { r: 115, g: 98, b: 86 }; // Default bg color start
+let targetColor = { r: 115, g: 98, b: 86 };  // Default bg color target
 let animationId = null;
 
+// --- Playlist System Variables ---
+const LIKED_SONGS_PLAYLIST_ID = 'liked_songs';
+const USER_PLAYLISTS_STORAGE_KEY = 'musicPlayer_userPlaylists';
+const LIKED_PLAYLIST_STORAGE_KEY = 'musicPlayer_likedSongsPlaylist'; // Keep this for liked songs
+
+let likedPlaylist = []; // Holds {id, title, artist, artwork} for liked songs
+let userPlaylists = []; // Holds {id, name, songs: [...]} for user-created playlists
+
+let currentPlayingPlaylistId = null; // ID of the playing playlist (e.g., 'liked_songs', or a user playlist ID)
+let currentPlaylistTrackIndex = -1;   // Index in the currentPlayingPlaylistId's song array
+
+let currentSidebarView = 'all_playlists'; // 'all_playlists' or 'single_playlist_view'
+let selectedPlaylistToViewId = null;  // ID of the playlist being viewed in the sidebar (not necessarily playing)
+
+// DOM Elements for playlist system (to be fetched in playlist.js's initializePlaylistSystem)
+let playlistDisplayAreaElement;
+let sidebarTitleElement;
+let backToPlaylistsBtnElement;
+let createNewPlaylistBtnElement;
+let addToPlaylistBtnElement;
+let addToPlaylistModalElement;
+let modalPlaylistListElement;
+let closeModalAddToPlaylistBtnElement;
+let likeBtnElement; // Will be grabbed in playlist.js
+let prevBtnElement; // Will be grabbed in playlist.js
+let nextBtnElement; // Will be grabbed in playlist.js
+
+// DOM Elements for General Modal
+let generalModalElement;
+let generalModalTitleElement;
+let generalModalMessageElement;
+let generalModalActionsElement;
+let closeGeneralModalBtnElement;
+
+// DOM Elements for Create Playlist Modal
+let createPlaylistModalElement;
+let createPlaylistModalTitleElement; // Though title is static here, good practice
+let newPlaylistNameInputElement;
+let confirmCreatePlaylistBtnElement;
+let cancelCreatePlaylistBtnElement;
+let closeCreatePlaylistModalBtnElement;
+
+// DOM Elements for Rename Playlist Modal
+let renamePlaylistModalElement;
+let renamePlaylistModalTitleElement; // If you want to include the old name in the title
+let renamePlaylistNameInputElement;
+let confirmRenamePlaylistBtnElement;
+let cancelRenamePlaylistBtnElement;
+let closeRenamePlaylistModalBtnElement;
+let playlistIdToRename = null; // To store the ID of the playlist being renamed
 ```
 
 js/lyrics.js
-
 ```js
 lyricsToggle.addEventListener("click", function () {
     showingLyrics = !showingLyrics;
@@ -493,65 +1665,332 @@ lyricsToggle.addEventListener("click", function () {
         lyricsContent.textContent = "No lyrics available.";
       });
   }
-  ```
-
-js/play.js
-```js
-
-function playSong(title, artist, artwork) {
-    trackTitle.textContent = title;
-    artistName.textContent = artist;
-  
-    lyricsSongTitle.textContent = title;
-    lyricsArtistName.textContent = artist;
-  
-    if (showingLyrics) {
-      fetchLyrics(artist, title);
-    }
-  
-    const highResArtwork = artwork.replace("100x100", "600x600");
-  
-    albumCover.crossOrigin = "anonymous";
-    albumCover.src = highResArtwork;
-  
-    albumCover.onload = function () {
-      try {
-        const dominantColor = colorThief.getColor(albumCover);
-        applyColors(dominantColor);
-      } catch (e) {
-        console.error("Color extraction failed:", e);
-      }
-    };
-  
-    currentTrack = {
-      title: title,
-      artist: artist,
-      artwork: artwork,
-    };
-  
-    const searchQuery = `${title} - ${artist}`;
-    getYT(searchQuery);
-  }
-
-  function loadVid(videoId) {
-    if (player && player.loadVideoById) {
-      player.loadVideoById(videoId);
-      player.playVideo();
-  
-      if (isMuted) {
-        player.mute();
-      } else {
-        player.unMute();
-      }
-    } else {
-      console.error("YouTube player not ready");
-    }
-  }
   
 ```
 
-js/playback.js
+js/modals.js
+```js
+// Callbacks for confirm/cancel actions
+let generalModalConfirmCallback = null; // Not strictly needed if callbacks are passed directly to buttons
+let generalModalCancelCallback = null;  // Same as above
 
+function initializeModals() {
+    // Initialize General Modal Elements
+    generalModalElement = document.getElementById('generalModal');
+    generalModalTitleElement = document.getElementById('generalModalTitle');
+    generalModalMessageElement = document.getElementById('generalModalMessage');
+    generalModalActionsElement = document.getElementById('generalModalActions');
+    closeGeneralModalBtnElement = document.getElementById('closeGeneralModal');
+
+    if (!generalModalElement || !generalModalTitleElement || !generalModalMessageElement ||
+        !generalModalActionsElement || !closeGeneralModalBtnElement) {
+        console.error("General modal DOM elements not found. Modal functionality will be limited.");
+        return; // Or handle gracefully
+    }
+
+    closeGeneralModalBtnElement.addEventListener('click', closeGeneralModal);
+    generalModalElement.addEventListener('click', (event) => {
+        // Close if clicked on the overlay (background)
+        if (event.target === generalModalElement) {
+            closeGeneralModal();
+        }
+    });
+    console.log("General Modal system initialized.");
+
+
+    // Initialize Create Playlist Modal Elements
+    createPlaylistModalElement = document.getElementById('createPlaylistModal');
+    // createPlaylistModalTitleElement = document.getElementById('createPlaylistModalTitle'); // If title is dynamic
+    newPlaylistNameInputElement = document.getElementById('newPlaylistNameInput');
+    confirmCreatePlaylistBtnElement = document.getElementById('confirmCreatePlaylistBtn');
+    cancelCreatePlaylistBtnElement = document.getElementById('cancelCreatePlaylistBtn');
+    closeCreatePlaylistModalBtnElement = document.getElementById('closeCreatePlaylistModal');
+
+    if (!createPlaylistModalElement || !newPlaylistNameInputElement || !confirmCreatePlaylistBtnElement ||
+        !cancelCreatePlaylistBtnElement || !closeCreatePlaylistModalBtnElement) {
+        console.error("Create Playlist modal DOM elements not found. This functionality will be limited.");
+    } else {
+        closeCreatePlaylistModalBtnElement.addEventListener('click', closeCreatePlaylistModal);
+        cancelCreatePlaylistBtnElement.addEventListener('click', closeCreatePlaylistModal);
+        confirmCreatePlaylistBtnElement.addEventListener('click', handleConfirmCreatePlaylist);
+        createPlaylistModalElement.addEventListener('click', (event) => {
+            if (event.target === createPlaylistModalElement) {
+                closeCreatePlaylistModal();
+            }
+        });
+        // Allow 'Enter' key in input field to submit
+        newPlaylistNameInputElement.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevent default form submission if it were in a form
+                handleConfirmCreatePlaylist();
+            }
+        });
+        console.log("Create Playlist Modal system initialized.");
+    }
+
+    // Initialize Rename Playlist Modal Elements
+    renamePlaylistModalElement = document.getElementById('renamePlaylistModal');
+    renamePlaylistModalTitleElement = document.getElementById('renamePlaylistModalTitle'); // Get the title element
+    renamePlaylistNameInputElement = document.getElementById('renamePlaylistNameInput');
+    confirmRenamePlaylistBtnElement = document.getElementById('confirmRenamePlaylistBtn');
+    cancelRenamePlaylistBtnElement = document.getElementById('cancelRenamePlaylistBtn');
+    closeRenamePlaylistModalBtnElement = document.getElementById('closeRenamePlaylistModal');
+
+    if (!renamePlaylistModalElement || !renamePlaylistNameInputElement || !confirmRenamePlaylistBtnElement ||
+        !cancelRenamePlaylistBtnElement || !closeRenamePlaylistModalBtnElement || !renamePlaylistModalTitleElement) {
+        console.error("Rename Playlist modal DOM elements not found. This functionality will be limited.");
+    } else {
+        closeRenamePlaylistModalBtnElement.addEventListener('click', closeRenamePlaylistModal);
+        cancelRenamePlaylistBtnElement.addEventListener('click', closeRenamePlaylistModal);
+        confirmRenamePlaylistBtnElement.addEventListener('click', handleConfirmRenamePlaylist);
+        renamePlaylistModalElement.addEventListener('click', (event) => {
+            if (event.target === renamePlaylistModalElement) {
+                closeRenamePlaylistModal();
+            }
+        });
+        renamePlaylistNameInputElement.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                handleConfirmRenamePlaylist();
+            }
+        });
+        console.log("Rename Playlist Modal system initialized.");
+    }
+}
+
+function showGeneralModal(title, message, buttonsConfig = []) {
+    // buttonsConfig example:
+    // [
+    //   { text: 'OK', class: 'secondary', callback: () => console.log('OK clicked') },
+    //   { text: 'Delete', class: 'primary', callback: handleDeleteFunction }
+    // ]
+    if (!generalModalElement || !generalModalTitleElement || !generalModalMessageElement || !generalModalActionsElement) {
+        console.error("Cannot show general modal: elements not initialized.");
+        // Fallback to alert if modal elements aren't ready (though they should be if init is called)
+        alert(`${title}\n${message.replace(/<br\s*\/?>/gi, "\n").replace(/<strong>|<\/strong>/gi, "")}`);
+        return;
+    }
+
+    generalModalTitleElement.textContent = title;
+    generalModalMessageElement.innerHTML = message; // Use innerHTML if message might contain simple HTML like <br>, <strong>
+    generalModalActionsElement.innerHTML = ''; // Clear previous buttons
+
+    if (buttonsConfig.length === 0) {
+        // Default OK button if no buttons are specified (for simple alerts)
+        const okButton = document.createElement('button');
+        okButton.textContent = 'OK';
+        okButton.className = 'modal-button secondary'; // Assumes .modal-button and .secondary are globally styled
+        okButton.onclick = closeGeneralModal;
+        generalModalActionsElement.appendChild(okButton);
+    } else {
+        buttonsConfig.forEach(btnConfig => {
+            const button = document.createElement('button');
+            button.textContent = btnConfig.text;
+            button.className = `modal-button ${btnConfig.class || 'secondary'}`;
+            button.onclick = () => {
+                closeGeneralModal(); // Always close modal on button click
+                if (btnConfig.callback && typeof btnConfig.callback === 'function') {
+                    btnConfig.callback();
+                }
+            };
+            generalModalActionsElement.appendChild(button);
+        });
+    }
+    generalModalElement.style.display = 'flex';
+}
+
+function closeGeneralModal() {
+    if (!generalModalElement) return;
+    generalModalElement.style.display = 'none';
+    // Callbacks are tied to buttons, so no need to reset module-level generalModalConfirmCallback here
+}
+
+function openCreatePlaylistModal() {
+    if (!createPlaylistModalElement || !newPlaylistNameInputElement) return;
+    newPlaylistNameInputElement.value = "My Playlist " + (typeof userPlaylists !== 'undefined' ? userPlaylists.length + 1 : 1); // Suggest a name
+    createPlaylistModalElement.style.display = 'flex';
+    newPlaylistNameInputElement.focus(); // Focus on the input field
+    newPlaylistNameInputElement.select(); // Select the suggested text
+}
+
+function closeCreatePlaylistModal() {
+    if (!createPlaylistModalElement) return;
+    createPlaylistModalElement.style.display = 'none';
+    if(newPlaylistNameInputElement) newPlaylistNameInputElement.value = ''; // Clear input
+}
+
+function handleConfirmCreatePlaylist() {
+    if (!newPlaylistNameInputElement) return;
+    const playlistName = newPlaylistNameInputElement.value.trim();
+
+    if (playlistName) {
+        // Call the actual createPlaylist function (which should be in playlist.js)
+        if (typeof createPlaylist === 'function') { // createPlaylist is from playlist.js
+            createPlaylist(playlistName);
+            if (typeof renderAllPlaylistsView === 'function') { // from playlist.js
+                 renderAllPlaylistsView(); // Refresh the sidebar
+            }
+            closeCreatePlaylistModal();
+        } else {
+            console.error("createPlaylist function not found.");
+            // Fallback to an alert if something is wrong with function availability
+            showGeneralModal("Error", "Could not create playlist. Functionality missing.");
+        }
+    } else {
+        // Use the general modal to show an error if the name is empty
+        if (typeof showGeneralModal === 'function') {
+            showGeneralModal("Invalid Name", "Playlist name cannot be empty.");
+        } else {
+            alert("Playlist name cannot be empty."); // Fallback
+        }
+        // Optionally, re-focus the input: newPlaylistNameInputElement.focus();
+    }
+}
+
+function openRenamePlaylistModal(currentPlaylistId, currentName) {
+    if (!renamePlaylistModalElement || !renamePlaylistNameInputElement || !renamePlaylistModalTitleElement) return;
+
+    playlistIdToRename = currentPlaylistId; // Store the ID
+    renamePlaylistModalTitleElement.textContent = `Rename "${escapeModalHtml(currentName)}"`; // Set dynamic title
+    renamePlaylistNameInputElement.value = currentName; // Pre-fill with current name
+    renamePlaylistModalElement.style.display = 'flex';
+    renamePlaylistNameInputElement.focus();
+    renamePlaylistNameInputElement.select();
+}
+
+function closeRenamePlaylistModal() {
+    if (!renamePlaylistModalElement) return;
+    renamePlaylistModalElement.style.display = 'none';
+    if(renamePlaylistNameInputElement) renamePlaylistNameInputElement.value = '';
+    playlistIdToRename = null; // Clear stored ID
+}
+
+function handleConfirmRenamePlaylist() {
+    if (!renamePlaylistNameInputElement || !playlistIdToRename) return;
+
+    const newPlaylistName = renamePlaylistNameInputElement.value.trim();
+    const oldPlaylistData = typeof getPlaylistById === 'function' ? getPlaylistById(playlistIdToRename) : null; // getPlaylistById from playlist.js
+    const oldName = oldPlaylistData ? oldPlaylistData.name : "";
+
+
+    if (newPlaylistName && newPlaylistName !== oldName) {
+        // Call the actual renamePlaylist function (which should be in playlist.js)
+        if (typeof renamePlaylist === 'function') { // renamePlaylist is from playlist.js
+            renamePlaylist(playlistIdToRename, newPlaylistName);
+            // renderAllPlaylistsView() or renderSinglePlaylistView() will be called by renamePlaylist
+            closeRenamePlaylistModal();
+        } else {
+            console.error("renamePlaylist function not found.");
+            showGeneralModal("Error", "Could not rename playlist. Functionality missing.");
+        }
+    } else if (!newPlaylistName) {
+        showGeneralModal("Invalid Name", "Playlist name cannot be empty.");
+        // Optionally, re-focus: renamePlaylistNameInputElement.focus();
+    } else { // Name is the same, or something else went wrong
+        closeRenamePlaylistModal(); // Just close if name hasn't changed
+    }
+}
+
+
+
+
+
+// Helper function for escaping HTML (can live here or in a general utils.js)
+// Make sure this is accessible if other files need it, or they have their own.
+function escapeModalHtml(unsafe) {
+    if (typeof unsafe !== 'string') {
+        return unsafe === null || typeof unsafe === 'undefined' ? '' : String(unsafe);
+    }
+    return unsafe
+         .replace(/&/g, "&")
+         .replace(/</g, "<")
+         .replace(/>/g, ">")
+         .replace(/"/g, '"')
+         .replace(/'/g, "'");
+}
+```
+
+js/play.js
+```js
+// js/play.js
+
+// artworkUrl is expected to be the 100x100 version
+// trackId should be a string if provided
+function playSong(title, artist, artworkUrl, trackId = null) {
+  // Generate a fallback ID if trackId is not provided (less reliable for liking/uniqueness)
+  const newTrackId = trackId ? trackId.toString() : `${title}-${artist}`.toLowerCase().replace(/\s+/g, '-');
+
+  currentTrack = {
+      id: newTrackId,
+      title: title,
+      artist: artist,
+      artwork: artworkUrl, // Store the 100x100
+      artworkLarge: artworkUrl ? artworkUrl.replace("100x100", "600x600") : 'img/empty_art.png'
+  };
+
+  trackTitle.textContent = currentTrack.title;
+  artistName.textContent = currentTrack.artist;
+
+  lyricsSongTitle.textContent = currentTrack.title;
+  lyricsArtistName.textContent = currentTrack.artist;
+
+  if (showingLyrics) { // showingLyrics is global from init.js
+      fetchLyrics(currentTrack.artist, currentTrack.title); // fetchLyrics is global from lyrics.js
+  }
+
+  albumCover.crossOrigin = "anonymous";
+  albumCover.src = currentTrack.artworkLarge;
+
+  albumCover.onload = function () {
+      // Check if the source is not the default empty art before trying colorThief
+      if (albumCover.src && !albumCover.src.endsWith('img/empty_art.png')) {
+          try {
+              const dominantColor = colorThief.getColor(albumCover); // colorThief is global
+              applyColors(dominantColor); // applyColors is global from bg.js
+          } catch (e) {
+              console.error("Color extraction failed (onload):", e);
+              applyColors([100, 100, 100]); // Fallback color
+          }
+      } else {
+           applyColors([115, 98, 86]); // Default for empty art
+      }
+  };
+  albumCover.onerror = function() {
+      console.error("Failed to load album art:", currentTrack.artworkLarge);
+      applyColors([100, 100, 100]); // Fallback color on error
+      albumCover.src = 'img/empty_art.png'; // Revert to default art on error
+  };
+
+  // Update UI elements that depend on the current track
+  if (typeof updateLikeButtonState === 'function') { // From playlist.js
+      updateLikeButtonState();
+  }
+  // updatePlaylistControlsVisibility is called by playSongFromCurrentPlaylist or clearPlaylistContext
+  // If playSong is called from search, clearPlaylistContext (in search.js) should have been called first.
+
+  const searchQuery = `${currentTrack.title} - ${currentTrack.artist}`;
+  getYT(searchQuery); // getYT is global from getYT.js
+}
+
+function loadVid(videoId) {
+  // player is global from init.js (and player.js)
+  // isMuted is global from init.js
+  if (player && typeof player.loadVideoById === 'function') {
+      player.loadVideoById(videoId);
+      // Autoplay is handled by YouTube API or onPlayerStateChange (YT.PlayerState.CUED)
+
+      if (isMuted && typeof player.mute === 'function') {
+          player.mute();
+      } else if (typeof player.unMute === 'function' && !isMuted) { // only unmute if not muted
+          player.unMute();
+      }
+  } else {
+      console.error("YouTube player not ready or loadVideoById not available.");
+  }
+}
+```
+
+js/playback.js
 ```js
 function togglePlayback() {
     console.log("Toggle playback called");
@@ -624,18 +2063,19 @@ function togglePlayback() {
 ```
 
 js/player.js
-
 ```js
+// js/player.js
 
+// YouTube Iframe API setup (tag, firstScriptTag) - unchanged
 const tag = document.createElement("script");
 tag.src = "https://www.youtube.com/iframe_api";
 const firstScriptTag = document.getElementsByTagName("script")[0];
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
 function onYouTubeIframeAPIReady() {
-  player = new YT.Player("ytPlayer", {
-    height: "360",
-    width: "640",
+  player = new YT.Player("ytPlayer", { // player is global
+    height: "1",
+    width: "1",
     videoId: "-",
     playerVars: {
       playsinline: 1,
@@ -644,10 +2084,12 @@ function onYouTubeIframeAPIReady() {
       modestbranding: 1,
       rel: 0,
       showinfo: 0,
+      autoplay: 0,
     },
     events: {
       onReady: onPlayerReady,
       onStateChange: onPlayerStateChange,
+      onError: onPlayerError
     },
   });
 }
@@ -655,40 +2097,74 @@ function onYouTubeIframeAPIReady() {
 function onPlayerReady(event) {
   console.log("Player is ready");
 
-  playPauseBtn.addEventListener("click", togglePlayback);
+  // playPauseBtn, volumeBtn, loopBtn are global from init.js
+  // seekBar is global from init.js
+  playPauseBtn.addEventListener("click", togglePlayback); // togglePlayback is global from playback.js
   volumeBtn.addEventListener("click", toggleMute);
   loopBtn.addEventListener("click", toggleLoop);
 
-  seekBar.addEventListener("mousedown", startSeek);
-  document.addEventListener("mousemove", dragSeek);
-  document.addEventListener("mouseup", endSeek);
+  seekBar.addEventListener("mousedown", startSeek); // startSeek from playback.js
+  document.addEventListener("mousemove", dragSeek); // dragSeek from playback.js
+  document.addEventListener("mouseup", endSeek);   // endSeek from playback.js
 
-  setInterval(updateProgress, 500);
+  setInterval(updateProgress, 500); // updateProgress from playback.js
+  updateLoopButtonIcon(); // Initialize loop button icon based on global loopState
 
-  if (albumCover.complete) {
+  // Initial color logic - unchanged
+  if (albumCover.complete && albumCover.src && !albumCover.src.endsWith('img/empty_art.png')) {
     try {
       const dominantColor = colorThief.getColor(albumCover);
       applyColors(dominantColor);
     } catch (e) {
-      console.error("Initial color extraction failed:", e);
+      console.error("Initial color extraction failed (already complete):", e);
+      applyColors([100,100,100]);
     }
-  } else {
-    albumCover.onload = function () {
-      try {
-        const dominantColor = colorThief.getColor(albumCover);
-        applyColors(dominantColor);
-      } catch (e) {
-        console.error("Initial color extraction failed:", e);
-      }
-    };
+  } else if (albumCover.src && albumCover.src.endsWith('img/empty_art.png')) {
+    applyColors([115, 98, 86]);
   }
 }
 
+// Updates the visual state of the loop button based on global 'loopState'
+function updateLoopButtonIcon() {
+    if (!loopBtn) return; // loopBtn is global
+    loopBtn.classList.remove('loop-active', 'loop-playlist-active');
+
+    if (loopState === 'song') {
+        loopBtn.classList.add('loop-active'); // For repeat-1.svg, green
+    } else if (loopState === 'playlist') {
+        loopBtn.classList.add('loop-playlist-active'); // For repeat.svg, green
+    }
+    // If 'none', no extra class, uses default .icon-loop style
+}
+
+// Manages cycling through loop states
+function toggleLoop() {
+    if (!player) return; // player is global
+
+    // currentPlayingPlaylistId is global from init.js
+    // likedPlaylist and userPlaylists are global from init.js
+    const activePlaylist = getPlaylistById(currentPlayingPlaylistId); // from playlist.js
+    const playlistIsEffectivelyActive = activePlaylist && activePlaylist.songs && activePlaylist.songs.length > 0;
+
+    if (playlistIsEffectivelyActive) {
+        if (loopState === 'none') loopState = 'playlist';
+        else if (loopState === 'playlist') loopState = 'song';
+        else loopState = 'none'; // 'song' -> 'none'
+    } else { // No playlist active, or active playlist is empty
+        if (loopState === 'none') loopState = 'song';
+        else loopState = 'none'; // 'song' -> 'none'
+    }
+    console.log("Loop state changed to:", loopState, "| Playlist active for looping:", playlistIsEffectivelyActive);
+    updateLoopButtonIcon();
+}
+
 function onPlayerStateChange(event) {
-  console.log("Player state changed:", event.data);
+  // loopState, currentPlayingPlaylistId, currentPlaylistTrackIndex are global
+  // getPlaylistById, playNextTrackInCurrentPlaylist are from playlist.js
+  console.log("Player state:", event.data, "| Loop:", loopState, "| PlaylistID:", currentPlayingPlaylistId, "| TrackIdx:", currentPlaylistTrackIndex);
 
   if (event.data === YT.PlayerState.PLAYING) {
-    isPlaying = true;
+    isPlaying = true; // isPlaying is global
     playPauseBtn.classList.remove("icon-play");
     playPauseBtn.classList.add("icon-pause");
   } else if (event.data === YT.PlayerState.PAUSED) {
@@ -699,21 +2175,91 @@ function onPlayerStateChange(event) {
     isPlaying = false;
     playPauseBtn.classList.remove("icon-pause");
     playPauseBtn.classList.add("icon-play");
-    
-    if (isLooping && player) {
-      player.seekTo(0, true); 
-      player.playVideo();     
+
+    if (loopState === 'song' && player) {
+      player.seekTo(0, true);
+      player.playVideo();
+    } else if (currentPlayingPlaylistId && typeof getPlaylistById === 'function' && typeof playNextTrackInCurrentPlaylist === 'function') {
+        const currentPlaylist = getPlaylistById(currentPlayingPlaylistId);
+        if (currentPlaylist && currentPlaylist.songs && currentPlaylist.songs.length > 0) {
+            const isLastTrack = currentPlaylistTrackIndex >= currentPlaylist.songs.length - 1;
+
+            if (loopState === 'playlist') {
+                playNextTrackInCurrentPlaylist(); // Will wrap to start if it was the last track
+            } else if (loopState === 'none' && !isLastTrack) {
+                playNextTrackInCurrentPlaylist(); // Proceed to next song in playlist
+            } else { // loopState is 'none' AND it was the last track, or playlist became invalid
+                clearPlayerStateOnEnd();
+            }
+        } else { // Playlist might have become empty or invalid
+             clearPlayerStateOnEnd();
+        }
+    } else { // Not in a playlist or song not set to loop
+      clearPlayerStateOnEnd();
     }
+  } else if (event.data === YT.PlayerState.CUED && currentTrack && currentTrack.id !== null && !isPlaying) {
+    if (player && typeof player.playVideo === 'function') player.playVideo();
   }
-  
 }
 
+function clearPlayerStateOnEnd() {
+    // progressBar, currentTimeSpan, remainingTimeSpan are global
+    // formatTime is from playback.js
+    if(progressBar) progressBar.style.width = "0%";
+    if(currentTimeSpan) currentTimeSpan.textContent = formatTime(0);
+    if (player && typeof player.getDuration === 'function') {
+        const duration = player.getDuration();
+        if(remainingTimeSpan) remainingTimeSpan.textContent = "-" + formatTime(duration || 0);
+    } else {
+        if(remainingTimeSpan) remainingTimeSpan.textContent = "-0:00";
+    }
+    // Optionally, clear current track display if desired, but typically not needed
+    // as the UI still shows the last played song until a new one starts.
+}
+
+function onPlayerError(event) {
+    console.error("YouTube Player Error:", event.data, "Song:", currentTrack ? currentTrack.title : "N/A");
+    isPlaying = false;
+    if (playPauseBtn) {
+        playPauseBtn.classList.remove("icon-pause");
+        playPauseBtn.classList.add("icon-play");
+    }
+
+    if (event.data === 101 || event.data === 150) {
+      if (typeof showGeneralModal === 'function') {
+          // Use escapeModalHtml from modals.js if available, or a local/global escapeHtml
+          const songTitle = currentTrack ? (typeof escapeModalHtml === 'function' ? escapeModalHtml(currentTrack.title) : currentTrack.title) : "This song";
+          showGeneralModal(
+              "Playback Error",
+              `"${songTitle}" cannot be played due to video embedding restrictions by the owner.`
+          );
+      } else {
+          alert(`Error: "${currentTrack ? currentTrack.title : "This song"}" cannot be played due to embedding restrictions.`);
+      }
+  }
+
+    if (loopState === 'playlist' && currentPlayingPlaylistId && typeof playNextTrackInCurrentPlaylist === 'function') {
+        console.warn("Player error, attempting next track due to 'loop playlist' state.");
+        playNextTrackInCurrentPlaylist();
+    } else if (loopState === 'song' && (event.data === 101 || event.data === 150)) {
+        // If looping a song that causes an embedding error, stop looping it.
+        console.warn("Embedding error on a looping song. Disabling loop for this track.");
+        loopState = 'none';
+        updateLoopButtonIcon();
+        clearPlayerStateOnEnd();
+    } else if (loopState !== 'song') { // If not looping the current song (which would retry itself)
+        clearPlayerStateOnEnd();
+    }
+    // If loopState is 'song' and it's a different error, it will try to replay and likely error again.
+    // A counter for repeated errors on the same song might be useful for breaking such loops.
+}
 
 // Toggle Mute function
 function toggleMute() {
-  if (!player) return;
-
-  if (isMuted) {
+  if (!player || typeof player.isMuted !== 'function') return;
+  // isMuted is global
+  // volumeBtn is global
+  if (player.isMuted()) {
     player.unMute();
     volumeBtn.classList.remove("icon-muted");
     volumeBtn.classList.add("icon-volume");
@@ -725,513 +2271,838 @@ function toggleMute() {
     isMuted = true;
   }
 }
+```
 
-function toggleLoop() {
-  if (!player) return;
+js/playlist.js
+```js
+// js/playlist.js
 
-  isLooping = !isLooping;
-  if (isLooping) {
-    loopBtn.classList.add("loop-active");
-  } else {
-    loopBtn.classList.remove("loop-active");
-  }
+// --- INITIALIZATION ---
+function initializePlaylistSystem() {
+    // Fetch DOM Elements
+    playlistDisplayAreaElement = document.getElementById('playlistDisplayArea');
+    sidebarTitleElement = document.getElementById('sidebarTitle');
+    backToPlaylistsBtnElement = document.getElementById('backToPlaylistsBtn');
+    createNewPlaylistBtnElement = document.getElementById('createNewPlaylistBtn');
+    addToPlaylistBtnElement = document.getElementById('addToPlaylistBtn');
+    addToPlaylistModalElement = document.getElementById('addToPlaylistModal');
+    modalPlaylistListElement = document.getElementById('modalPlaylistList');
+    closeModalAddToPlaylistBtnElement = document.getElementById('closeAddToPlaylistModal');
+    likeBtnElement = document.getElementById('likeBtn');
+    prevBtnElement = document.getElementById('prevBtn');
+    nextBtnElement = document.getElementById('nextBtn');
+
+    if (!playlistDisplayAreaElement || !sidebarTitleElement || !backToPlaylistsBtnElement ||
+        !createNewPlaylistBtnElement || !addToPlaylistBtnElement || !addToPlaylistModalElement ||
+        !modalPlaylistListElement || !closeModalAddToPlaylistBtnElement || !likeBtnElement ||
+        !prevBtnElement || !nextBtnElement) {
+        console.error("One or more playlist system DOM elements not found. Aborting.");
+        return;
+    }
+
+    loadLikedPlaylist();
+    loadUserPlaylists();
+
+    renderSidebar(); // Initial render
+
+    // Event Listeners
+    likeBtnElement.addEventListener('click', toggleLikeCurrentSong);
+    nextBtnElement.addEventListener('click', playNextTrackInCurrentPlaylist);
+    prevBtnElement.addEventListener('click', playPreviousTrackInCurrentPlaylist);
+    backToPlaylistsBtnElement.addEventListener('click', () => switchSidebarView('all_playlists'));
+    createNewPlaylistBtnElement.addEventListener('click', handleCreateNewPlaylist);
+    addToPlaylistBtnElement.addEventListener('click', openAddToPlaylistModal);
+    closeModalAddToPlaylistBtnElement.addEventListener('click', closeAddToPlaylistModal);
+
+    window.addEventListener('click', (event) => {
+        if (event.target === addToPlaylistModalElement) {
+            closeAddToPlaylistModal();
+        }
+    });
+
+    updatePlaylistControlsVisibility(); // Initial check for prev/next buttons
+}
+
+// --- DATA MANAGEMENT (LIKED SONGS) ---
+function loadLikedPlaylist() {
+    const stored = localStorage.getItem(LIKED_PLAYLIST_STORAGE_KEY); // From init.js
+    likedPlaylist = stored ? JSON.parse(stored) : [];
+}
+
+function saveLikedPlaylist() {
+    localStorage.setItem(LIKED_PLAYLIST_STORAGE_KEY, JSON.stringify(likedPlaylist));
+}
+
+function addSongToLikedPlaylist(songData) {
+    if (!songData || !songData.id) {
+        console.error("Cannot add to liked: missing song data or ID.", songData);
+        return;
+    }
+    if (!likedPlaylist.find(s => s.id === songData.id)) {
+        likedPlaylist.push(songData);
+        saveLikedPlaylist();
+        if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === LIKED_SONGS_PLAYLIST_ID) {
+            renderSinglePlaylistView(LIKED_SONGS_PLAYLIST_ID);
+        }
+        // If Liked Songs playlist is currently playing, this new song is now at the end of its queue.
+        // No specific index adjustment needed here unless we want to auto-play it.
+        updateLikeButtonState(true); // Update the like button for the current track
+    }
+}
+
+function removeSongFromLikedPlaylist(songId) {
+    const initialLength = likedPlaylist.length;
+    const songBeingRemoved = likedPlaylist.find(s => s.id === songId);
+
+    likedPlaylist = likedPlaylist.filter(s => s.id !== songId);
+
+    if (likedPlaylist.length < initialLength) {
+        saveLikedPlaylist();
+        if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === LIKED_SONGS_PLAYLIST_ID) {
+            renderSinglePlaylistView(LIKED_SONGS_PLAYLIST_ID);
+        }
+        if (currentPlayingPlaylistId === LIKED_SONGS_PLAYLIST_ID && currentTrack && currentTrack.id === songId) {
+            // If the removed song was the one playing from liked playlist
+            // The player.js onPlayerStateChange will handle song end. If more songs, it might play next.
+            // We might need to adjust currentPlaylistTrackIndex if the removed song was *before* the current one.
+            // For simplicity, let's assume if current playing is removed, player stops or plays next if available.
+            // A more robust way would be to re-calculate currentPlaylistTrackIndex
+            const oldPlayingSongId = currentTrack.id;
+            const newIndex = likedPlaylist.findIndex(s => s.id === oldPlayingSongId);
+            if (newIndex === -1 && likedPlaylist.length > 0 && currentPlaylistTrackIndex >= likedPlaylist.length) {
+                // If the song was last and removed, try to point to new last or 0
+                currentPlaylistTrackIndex = Math.max(0, likedPlaylist.length - 1);
+            } else if (newIndex !== -1) {
+                 currentPlaylistTrackIndex = newIndex; // If it was another song.
+            } else if (likedPlaylist.length === 0) {
+                clearPlaylistContext();
+            }
+        }
+        if (currentTrack && currentTrack.id === songId) {
+            updateLikeButtonState(false);
+        }
+    }
+}
+
+function isSongLiked(songId) {
+    if (!songId) return false;
+    return likedPlaylist.some(s => s.id === songId);
+}
+
+function toggleLikeCurrentSong() {
+    if (!currentTrack || currentTrack.id == null) {
+        console.warn("No current track to like/unlike, or track has no ID.");
+        return;
+    }
+    if (isSongLiked(currentTrack.id)) {
+        removeSongFromLikedPlaylist(currentTrack.id);
+    } else {
+        addSongToLikedPlaylist({
+            id: currentTrack.id,
+            title: currentTrack.title,
+            artist: currentTrack.artist,
+            artwork: currentTrack.artwork // Ensure this is the 100x100 artwork
+        });
+    }
+}
+
+function updateLikeButtonState(isLikedOverride) {
+    if (!likeBtnElement) return;
+    const liked = typeof isLikedOverride === 'boolean' ? isLikedOverride : (currentTrack && currentTrack.id != null ? isSongLiked(currentTrack.id) : false);
+
+    if (liked) {
+        likeBtnElement.classList.remove('icon-heart-empty');
+        likeBtnElement.classList.add('icon-heart-filled');
+    } else {
+        likeBtnElement.classList.remove('icon-heart-filled');
+        likeBtnElement.classList.add('icon-heart-empty');
+    }
+}
+
+// --- DATA MANAGEMENT (USER PLAYLISTS) ---
+function loadUserPlaylists() {
+    const stored = localStorage.getItem(USER_PLAYLISTS_STORAGE_KEY); // From init.js
+    userPlaylists = stored ? JSON.parse(stored) : [];
+}
+
+function saveUserPlaylists() {
+    localStorage.setItem(USER_PLAYLISTS_STORAGE_KEY, JSON.stringify(userPlaylists));
+}
+
+function createPlaylist(name) {
+    const newPlaylist = {
+        id: `playlist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: name || "New Playlist",
+        songs: [],
+        // artwork: 'img/empty_art.png' // Placeholder for future custom artwork
+    };
+    userPlaylists.push(newPlaylist);
+    saveUserPlaylists();
+    return newPlaylist;
+}
+
+function getPlaylistById(playlistId) {
+    if (playlistId === LIKED_SONGS_PLAYLIST_ID) {
+        return { id: LIKED_SONGS_PLAYLIST_ID, name: "Liked Songs", songs: [...likedPlaylist] }; // Return a copy for safety
+    }
+    return userPlaylists.find(p => p.id === playlistId);
+}
+
+function renamePlaylist(playlistId, newName) {
+    const playlist = userPlaylists.find(p => p.id === playlistId);
+    if (playlist && newName.trim() !== "") {
+        playlist.name = newName.trim();
+        saveUserPlaylists();
+       // Always re-render the current sidebar view to reflect the name change
+        if (currentSidebarView === 'all_playlists') {
+            renderAllPlaylistsView();
+        } else if (currentSidebarView === 'single_playlist_view') {
+            if (selectedPlaylistToViewId === playlistId) {
+                // If viewing the renamed playlist, update its title and re-render its content
+                if (sidebarTitleElement) sidebarTitleElement.textContent = escapeHtml(playlist.name);
+                renderSinglePlaylistView(playlistId); // Re-render to show updated name potentially in header or list item
+            }
+            // If viewing a different playlist, but the renamed one is in the overview,
+            // renderAllPlaylistsView would be needed if the change should reflect there immediately
+            // without navigating back. For simplicity now, it will update when navigating back.
+            // A more robust solution would be a pub/sub or state management.
+        }
+    }
+}
+
+function deletePlaylist(playlistId) {
+    const playlist = getPlaylistById(playlistId);
+    if (!playlist) return;
+    const playlistName = playlist.name || "this playlist";
+
+    // Uses global showGeneralModal and escapeModalHtml (if needed within message)
+    showGeneralModal(
+        "Confirm Deletion",
+        `Are you sure you want to delete the playlist "<strong>${escapeModalHtml(playlistName)}</strong>"?<br>This action cannot be undone.`,
+        [
+            {
+                text: 'Delete',
+                class: 'primary',
+                callback: () => {
+                    userPlaylists = userPlaylists.filter(p => p.id !== playlistId);
+                    saveUserPlaylists();
+                    if (selectedPlaylistToViewId === playlistId) switchSidebarView('all_playlists');
+                    else if (currentSidebarView === 'all_playlists') renderAllPlaylistsView();
+                    if (currentPlayingPlaylistId === playlistId) clearPlaylistContext();
+                    console.log(`Playlist "${escapeModalHtml(playlistName)}" deleted.`);
+                }
+            },
+            { text: 'Cancel', class: 'secondary', callback: () => console.log('Deletion cancelled.') }
+        ]
+    );
+}
+
+function addSongToUserPlaylist(playlistId, songData) {
+    const playlist = userPlaylists.find(p => p.id === playlistId);
+    if (playlist && songData && songData.id) {
+        if (!playlist.songs.find(s => s.id === songData.id)) {
+            playlist.songs.push(songData);
+            saveUserPlaylists();
+            if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === playlistId) {
+                renderSinglePlaylistView(playlistId);
+            }
+            console.log(`Song "${songData.title}" added to playlist "${playlist.name}"`);
+        } else {
+            showGeneralModal("Song Exists", `"${escapeModalHtml(songData.title)}" is already in the playlist "${escapeModalHtml(playlist.name)}".`);
+        }
+    }
+}
+
+function removeSongFromUserPlaylist(playlistId, songId) {
+    const playlist = userPlaylists.find(p => p.id === playlistId);
+    if (playlist) {
+        const initialLength = playlist.songs.length;
+        playlist.songs = playlist.songs.filter(s => s.id !== songId);
+        if (playlist.songs.length < initialLength) {
+            saveUserPlaylists();
+            if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === playlistId) {
+                renderSinglePlaylistView(playlistId);
+            }
+            // If the removed song was playing from this user playlist
+            if (currentPlayingPlaylistId === playlistId && currentTrack && currentTrack.id === songId) {
+                // More complex logic similar to removeSongFromLikedPlaylist might be needed here
+                // For now, player.js will handle the ENDED state.
+            }
+        }
+    }
+}
+
+function reorderSongInPlaylist(playlistId, oldIndex, newIndex) {
+    const playlistRef = (playlistId === LIKED_SONGS_PLAYLIST_ID) ? likedPlaylist : userPlaylists.find(p => p.id === playlistId)?.songs;
+    if (!playlistRef) return;
+
+    const itemToMove = playlistRef.splice(oldIndex, 1)[0];
+    playlistRef.splice(newIndex, 0, itemToMove);
+
+    if (playlistId === LIKED_SONGS_PLAYLIST_ID) {
+        saveLikedPlaylist();
+    } else {
+        saveUserPlaylists(); // Assumes playlistRef was a direct reference to a user playlist's songs array
+    }
+
+    if (currentPlayingPlaylistId === playlistId && currentTrack) {
+        const newPlayingIndex = playlistRef.findIndex(song => song.id === currentTrack.id);
+        if (newPlayingIndex !== -1) {
+            currentPlaylistTrackIndex = newPlayingIndex;
+        }
+    }
+
+    if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === playlistId) {
+        renderSinglePlaylistView(playlistId);
+    }
+}
+
+// --- UI RENDERING ---
+function renderSidebar() {
+    if (!playlistDisplayAreaElement) return; // Guard if elements not ready
+    if (currentSidebarView === 'all_playlists') {
+        renderAllPlaylistsView();
+    } else if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId) {
+        renderSinglePlaylistView(selectedPlaylistToViewId);
+    }
+}
+
+function switchSidebarView(view, playlistId = null) {
+    currentSidebarView = view;
+    selectedPlaylistToViewId = playlistId; // This is ID of playlist to *view*, not necessarily play
+    renderSidebar();
+}
+
+function renderAllPlaylistsView() {
+    if (!playlistDisplayAreaElement || !sidebarTitleElement || !backToPlaylistsBtnElement || !createNewPlaylistBtnElement) return;
+    playlistDisplayAreaElement.innerHTML = '';
+    sidebarTitleElement.textContent = "Your Playlists";
+    backToPlaylistsBtnElement.style.display = 'none';
+    createNewPlaylistBtnElement.style.display = 'inline-block';
+
+    const ul = document.createElement('ul');
+    // ul.className = 'playlist-list-overview'; // Ensure this class is defined in CSS
+
+    const likedSongsData = { id: LIKED_SONGS_PLAYLIST_ID, name: "Liked Songs", songs: likedPlaylist };
+    ul.appendChild(createPlaylistOverviewItem(likedSongsData));
+
+    userPlaylists.forEach(playlist => {
+        ul.appendChild(createPlaylistOverviewItem(playlist));
+    });
+
+    playlistDisplayAreaElement.appendChild(ul);
+    playlistDisplayAreaElement.scrollTop = 0;
+}
+
+function createPlaylistOverviewItem(playlistData) {
+    const li = document.createElement('li');
+    li.className = 'playlist-overview-item';
+    li.setAttribute('data-playlist-id', playlistData.id);
+
+    const songsText = playlistData.songs.length === 1 ? "1 song" : `${playlistData.songs.length} songs`;
+
+    let artworkSrc;
+    if (playlistData.id === LIKED_SONGS_PLAYLIST_ID) {
+        artworkSrc = 'img/liked_songs.png'; // Static artwork for Liked Songs
+    } else {
+        artworkSrc = playlistData.artwork || // For future custom playlist artwork
+                     (playlistData.songs.length > 0 && playlistData.songs[0].artwork ? playlistData.songs[0].artwork : 'img/empty_art.png');
+    }
+
+
+    let nameDisplay = `<div class="playlist-overview-item-name">${escapeHtml(playlistData.name)}</div>`;
+    let actionsHtml = '';
+
+    if (playlistData.id !== LIKED_SONGS_PLAYLIST_ID) {
+        actionsHtml = `
+            <div class="playlist-item-actions">
+                <button class="rename-playlist-btn" title="Rename"><i class="icon icon-edit"></i></button>
+                <button class="delete-playlist-btn" title="Delete"><i class="icon icon-trash"></i></button>
+            </div>`;
+    }
+
+    li.innerHTML = `
+        <img src="${artworkSrc}" alt="${escapeHtml(playlistData.name)}" class="playlist-overview-item-artwork">
+        <div class="playlist-overview-item-info">
+            ${nameDisplay}
+            <div class="playlist-overview-item-count">${songsText}</div>
+        </div>
+        ${actionsHtml}
+    `;
+
+    const infoSection = li.querySelector('.playlist-overview-item-info');
+    const artworkSection = li.querySelector('.playlist-overview-item-artwork');
+
+    const viewPlaylistHandler = () => switchSidebarView('single_playlist_view', playlistData.id);
+
+    if (infoSection) infoSection.addEventListener('click', (e) => {
+        if (!e.target.closest('.playlist-item-actions') && !e.target.closest('.playlist-name-input')) {
+            viewPlaylistHandler();
+        }
+    });
+    if (artworkSection) artworkSection.addEventListener('click', (e) => {
+         if (!e.target.closest('.playlist-item-actions') && !e.target.closest('.playlist-name-input')) {
+            viewPlaylistHandler();
+        }
+    });
+
+    if (playlistData.id !== LIKED_SONGS_PLAYLIST_ID) {
+        const renameBtn = li.querySelector('.rename-playlist-btn');
+        const deleteBtn = li.querySelector('.delete-playlist-btn');
+        if(renameBtn) renameBtn.addEventListener('click', () => handleRenamePlaylist(playlistData.id, li));
+        if(deleteBtn) deleteBtn.addEventListener('click', () => deletePlaylist(playlistData.id)); // Confirmation inside deletePlaylist
+    }
+    return li;
+}
+
+function renderSinglePlaylistView(playlistId) {
+    if (!playlistDisplayAreaElement || !sidebarTitleElement || !backToPlaylistsBtnElement || !createNewPlaylistBtnElement) return;
+
+    const playlist = getPlaylistById(playlistId);
+    if (!playlist) {
+        switchSidebarView('all_playlists');
+        return;
+    }
+
+    playlistDisplayAreaElement.innerHTML = '';
+    sidebarTitleElement.textContent = escapeHtml(playlist.name);
+    backToPlaylistsBtnElement.style.display = 'inline-block';
+    createNewPlaylistBtnElement.style.display = 'none';
+
+    if (playlist.songs.length === 0) {
+        playlistDisplayAreaElement.innerHTML = `<p class="empty-playlist-message">This playlist is empty.</p>`;
+        return;
+    }
+
+    const ul = document.createElement('ul');
+    // ul.className = 'playlist-list'; // Ensure this class is in CSS
+
+    playlist.songs.forEach((song, index) => {
+        const li = document.createElement('li');
+        li.className = 'playlist-item'; // Re-use for songs in a playlist
+        li.setAttribute('data-song-id', song.id.toString());
+        li.setAttribute('draggable', true);
+
+        if (currentPlayingPlaylistId === playlistId && currentPlaylistTrackIndex === index && currentTrack && currentTrack.id === song.id) {
+            li.classList.add('playing');
+        }
+
+        let removeButtonHtml = '';
+        if (playlistId !== LIKED_SONGS_PLAYLIST_ID) {
+            removeButtonHtml = `<button class="remove-song-from-playlist-btn icon-action-btn" title="Remove from playlist"><i class="icon icon-trash"></i></button>`;
+        }
+
+
+        li.innerHTML = `
+            <img src="${song.artwork || 'img/empty_art.png'}" alt="${escapeHtml(song.title)}" class="playlist-item-artwork">
+            <div class="playlist-item-info">
+                <div class="playlist-item-title">${escapeHtml(song.title)}</div>
+                <div class="playlist-item-artist">${escapeHtml(song.artist)}</div>
+            </div>
+            ${removeButtonHtml}
+        `;
+
+        li.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-song-from-playlist-btn')) {
+                if (playlistId === LIKED_SONGS_PLAYLIST_ID) { // Should not happen due to button conditional
+                    // removeSongFromLikedPlaylist(song.id); // This path should ideally not be taken
+                } else {
+                    removeSongFromUserPlaylist(playlistId, song.id);
+                }
+            } else {
+                playSongFromCurrentPlaylist(playlistId, index);
+            }
+        });
+
+        li.addEventListener('dragstart', (event) => handleSongDragStart(event, index, playlistId));
+        li.addEventListener('dragover', handleSongDragOver);
+        li.addEventListener('drop', (event) => handleSongDrop(event, index, playlistId)); // index here is the one dropped ON
+        li.addEventListener('dragend', handleSongDragEnd);
+
+        ul.appendChild(li);
+    });
+    playlistDisplayAreaElement.appendChild(ul);
+    playlistDisplayAreaElement.scrollTop = 0;
+}
+
+// --- PLAYBACK LOGIC ADAPTATIONS ---
+function playSongFromCurrentPlaylist(playlistId, songIndex) {
+    const playlist = getPlaylistById(playlistId); // This now gets a full playlist object
+    if (!playlist || !playlist.songs || songIndex < 0 || songIndex >= playlist.songs.length) {
+        console.warn(`Cannot play song: invalid playlist or index. Playlist ID: ${playlistId}, Index: ${songIndex}`);
+        clearPlaylistContext();
+        return;
+    }
+
+    const songToPlay = playlist.songs[songIndex];
+    currentPlayingPlaylistId = playlistId;
+    currentPlaylistTrackIndex = songIndex;
+
+    // Call the global playSong function (defined in play.js)
+    if (typeof playSong === 'function') {
+        playSong(songToPlay.title, songToPlay.artist, songToPlay.artwork, songToPlay.id.toString());
+    } else {
+        console.error("Global playSong function not found!");
+    }
+
+    renderSidebar(); // Re-render to highlight playing song
+    updatePlaylistControlsVisibility();
+}
+
+function playNextTrackInCurrentPlaylist() {
+    if (!currentPlayingPlaylistId) return;
+    const playlist = getPlaylistById(currentPlayingPlaylistId);
+
+    if (playlist && playlist.songs.length > 0) {
+        let nextIndex = currentPlaylistTrackIndex + 1;
+        if (nextIndex >= playlist.songs.length) {
+            nextIndex = 0; // Loop for 'playlist' loop state, or if user clicks next on last song
+        }
+        playSongFromCurrentPlaylist(currentPlayingPlaylistId, nextIndex);
+    }
+}
+
+function playPreviousTrackInCurrentPlaylist() {
+    if (!currentPlayingPlaylistId) return;
+    const playlist = getPlaylistById(currentPlayingPlaylistId);
+
+    if (playlist && playlist.songs.length > 0) {
+        let prevIndex = currentPlaylistTrackIndex - 1;
+        if (prevIndex < 0) {
+            prevIndex = playlist.songs.length - 1;
+        }
+        playSongFromCurrentPlaylist(currentPlayingPlaylistId, prevIndex);
+    }
+}
+
+function updatePlaylistControlsVisibility() {
+    if (!prevBtnElement || !nextBtnElement) return;
+    const playlist = getPlaylistById(currentPlayingPlaylistId);
+    const showControls = playlist && playlist.songs && playlist.songs.length > 0; // Show if any playlist has songs
+    prevBtnElement.style.display = showControls ? 'inline-block' : 'none';
+    nextBtnElement.style.display = showControls ? 'inline-block' : 'none';
+
+    if (typeof updateLoopButtonIcon === 'function') updateLoopButtonIcon(); // Defined in player.js
+}
+
+function clearPlaylistContext() {
+    const wasPlayingPlaylist = currentPlayingPlaylistId !== null;
+    currentPlayingPlaylistId = null;
+    currentPlaylistTrackIndex = -1;
+
+    if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId) {
+         const playlistBeingViewed = getPlaylistById(selectedPlaylistToViewId);
+         if(playlistBeingViewed) renderSinglePlaylistView(selectedPlaylistToViewId); // Re-render to remove playing highlight
+    } else if (currentSidebarView === 'all_playlists') {
+        // If playing from "All Playlists" view (e.g. clicking play on a playlist overview - future feature)
+        // For now, this else if might not be strictly necessary.
+    }
+
+    updatePlaylistControlsVisibility();
+
+    if (wasPlayingPlaylist && typeof loopState !== 'undefined' && loopState === 'playlist') {
+        loopState = 'none';
+        if (typeof updateLoopButtonIcon === 'function') updateLoopButtonIcon();
+    }
+}
+
+// --- "ADD TO PLAYLIST" MODAL ---
+function openAddToPlaylistModal() {
+    if (!currentTrack || currentTrack.id == null) {
+        // Assumes showGeneralModal and escapeModalHtml are global from modals.js
+        showGeneralModal("Cannot Add Song", "No song is currently playing to add to a playlist.");
+        return;
+    }
+    modalPlaylistListElement.innerHTML = '';
+
+    // Option to add to Liked Songs
+    const likedItem = document.createElement('div');
+    likedItem.className = 'modal-playlist-item';
+    likedItem.textContent = "Liked Songs";
+    likedItem.onclick = () => {
+        addSongToLikedPlaylist({ id: currentTrack.id, title: currentTrack.title, artist: currentTrack.artist, artwork: currentTrack.artwork });
+        closeAddToPlaylistModal();
+    };
+    modalPlaylistListElement.appendChild(likedItem);
+
+    userPlaylists.forEach(playlist => {
+        const playlistItem = document.createElement('div');
+        playlistItem.className = 'modal-playlist-item';
+        playlistItem.textContent = escapeHtml(playlist.name);
+        playlistItem.onclick = () => {
+            addSongToUserPlaylist(playlist.id, { id: currentTrack.id, title: currentTrack.title, artist: currentTrack.artist, artwork: currentTrack.artwork });
+            closeAddToPlaylistModal();
+        };
+        modalPlaylistListElement.appendChild(playlistItem);
+    });
+
+    if (modalPlaylistListElement.children.length === 1 && userPlaylists.length === 0) { // Only "Liked Songs" showing and no user playlists
+         const noUserPlaylistsMsg = document.createElement('p');
+         noUserPlaylistsMsg.textContent = 'No other playlists. Create one first!';
+         noUserPlaylistsMsg.style.textAlign = 'center';
+         noUserPlaylistsMsg.style.marginTop = '10px';
+         modalPlaylistListElement.appendChild(noUserPlaylistsMsg);
+    }
+
+    addToPlaylistModalElement.style.display = 'flex';
+}
+
+function closeAddToPlaylistModal() {
+    addToPlaylistModalElement.style.display = 'none';
+}
+
+// --- PLAYLIST MANAGEMENT UI HANDLERS ---
+function handleCreateNewPlaylist() {
+    if (typeof openCreatePlaylistModal === 'function') { // openCreatePlaylistModal is from modals.js
+        openCreatePlaylistModal();
+    } else {
+        console.error("openCreatePlaylistModal function not found!");
+        // Fallback to prompt if modal function isn't available
+        const playlistNameFallback = prompt("Enter name for new playlist (modal error):", "My Playlist");
+        if (playlistNameFallback && playlistNameFallback.trim() !== "") {
+            createPlaylist(playlistNameFallback.trim());
+            renderAllPlaylistsView();
+        } else if (playlistNameFallback !== null) {
+            alert("Playlist name cannot be empty.");
+        }
+    }
+}
+
+function handleRenamePlaylist(playlistIdToEdit /*, listItemElement - no longer needed */) {
+    const playlist = getPlaylistById(playlistIdToEdit); // getPlaylistById is in this file
+    if (!playlist || playlist.id === LIKED_SONGS_PLAYLIST_ID) { // Can't rename Liked Songs
+        console.warn("Attempted to rename Liked Songs or non-existent playlist.");
+        return;
+    }
+
+    // NEW: Call the function to open the dedicated modal
+    // openRenamePlaylistModal is from modals.js
+    if (typeof openRenamePlaylistModal === 'function') {
+        openRenamePlaylistModal(playlist.id, playlist.name);
+    } else {
+        console.error("openRenamePlaylistModal function not found!");
+        // Fallback to prompt if modal function isn't available (optional)
+        const newNameFallback = prompt(`Enter new name for "${escapeHtml(playlist.name)}":`, playlist.name);
+        if (newNameFallback && newNameFallback.trim() !== "" && newNameFallback.trim() !== playlist.name) {
+            renamePlaylist(playlist.id, newNameFallback.trim());
+            // renamePlaylist itself will call renderAllPlaylistsView or update title
+        } else if (newNameFallback && newNameFallback.trim() === "") {
+            // Using global showGeneralModal for error
+            if(typeof showGeneralModal === 'function') showGeneralModal("Invalid Name", "Playlist name cannot be empty.");
+            else alert("Playlist name cannot be empty.");
+        }
+    }
+}
+
+// --- DRAG AND DROP FOR SONGS (within a single playlist view) ---
+let draggedSongIndex = null;
+let draggedSongElement = null;
+let dragOverPlaylistIdContext = null; // Stores playlist ID during drag operation
+
+function handleSongDragStart(event, index, playlistId) {
+    draggedSongIndex = index;
+    draggedSongElement = event.target;
+    dragOverPlaylistIdContext = playlistId; // Set context for this drag operation
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', index.toString()); // Standard practice
+    setTimeout(() => {
+        if (draggedSongElement) draggedSongElement.classList.add('dragging');
+    }, 0);
+}
+
+function handleSongDragOver(event) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+    const currentTargetLi = event.target.closest('.playlist-item');
+
+    if (!currentTargetLi || !draggedSongElement || currentTargetLi === draggedSongElement ||
+        !playlistDisplayAreaElement.contains(currentTargetLi)) { // Ensure target is within the display area
+        return;
+    }
+    clearGapIndicators(); // Clear previous gaps
+    const rect = currentTargetLi.getBoundingClientRect();
+    const offsetY = event.clientY - rect.top;
+    currentTargetLi.classList.add(offsetY < rect.height / 2 ? 'show-gap-above' : 'show-gap-below');
+}
+
+function handleSongDrop(event, indexOfTheItemDroppedOn, playlistIdForDropTarget) {
+    event.preventDefault();
+    clearGapIndicators();
+
+    if (draggedSongIndex === null || dragOverPlaylistIdContext !== playlistIdForDropTarget ||
+        dragOverPlaylistIdContext !== selectedPlaylistToViewId) {
+        // Dragged from different playlist context or something went wrong
+        if (draggedSongElement) draggedSongElement.classList.remove('dragging');
+        draggedSongIndex = null;
+        draggedSongElement = null;
+        dragOverPlaylistIdContext = null;
+        return;
+    }
+
+    // At this point, playlistIdForDropTarget is the same as dragOverPlaylistIdContext
+    const currentReorderingPlaylistId = dragOverPlaylistIdContext;
+
+    reorderSongInPlaylist(currentReorderingPlaylistId, draggedSongIndex, indexOfTheItemDroppedOn);
+    // reorderSongInPlaylist now handles saving and re-rendering the single playlist view.
+    // The re-render will also clean up dragging classes.
+
+    // Reset state variables in handleSongDragEnd
+}
+
+function handleSongDragEnd(event) {
+    clearGapIndicators();
+    if (draggedSongElement) {
+        draggedSongElement.classList.remove('dragging');
+    }
+    // Failsafe: remove dragging from all items if something went wrong
+    const allItems = playlistDisplayAreaElement.querySelectorAll('.playlist-item.dragging');
+    allItems.forEach(item => item.classList.remove('dragging'));
+
+    draggedSongIndex = null;
+    draggedSongElement = null;
+    dragOverPlaylistIdContext = null;
+}
+
+function clearGapIndicators() {
+    const items = playlistDisplayAreaElement.querySelectorAll('.playlist-item');
+    items.forEach(item => {
+        item.classList.remove('show-gap-above', 'show-gap-below');
+    });
+}
+
+// Helper to prevent XSS
+function escapeHtml(unsafe) {
+    if (typeof unsafe !== 'string') {
+        // console.warn("escapeHtml called with non-string:", unsafe);
+        return unsafe === null || typeof unsafe === 'undefined' ? '' : String(unsafe);
+    }
+    return unsafe
+         .replace(/&/g, "&")
+         .replace(/</g, "<")
+         .replace(/>/g, ">")
+         .replace(/"/g, '"')
+         .replace(/'/g, "'")
 }
 ```
 
 js/search.js
-
 ```js
+// js/search.js
+
 searchInput.addEventListener("input", function () {
-    clearTimeout(searchTimeout);
-  
-    searchTimeout = setTimeout(() => {
+  clearTimeout(searchTimeout);
+
+  searchTimeout = setTimeout(() => {
       const query = searchInput.value.trim();
       if (query.length > 1) {
-        searchSongs(query);
+          searchSongs(query);
       } else {
-        hideSearchResults();
+         if (typeof hideSearchResults === 'function') hideSearchResults();
       }
-    }, 500);
-  });
-  
-  searchInput.addEventListener("keypress", function (e) {
-    if (e.key === "Enter") {
+  }, 300);
+});
+
+searchInput.addEventListener("keypress", function (e) {
+  if (e.key === "Enter") {
       clearTimeout(searchTimeout);
       const query = searchInput.value.trim();
       if (query.length > 1) {
-        searchSongs(query);
+          searchSongs(query);
       }
-    }
-  });
-  
-  function searchSongs(query) {
-    searchResults.innerHTML = '<div class="loading">Searching...</div>';
-    showSearchResults();
-  
-    const url = `${SEARCH_EP}${encodeURIComponent(query)}&media=music&limit=10`;
-  
-    fetch(url)
+  }
+});
+
+function searchSongs(query) {
+  searchResults.innerHTML = '<div class="loading">Searching...</div>';
+  showSearchResults();
+
+  // Prioritize 'song' entity for better track matches
+  const url = `${SEARCH_EP}${encodeURIComponent(query)}&media=music&entity=song&limit=10`;
+
+  fetch(url)
       .then((response) => response.json())
       .then((data) => {
-        console.log("iTunes search results:", data);
-        displaySearchResults(data.results);
+          console.log("iTunes search results:", data);
+          displaySearchResults(data.results);
       })
       .catch((error) => {
-        console.error("Error searching iTunes:", error);
-        searchResults.innerHTML =
-          '<div class="loading">Search failed. Please try again.</div>';
+          console.error("Error searching iTunes:", error);
+          searchResults.innerHTML =
+              '<div class="loading">Search failed. Please try again.</div>';
       });
-  }
-  
-  function displaySearchResults(results) {
-    if (!results || results.length === 0) {
+}
+
+function displaySearchResults(results) {
+  if (!results || results.length === 0) {
       searchResults.innerHTML = '<div class="loading">No results found</div>';
       return;
-    }
-  
-    searchResults.innerHTML = "";
-  
-    results.forEach((item) => {
-      if (!item.trackName || !item.artistName) return;
-  
+  }
+
+  searchResults.innerHTML = ""; // Clear previous results
+
+  results.forEach((item) => {
+      // Ensure essential data is present, especially trackId for liking
+      if (!item.trackName || !item.artistName || !item.trackId || !item.artworkUrl100) {
+          console.warn("Skipping search result due to missing data:", item);
+          return;
+      }
+
       const resultElement = document.createElement("div");
       resultElement.className = "result-item";
       resultElement.innerHTML = `
-        <div class="result-img">
-          <img src="${item.artworkUrl100}" alt="${item.trackName}" crossorigin="anonymous">
-        </div>
-        <div class="result-info">
-          <div class="result-title">${item.trackName}</div>
-          <div class="result-artist">${item.artistName}</div>
-        </div>
-      `;
-  
+      <div class="result-img">
+        <img src="${item.artworkUrl100}" alt="${item.trackName}" crossorigin="anonymous">
+      </div>
+      <div class="result-info">
+        <div class="result-title">${item.trackName}</div>
+        <div class="result-artist">${item.artistName}</div>
+      </div>
+    `;
+
       resultElement.addEventListener("click", () => {
-        playSong(item.trackName, item.artistName, item.artworkUrl100);
-        hideSearchResults();
-        searchInput.value = "";
+          // When playing from search, it's not from the "liked" playlist context initially.
+          if (typeof clearPlaylistContext === 'function') {
+              clearPlaylistContext(); // Reset active playlist context
+          }
+
+          // Pass trackId as a string, and the 100x100 artwork.
+          // playSong will derive the larger artwork.
+          playSong(item.trackName, item.artistName, item.artworkUrl100, item.trackId.toString());
+
+          hideSearchResults();
+          searchInput.value = ""; // Clear search input
       });
-  
+
       searchResults.appendChild(resultElement);
-    });
-  }
-  
-  function showSearchResults() {
-    searchResults.classList.add("active");
-  }
-  
-  function hideSearchResults() {
-    searchResults.classList.remove("active");
-  }
-  
+  });
+}
+
+function showSearchResults() {
+  searchResults.classList.add("active");
+}
+
+function hideSearchResults() {
+  searchResults.classList.remove("active");
+}
 ```
 
-css/all.css
-
-```css
-:root {
-    --bg-start: #747474;
-    --bg-end: #4b4b4b;
-    --card-width: 540px;
-    --card-height: 220px;
-  }
-  * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-  body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-      sans-serif;
-    color: #fff;
-    padding: 20px;
-    transition: background 0.8s ease;
-  }
-  .search-container {
-    width: 100%;
-    max-width: 560px;
-    margin-bottom: 20px;
-    z-index: 100;
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-  }
-  .search-input {
-    width: 100%;
-    padding: 12px 20px;
-    border-radius: 12px;
-    border: none;
-    font-family: "Inter", sans-serif;
-    font-size: 16px;
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff;
-    outline: none;
-    transition: all 0.2s ease;
-    backdrop-filter: blur(5px);
-  }
-  .search-input::placeholder {
-    color: rgba(255, 255, 255, 0.6);
-  }
-  .search-input:focus {
-    background: rgba(255, 255, 255, 0.25);
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-  }
-  .search-results {
-    width: 100%;
-    max-width: 560px;
-    max-height: 400px;
-    background: rgba(30, 30, 30, 0.65);
-    backdrop-filter: blur(10px);
-    border-radius: 8px;
-    overflow-y: auto;
-    opacity: 0;
-    transform: translateY(-7px);
-    visibility: hidden;
-    transition: all 0.2s ease;
-    z-index: 99;
-    position: absolute;
-    top: 75px;
-    left: 50%;
-    transform: translateX(-50%) translateY(-7px);
-  }
-  .search-results.active {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-    visibility: visible;
-  }
-  .result-item {
-    display: flex;
-    align-items: center;
-    padding: 12px 16px;
-    cursor: pointer;
-    transition: background 0.2s;
-    overflow: hidden;
-  }
-  .result-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-  }
-  .result-img {
-    width: 60px;
-    height: 60px;
-    border-radius: 6px;
-    overflow: hidden;
-    margin-right: 16px;
-    flex-shrink: 0;
-  }
-  .result-img img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  .result-info {
-    flex: 1;
-  }
-  .result-title {
-    font-weight: 600;
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .result-artist {
-    font-size: 14px;
-    opacity: 0.7;
-  }
-  .player {
-    width: 100%;
-    width: 570px;
-    display: flex;
-    align-items: center;
-    gap: 28px;
-    padding: 24px;
-    margin: 0 auto;
-  }
-  .album-art {
-    flex: 0 0 220px;
-    height: 220px;
-    border-radius: 12px;
-    overflow: hidden;
-  }
-  .album-art img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  .info {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-left: 0px;
-    text-shadow: 0px 0px 12px rgba(0, 0, 0, 0.3);
-  }
-  .top-icons {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 12px;
-  }
-  .top-icons i {
-    font-size: 20px;
-    opacity: 0.6;
-  }
-  
-  .track-title {
-    font-size: 34px;
-    font-weight: 700;
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 300px;
-  }
-  .artist {
-    font-size: 20px;
-    opacity: 0.75;
-    margin-bottom: 45px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 300px;
-  }
- 
-
-  .seekbar {
-    height: 6px;
-    background: rgba(255, 255, 255, 0.25);
-    border-radius: 6px;
-    position: relative;
-    cursor: pointer;
-    transition: height 0.2s ease;
-  }
-  .seekbar.active {
-    height: 8px;
-  }
-  #progress {
-    height: 100%;
-    width: 0%;
-    background: #fff;
-    border-radius: 3px;
-  }
-  .timecodes {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    opacity: 0.7;
-    margin-top: 4px;
-  }
-  #ytPlayer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 1px;
-    height: 1px;
-    opacity: 0.01;
-  }
-  .loading {
-    text-align: center;
-    padding: 20px;
-    color: rgba(255, 255, 255, 0.7);
-  }
-  .search-results::-webkit-scrollbar {
-    width: 6px;
-  }
-  .search-results::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 3px;
-  }
-  .search-results::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 3px;
-  }
-  
-
-  
-  /* Lyrics view */
-  .lyrics-info {
-    flex: 1;
-    display: none;
-    flex-direction: column;
-    justify-content: flex-start;
-    padding-left: 0px;
-    text-shadow: 0px 0px 12px rgba(0, 0, 0, 0.3);
-  }
-  
-  .lyrics-content {
-    max-height: 220px;
-    overflow-y: auto;
-    text-align: left;
-    white-space: pre-line;
-    padding-right: 10px;
-    font-size: 16px;
-    line-height: 1.6;
-  }
-  
-  .lyrics-content::-webkit-scrollbar {
-    width: 4px;
-  }
-  
-  .lyrics-content::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 3px;
-  }
-  
-  .lyrics-content::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
-    border-radius: 3px;
-  }
-  
-  .lyrics-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-    display: none;
-  }
-  
-  .lyrics-title {
-    font-size: 30px;
-    font-weight: 700;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 300px;
-  }
-  
-  .lyrics-artist {
-    font-size: 16px;
-    opacity: 0.75;
-    margin-bottom: 15px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 300px;
-  }
-
-
-  .controls {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    margin-bottom: 18px;
-  }
-  .controls i {
-    font-size: 32px;
-    cursor: pointer;
-    transition: 0.12s ease;
-  }
-  .controls i:active {
-    transform: scale(0.94);
-  }
-
-
-  
-  #volumeBtn {
-    font-size: 20px;
-  }
-
-  .lyrics-toggle {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    backdrop-filter: blur(5px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease;
-    z-index: 100;
-  }
-  
-  .lyrics-toggle:hover {
-    background: rgba(255, 255, 255, 0.25);
-  }
-  
-  .lyrics-toggle i {
-    background-color: white;
-    width: 22px;
-    height: 22px;
-  }
-
-.icon {
-  display: inline-block;
-  width: 32px;
-  height: 32px;
-  background-color: white;
-  mask-repeat: no-repeat;
-  mask-position: center;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  -webkit-mask-size: contain;
-  transition: transform 0.1s ease, background-color 0.1s ease;
-}
-
-.icon:active {
-  transform: scale(0.94);
-}
-
-.icon-play {
-  mask-image: url('../img/icons/play.svg');
-  -webkit-mask-image: url('../img/icons/play.svg');
-}
-
-
-.icon-pause {
-  mask-image: url('../img/icons/pause.svg');
-  -webkit-mask-image: url('../img/icons/pause.svg');
-}
-
-
-.icon-volume {
-  mask-image: url('../img/icons/volume-loud.svg');
-  -webkit-mask-image: url('../img/icons/volume-loud.svg');
-}
-
-
-.icon-muted {
-  mask-image: url('../img/icons/mute.svg');
-  -webkit-mask-image: url('../img/icons/mute.svg');
-}
-
-
-
-.icon-lyrics {
-  mask-image: url('img/icons/lyrics.svg');
-  -webkit-mask-image: url('../img/icons/lyrics.svg');
-}
-
-.icon-lyrics-on {
-  mask-image: url('../img/icons/music.svg');
-  -webkit-mask-image: url('../img/icons/music.svg');
-}
-
-
-.icon-loop {
-  mask-image: url('../img/icons/repeat.svg');
-  -webkit-mask-image: url('../img/icons/repeat.svg');
-}
-
-
-.icon-loop.loop-active {
-  mask-image: url('../img/icons/repeat-1.svg'); /* with the "1" on it */
-  -webkit-mask-image: url('../img/icons/repeat-1.svg');
-  background-color: #00ff88;
-  transform: scale(1.1);
-}
-
-```
-
+image paths:
+img/liked_songs.png
+img/empty_art.png
+img/favicon.ico
+img/icons/arrow-left.svg
+img/icons/edit.svg
+img/icons/heart-empty.svg
+img/icons/heart-filled.svg
+img/icons/lyrics.svg
+img/icons/music.svg
+img/icons/mute.svg
+img/icons/next.svg
+img/icons/pause.svg
+img/icons/play.svg
+img/icons/plus-circle.svg
+img/icons/prev.svg
+img/icons/repeat-1.svg
+img/icons/repeat.svg
+img/icons/trash.svg
+img/icons/volume-loud.svg

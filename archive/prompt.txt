@@ -1,0 +1,1237 @@
+i have a static music player app which works perfectly right now. however, i want to add a playlist system which uses local storage to store different playlists, which has different songs in a queue. for now, i want you to code me the playlist system but first start with just a liked playlist (empty) on the side. whenever on a song, there should be the option to "heart" the song, which automatically puts it in the liked playlist. in the liked playlist you should be able to play it (with the queue system), so when 1 song ends it moves on to the next song in the playlist queue. you should be able to reorder songs in the list. can you please give me the code to add + change, and I would like to keep my "modular" format (as in having multiple files for each thing which makes it easier to manage). heres my current codebase:
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+index.html
+```html
+<!DOCTYPE html>
+<!--------------------------------------* 
+* - iTunes api - searching
+* - lyrics.ovh - lyrics
+* - youtube data v3 - player
+* - RapidAPI (rapidapi.com/ytdlfree/api/youtube-v3-alternative) - cycling player
+*--------------------------------------->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Music Player</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.min.js"></script>
+    <link rel="stylesheet" href="css/all.css" />
+
+    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
+  </head>
+  <body>
+    <div class="search-container">
+      <input
+        type="text"
+        class="search-input"
+        placeholder="Search for any song..."
+        id="searchInput"
+      />
+    </div>
+
+    <div class="search-results" id="searchResults">
+    </div>
+
+    <div class="player">
+      <div class="album-art">
+        <img
+          src="img/empty_art.png"
+          alt="Album"
+          id="albumCover"
+          crossorigin="anonymous"
+        />
+      </div>
+      <div class="info" id="playerInfo">
+        <div class="track-title" id="trackTitle">Not Playing</div>
+        <div class="artist" id="artistName">Not Playing</div>
+        <div class="controls">
+          <i id="playPause" class="icon icon-play"></i>
+          <i id="volumeBtn" class="icon icon-volume"></i>
+          <i id="loopBtn" class="icon icon-loop"></i>
+        </div>
+        <div id="seekbar" class="seekbar"><div id="progress"></div></div>
+        <div class="timecodes">
+          <span id="currentTime">0:00</span>
+          <span id="remainingTime">-0:00</span>
+        </div>
+      </div>
+
+      <div class="lyrics-info" id="lyricsInfo">
+        <div class="lyrics-header">
+          <div>
+            <div class="lyrics-title" id="lyricsSongTitle">Not Playing</div>
+            <div class="lyrics-artist" id="lyricsArtistName">Not Playing</div>
+          </div>
+        </div>
+        <div class="lyrics-content" id="lyricsContent">
+          No lyrics available.
+        </div>
+      </div>
+    </div>
+
+
+    <div class="lyrics-toggle" id="lyricsToggle">
+      <i class="icon icon-lyrics"></i>
+    </div>
+    
+
+    <div id="player-container">
+      <div id="ytPlayer"></div>
+    </div>
+
+    <script src="js/endpoints.js"></script>
+
+    <script src="js/init.js"></script>
+    <script src="js/bg.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/search.js"></script>
+    <script src="js/play.js"></script>
+    <script src="js/getYT.js"></script>
+    <script src="js/lyrics.js"></script>
+    <script src="js/playback.js"></script>
+
+    <script>
+      document.addEventListener("click", function (e) {
+        if (!searchResults.contains(e.target) && e.target !== searchInput) {
+          hideSearchResults();
+        }
+      });
+    </script>
+  </body>
+</html>
+```
+
+js/bg.js
+```js
+function applyColors(color) {
+    if (!color || !Array.isArray(color) || color.length < 3) {
+      return;
+    }
+  
+    targetColor = { r: color[0], g: color[1], b: color[2] };
+  
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+    }
+  
+    applyAnimation();
+  }
+  
+  function applyAnimation() {
+    const dr = (targetColor.r - currentColor.r) * 0.1;
+    const dg = (targetColor.g - currentColor.g) * 0.1;
+    const db = (targetColor.b - currentColor.b) * 0.1;
+  
+    currentColor.r += dr;
+    currentColor.g += dg;
+    currentColor.b += db;
+  
+    const r = Math.round(currentColor.r);
+    const g = Math.round(currentColor.g);
+    const b = Math.round(currentColor.b);
+  
+    const darkenAmount = 30;
+    const endR = Math.max(0, r - darkenAmount);
+    const endG = Math.max(0, g - darkenAmount);
+    const endB = Math.max(0, b - darkenAmount);
+  
+    document.documentElement.style.setProperty(
+      "--bg-start",
+      `rgb(${r}, ${g}, ${b})`
+    );
+    document.documentElement.style.setProperty(
+      "--bg-end",
+      `rgb(${endR}, ${endG}, ${endB})`
+    );
+  
+    const tolerance = 0.5;
+    if (
+      Math.abs(targetColor.r - currentColor.r) > tolerance ||
+      Math.abs(targetColor.g - currentColor.g) > tolerance ||
+      Math.abs(targetColor.b - currentColor.b) > tolerance
+    ) {
+      animationId = requestAnimationFrame(applyAnimation);
+    } else {
+      currentColor = { ...targetColor };
+    }
+  }
+  ```
+
+js/endpoints.js
+```js
+// NB: Each YT Key gives 100 req/day (dev mode)
+
+//const YT_KEY = "AIzaSyDyS3-fRybg6VCIAoRzAt47PNnEVMOsODs";
+//const YT_KEY = "AIzaSyAgfWDE5zoRPZWx_BDuCQYFwIIdPOg1M0E";
+const YT_KEYS = [
+    'AIzaSyDyS3-fRybg6VCIAoRzAt47PNnEVMOsODs', // OGs
+    'AIzaSyAgfWDE5zoRPZWx_BDuCQYFwIIdPOg1M0E' // @gmail
+];
+
+const RAPIDAPI_HOST = 'youtube-v3-alternative.p.rapidapi.com';
+// https://rapidapi.com/ytdlfree/api/youtube-v3-alternative
+
+// NB: Each Rapid Key gives 500 req/month
+
+//const RAPIDAPI_KEY = '97ffa9c073mshdf976f56ef861b2p1294d8jsnb5302f45e8d8';
+//const RAPIDAPI_KEY = '77c80e02acmshceeac2836195444p1415aejsn1ab385b54e75';
+const RAPIDAPI_KEYS = [
+    '14702a52c6msh8318e1e2125f434p11da50jsnab4512ddcf3f', // MK
+    '97ffa9c073mshdf976f56ef861b2p1294d8jsnb5302f45e8d8', // @gmail
+    '77c80e02acmshceeac2836195444p1415aejsn1ab385b54e75', // me@hydrovolter
+    '742640eb4emsh8a1fff59e07f4b1p190938jsnd56db90aab6a', // contact@hydrovolter
+    '5ff8bd8475mshe5e6e79c491683ap16d313jsn6d3c2370ff4b' // dmca@hydrovolter
+];
+
+
+
+
+const LYRIC_EP = "https://api.lyrics.ovh/v1/";
+const YT_EP = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=";
+//const YT_EP = "https://api.hydrovolter.workers.dev/music/?part=snippet&q=";
+const SEARCH_EP = "https://itunes.apple.com/search?term=";
+
+```
+
+
+js/getYT.js
+
+```js
+// --- Global Counters and API Keys (ensure these are defined globally) ---
+// ... (Your existing global definitions for YT_EP, RAPIDAPI_HOST, YT_KEYS, RAPIDAPI_KEYS) ...
+
+let apiCallCounter = 0; // Cycles between Google API and RapidAPI
+let rapidApiKeyCounter = 0; // Tracks the current RapidAPI key index
+let googleApiKeyCounter = 0; // Tracks the current Google API key index
+
+// GOOGLE API
+async function getYTGoogleAPI(query) {
+    // Keep track of the starting key index for this attempt to prevent infinite loops
+    const initialKeyIndex = googleApiKeyCounter % YT_KEYS.length;
+    let attempts = 0;
+    let foundVideo = false;
+    let lastError = null;
+
+    // Loop through all available Google API keys
+    while (attempts < YT_KEYS.length && !foundVideo) {
+        const currentKeyIndex = googleApiKeyCounter % YT_KEYS.length;
+        const currentGoogleAPIKey = YT_KEYS[currentKeyIndex];
+
+        console.log(`Google API: Attempting with key index ${currentKeyIndex} (Attempt ${attempts + 1}/${YT_KEYS.length})`);
+
+        const url = `${YT_EP}${encodeURIComponent(
+            query
+        )}&type=video&videoEmbeddable=true&key=${currentGoogleAPIKey}&maxResults=1`;
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Google API HTTP error! status: ${response.status} for key index ${currentKeyIndex}`);
+            }
+            const data = await response.json();
+
+            console.log("Youtube results (Google API):", data);
+            if (data.items && data.items.length > 0) {
+                const videoId = data.items[0].id.videoId;
+                loadVid(videoId);
+                foundVideo = true; // Mark as successful
+                // No need to increment googleApiKeyCounter here; it will naturally advance on next getYTGoogleAPI call
+                // because of the final increment after the loop.
+            } else {
+                lastError = new Error(`No YouTube results found (Google API) for key index ${currentKeyIndex}`);
+                console.error(lastError.message);
+            }
+        } catch (error) {
+            lastError = error;
+            console.error(`Error searching YouTube (Google API) with key index ${currentKeyIndex}:`, error);
+        }
+
+        if (!foundVideo) {
+            // Only increment to try the next key if the current one didn't find a video
+            googleApiKeyCounter++;
+            attempts++;
+        }
+    }
+
+    if (foundVideo) {
+        return Promise.resolve(true); // Resolve if a video was found
+    } else {
+        // If no video was found after all key attempts
+        return Promise.reject(lastError || new Error("Google API exhausted all keys without success."));
+    }
+}
+
+// youtube-v3-alternative RAPIDAPI
+async function getYTRapidAPI(query) {
+    const initialKeyIndex = rapidApiKeyCounter % RAPIDAPI_KEYS.length;
+    let attempts = 0;
+    let foundVideo = false;
+    let lastError = null;
+
+    // Loop through all available RapidAPI keys
+    while (attempts < RAPIDAPI_KEYS.length && !foundVideo) {
+        const currentKeyIndex = rapidApiKeyCounter % RAPIDAPI_KEYS.length;
+        const currentRapidAPIKey = RAPIDAPI_KEYS[currentKeyIndex];
+
+        console.log(`RapidAPI: Attempting with key index ${currentKeyIndex} (Attempt ${attempts + 1}/${RAPIDAPI_KEYS.length})`);
+
+        const url = `https://${RAPIDAPI_HOST}/search?query=${encodeURIComponent(
+            query
+        )}&geo=US&lang=en`;
+
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'x-rapidapi-host': RAPIDAPI_HOST,
+                    'x-rapidapi-key': currentRapidAPIKey,
+                },
+            });
+            if (!response.ok) {
+                throw new Error(`RapidAPI HTTP error! status: ${response.status} for key index ${currentKeyIndex}`);
+            }
+            const data = await response.json();
+
+            console.log("RapidAPI Youtube results:", data);
+            if (data && data.data && data.data.length > 0) {
+                const videoId = data.data[0].videoId;
+                if (videoId) {
+                    loadVid(videoId);
+                    foundVideo = true; // Mark as successful
+                    // No need to increment rapidApiKeyCounter here; it will naturally advance on next getYTRapidAPI call
+                } else {
+                    lastError = new Error(`Could not extract video ID from RapidAPI results for key index ${currentKeyIndex}`);
+                    console.error(lastError.message, data.data[0]);
+                }
+            } else {
+                lastError = new Error(`No RapidAPI YouTube results found or unexpected data structure for key index ${currentKeyIndex}`);
+                console.error(lastError.message);
+            }
+        } catch (error) {
+            lastError = error;
+            console.error(`Error searching RapidAPI YouTube with key index ${currentKeyIndex}:`, error);
+        }
+
+        if (!foundVideo) {
+            // Only increment to try the next key if the current one didn't find a video
+            rapidApiKeyCounter++;
+            attempts++;
+        }
+    }
+
+    if (foundVideo) {
+        return Promise.resolve(true); // Resolve if a video was found
+    } else {
+        // If no video was found after all key attempts
+        return Promise.reject(lastError || new Error("RapidAPI exhausted all keys without success."));
+    }
+}
+
+
+// --- Main getYT function with fallback logic (remains largely the same) ---
+async function getYT(query) {
+    let searchSuccessful = false;
+
+    // Determine the primary API for this call
+    const primaryApiIsGoogle = (apiCallCounter % 2 === 0);
+
+    if (primaryApiIsGoogle) {
+        console.log("Attempting with Google API (Primary)...");
+        try {
+            await getYTGoogleAPI(query); // This will now try all Google keys internally
+            searchSuccessful = true; // Primary attempt succeeded
+        } catch (error) {
+            console.warn("Google API failed after trying all its keys. Attempting with RapidAPI (Fallback)...", error);
+            try {
+                await getYTRapidAPI(query); // This will now try all RapidAPI keys internally
+                searchSuccessful = true; // Fallback attempt succeeded
+            } catch (fallbackError) {
+                console.error("Both Google API (all keys) and RapidAPI (all keys) failed:", fallbackError);
+            }
+        }
+    } else { // Primary API is RapidAPI
+        console.log("Attempting with RapidAPI (Primary)...");
+        try {
+            await getYTRapidAPI(query); // This will now try all RapidAPI keys internally
+            searchSuccessful = true; // Primary attempt succeeded
+        } catch (error) {
+            console.warn("RapidAPI failed after trying all its keys. Attempting with Google API (Fallback)...", error);
+            try {
+                await getYTGoogleAPI(query); // This will now try all Google keys internally
+                searchSuccessful = true; // Fallback attempt succeeded
+            } catch (fallbackError) {
+                console.error("Both RapidAPI (all keys) and Google API (all keys) failed:", fallbackError);
+            }
+        }
+    }
+
+    // Only increment the main API counter if at least one API call was successful
+    if (searchSuccessful) {
+        apiCallCounter++;
+    } else {
+        console.warn("No video loaded after all attempts across both APIs and all their keys. Next getYT call will re-attempt the same primary API.");
+    }
+}
+```
+
+js/init.js
+
+```js
+const searchInput = document.getElementById("searchInput");
+const searchResults = document.getElementById("searchResults");
+const trackTitle = document.getElementById("trackTitle");
+const artistName = document.getElementById("artistName");
+const albumCover = document.getElementById("albumCover");
+const playPauseBtn = document.getElementById("playPause");
+const volumeBtn = document.getElementById("volumeBtn");
+const seekBar = document.getElementById("seekbar");
+const progressBar = document.getElementById("progress");
+const currentTimeSpan = document.getElementById("currentTime");
+const remainingTimeSpan = document.getElementById("remainingTime");
+const lyricsToggle = document.getElementById("lyricsToggle");
+const lyricsIcon = lyricsToggle.querySelector("i");
+const playerInfo = document.getElementById("playerInfo");
+const lyricsInfo = document.getElementById("lyricsInfo");
+const lyricsSongTitle = document.getElementById("lyricsSongTitle");
+const lyricsArtistName = document.getElementById("lyricsArtistName");
+const lyricsContent = document.getElementById("lyricsContent");
+const loopBtn = document.getElementById("loopBtn");
+
+let showingLyrics = false;
+let isMuted = false;
+let isLooping = false;
+
+let player;
+let isPlaying = false;
+let isDragging = false;
+let searchTimeout;
+let currentTrack = {
+  title: "Not Playing",
+  artist: "Not Playing",
+  artwork: "img/empty_art.png",
+};
+
+const colorThief = new ColorThief();
+
+let currentColor = { r: 115, g: 98, b: 86 };
+let targetColor = { r: 115, g: 98, b: 86 };
+let animationId = null;
+
+```
+
+js/lyrics.js
+
+```js
+lyricsToggle.addEventListener("click", function () {
+    showingLyrics = !showingLyrics;
+  
+    if (showingLyrics) {
+      playerInfo.style.display = "none";
+      lyricsInfo.style.display = "flex";
+      fetchLyrics(currentTrack.artist, currentTrack.title);
+      lyricsIcon.classList.remove("icon-lyrics");
+      lyricsIcon.classList.add("icon-lyrics-on");
+    } else {
+      playerInfo.style.display = "flex";
+      lyricsInfo.style.display = "none";
+      lyricsIcon.classList.remove("icon-lyrics-on");
+      lyricsIcon.classList.add("icon-lyrics");
+    }
+    
+  });
+  
+  function fetchLyrics(artist, title) {
+    lyricsSongTitle.textContent = title;
+    lyricsArtistName.textContent = artist;
+    lyricsContent.textContent = "Loading lyrics...";
+  
+    const cleanArtist = encodeURIComponent(artist.trim());
+    const cleanTitle = encodeURIComponent(title.trim());
+  
+    fetch(`${LYRIC_EP}${cleanArtist}/${cleanTitle}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Lyrics not found");
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.lyrics) {
+          const normalizedLyrics = data.lyrics.replace(/\n{3,}/g, "\n\n");
+          const formattedLyrics = normalizedLyrics.replace(/\n/g, "<br>");
+          lyricsContent.innerHTML = formattedLyrics;
+        } else {
+          lyricsContent.textContent = "No lyrics available.";
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching lyrics:", error);
+        lyricsContent.textContent = "No lyrics available.";
+      });
+  }
+  ```
+
+js/play.js
+```js
+
+function playSong(title, artist, artwork) {
+    trackTitle.textContent = title;
+    artistName.textContent = artist;
+  
+    lyricsSongTitle.textContent = title;
+    lyricsArtistName.textContent = artist;
+  
+    if (showingLyrics) {
+      fetchLyrics(artist, title);
+    }
+  
+    const highResArtwork = artwork.replace("100x100", "600x600");
+  
+    albumCover.crossOrigin = "anonymous";
+    albumCover.src = highResArtwork;
+  
+    albumCover.onload = function () {
+      try {
+        const dominantColor = colorThief.getColor(albumCover);
+        applyColors(dominantColor);
+      } catch (e) {
+        console.error("Color extraction failed:", e);
+      }
+    };
+  
+    currentTrack = {
+      title: title,
+      artist: artist,
+      artwork: artwork,
+    };
+  
+    const searchQuery = `${title} - ${artist}`;
+    getYT(searchQuery);
+  }
+
+  function loadVid(videoId) {
+    if (player && player.loadVideoById) {
+      player.loadVideoById(videoId);
+      player.playVideo();
+  
+      if (isMuted) {
+        player.mute();
+      } else {
+        player.unMute();
+      }
+    } else {
+      console.error("YouTube player not ready");
+    }
+  }
+  
+```
+
+js/playback.js
+
+```js
+function togglePlayback() {
+    console.log("Toggle playback called");
+    if (!player) return;
+  
+    if (isPlaying) {
+      player.pauseVideo();
+    } else {
+      player.playVideo();
+    }
+  }
+  
+  function startSeek(e) {
+    isDragging = true;
+    seekBar.classList.add("active");
+    updateSeekPosition(e);
+  }
+  
+  function dragSeek(e) {
+    if (isDragging) {
+      updateSeekPosition(e);
+    }
+  }
+  
+  function endSeek() {
+    if (isDragging) {
+      isDragging = false;
+      seekBar.classList.remove("active");
+    }
+  }
+  
+  function updateSeekPosition(e) {
+    if (!player || !player.getDuration) return;
+  
+    const rect = seekBar.getBoundingClientRect();
+    const position = (e.clientX - rect.left) / rect.width;
+    const percent = Math.min(Math.max(position, 0), 1);
+  
+    progressBar.style.width = percent * 100 + "%";
+  
+    const duration = player.getDuration();
+    player.seekTo(percent * duration, true);
+  }
+  
+  function updateProgress() {
+    if (!player || !player.getDuration || isDragging) return;
+  
+    try {
+      const duration = player.getDuration() || 0;
+      const currentTime = player.getCurrentTime() || 0;
+      const percent = (currentTime / duration) * 100;
+  
+      progressBar.style.width = percent + "%";
+  
+      currentTimeSpan.textContent = formatTime(currentTime);
+      remainingTimeSpan.textContent = "-" + formatTime(duration - currentTime);
+    } catch (error) {
+      console.error("Error updating progress:", error);
+    }
+  }
+  
+  function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60)
+      .toString()
+      .padStart(2, "0");
+    return `${minutes}:${secs}`;
+  }
+  
+```
+
+js/player.js
+
+```js
+
+const tag = document.createElement("script");
+tag.src = "https://www.youtube.com/iframe_api";
+const firstScriptTag = document.getElementsByTagName("script")[0];
+firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+function onYouTubeIframeAPIReady() {
+  player = new YT.Player("ytPlayer", {
+    height: "360",
+    width: "640",
+    videoId: "-",
+    playerVars: {
+      playsinline: 1,
+      controls: 0,
+      enablejsapi: 1,
+      modestbranding: 1,
+      rel: 0,
+      showinfo: 0,
+    },
+    events: {
+      onReady: onPlayerReady,
+      onStateChange: onPlayerStateChange,
+    },
+  });
+}
+
+function onPlayerReady(event) {
+  console.log("Player is ready");
+
+  playPauseBtn.addEventListener("click", togglePlayback);
+  volumeBtn.addEventListener("click", toggleMute);
+  loopBtn.addEventListener("click", toggleLoop);
+
+  seekBar.addEventListener("mousedown", startSeek);
+  document.addEventListener("mousemove", dragSeek);
+  document.addEventListener("mouseup", endSeek);
+
+  setInterval(updateProgress, 500);
+
+  if (albumCover.complete) {
+    try {
+      const dominantColor = colorThief.getColor(albumCover);
+      applyColors(dominantColor);
+    } catch (e) {
+      console.error("Initial color extraction failed:", e);
+    }
+  } else {
+    albumCover.onload = function () {
+      try {
+        const dominantColor = colorThief.getColor(albumCover);
+        applyColors(dominantColor);
+      } catch (e) {
+        console.error("Initial color extraction failed:", e);
+      }
+    };
+  }
+}
+
+function onPlayerStateChange(event) {
+  console.log("Player state changed:", event.data);
+
+  if (event.data === YT.PlayerState.PLAYING) {
+    isPlaying = true;
+    playPauseBtn.classList.remove("icon-play");
+    playPauseBtn.classList.add("icon-pause");
+  } else if (event.data === YT.PlayerState.PAUSED) {
+    isPlaying = false;
+    playPauseBtn.classList.remove("icon-pause");
+    playPauseBtn.classList.add("icon-play");
+  } else if (event.data === YT.PlayerState.ENDED) {
+    isPlaying = false;
+    playPauseBtn.classList.remove("icon-pause");
+    playPauseBtn.classList.add("icon-play");
+    
+    if (isLooping && player) {
+      player.seekTo(0, true); 
+      player.playVideo();     
+    }
+  }
+  
+}
+
+
+// Toggle Mute function
+function toggleMute() {
+  if (!player) return;
+
+  if (isMuted) {
+    player.unMute();
+    volumeBtn.classList.remove("icon-muted");
+    volumeBtn.classList.add("icon-volume");
+    isMuted = false;
+  } else {
+    player.mute();
+    volumeBtn.classList.remove("icon-volume");
+    volumeBtn.classList.add("icon-muted");
+    isMuted = true;
+  }
+}
+
+function toggleLoop() {
+  if (!player) return;
+
+  isLooping = !isLooping;
+  if (isLooping) {
+    loopBtn.classList.add("loop-active");
+  } else {
+    loopBtn.classList.remove("loop-active");
+  }
+}
+```
+
+js/search.js
+
+```js
+searchInput.addEventListener("input", function () {
+    clearTimeout(searchTimeout);
+  
+    searchTimeout = setTimeout(() => {
+      const query = searchInput.value.trim();
+      if (query.length > 1) {
+        searchSongs(query);
+      } else {
+        hideSearchResults();
+      }
+    }, 500);
+  });
+  
+  searchInput.addEventListener("keypress", function (e) {
+    if (e.key === "Enter") {
+      clearTimeout(searchTimeout);
+      const query = searchInput.value.trim();
+      if (query.length > 1) {
+        searchSongs(query);
+      }
+    }
+  });
+  
+  function searchSongs(query) {
+    searchResults.innerHTML = '<div class="loading">Searching...</div>';
+    showSearchResults();
+  
+    const url = `${SEARCH_EP}${encodeURIComponent(query)}&media=music&limit=10`;
+  
+    fetch(url)
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("iTunes search results:", data);
+        displaySearchResults(data.results);
+      })
+      .catch((error) => {
+        console.error("Error searching iTunes:", error);
+        searchResults.innerHTML =
+          '<div class="loading">Search failed. Please try again.</div>';
+      });
+  }
+  
+  function displaySearchResults(results) {
+    if (!results || results.length === 0) {
+      searchResults.innerHTML = '<div class="loading">No results found</div>';
+      return;
+    }
+  
+    searchResults.innerHTML = "";
+  
+    results.forEach((item) => {
+      if (!item.trackName || !item.artistName) return;
+  
+      const resultElement = document.createElement("div");
+      resultElement.className = "result-item";
+      resultElement.innerHTML = `
+        <div class="result-img">
+          <img src="${item.artworkUrl100}" alt="${item.trackName}" crossorigin="anonymous">
+        </div>
+        <div class="result-info">
+          <div class="result-title">${item.trackName}</div>
+          <div class="result-artist">${item.artistName}</div>
+        </div>
+      `;
+  
+      resultElement.addEventListener("click", () => {
+        playSong(item.trackName, item.artistName, item.artworkUrl100);
+        hideSearchResults();
+        searchInput.value = "";
+      });
+  
+      searchResults.appendChild(resultElement);
+    });
+  }
+  
+  function showSearchResults() {
+    searchResults.classList.add("active");
+  }
+  
+  function hideSearchResults() {
+    searchResults.classList.remove("active");
+  }
+  
+```
+
+css/all.css
+
+```css
+:root {
+    --bg-start: #747474;
+    --bg-end: #4b4b4b;
+    --card-width: 540px;
+    --card-height: 220px;
+  }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      sans-serif;
+    color: #fff;
+    padding: 20px;
+    transition: background 0.8s ease;
+  }
+  .search-container {
+    width: 100%;
+    max-width: 560px;
+    margin-bottom: 20px;
+    z-index: 100;
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .search-input {
+    width: 100%;
+    padding: 12px 20px;
+    border-radius: 12px;
+    border: none;
+    font-family: "Inter", sans-serif;
+    font-size: 16px;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    outline: none;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(5px);
+  }
+  .search-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+  }
+  .search-input:focus {
+    background: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  }
+  .search-results {
+    width: 100%;
+    max-width: 560px;
+    max-height: 400px;
+    background: rgba(30, 30, 30, 0.65);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    overflow-y: auto;
+    opacity: 0;
+    transform: translateY(-7px);
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 99;
+    position: absolute;
+    top: 75px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-7px);
+  }
+  .search-results.active {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    visibility: visible;
+  }
+  .result-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+    overflow: hidden;
+  }
+  .result-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .result-img {
+    width: 60px;
+    height: 60px;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-right: 16px;
+    flex-shrink: 0;
+  }
+  .result-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .result-info {
+    flex: 1;
+  }
+  .result-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .result-artist {
+    font-size: 14px;
+    opacity: 0.7;
+  }
+  .player {
+    width: 100%;
+    width: 570px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    padding: 24px;
+    margin: 0 auto;
+  }
+  .album-art {
+    flex: 0 0 220px;
+    height: 220px;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .album-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-left: 0px;
+    text-shadow: 0px 0px 12px rgba(0, 0, 0, 0.3);
+  }
+  .top-icons {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .top-icons i {
+    font-size: 20px;
+    opacity: 0.6;
+  }
+  
+  .track-title {
+    font-size: 34px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 300px;
+  }
+  .artist {
+    font-size: 20px;
+    opacity: 0.75;
+    margin-bottom: 45px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 300px;
+  }
+ 
+
+  .seekbar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    position: relative;
+    cursor: pointer;
+    transition: height 0.2s ease;
+  }
+  .seekbar.active {
+    height: 8px;
+  }
+  #progress {
+    height: 100%;
+    width: 0%;
+    background: #fff;
+    border-radius: 3px;
+  }
+  .timecodes {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    opacity: 0.7;
+    margin-top: 4px;
+  }
+  #ytPlayer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    opacity: 0.01;
+  }
+  .loading {
+    text-align: center;
+    padding: 20px;
+    color: rgba(255, 255, 255, 0.7);
+  }
+  .search-results::-webkit-scrollbar {
+    width: 6px;
+  }
+  .search-results::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+  .search-results::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+  
+
+  
+  /* Lyrics view */
+  .lyrics-info {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding-left: 0px;
+    text-shadow: 0px 0px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .lyrics-content {
+    max-height: 220px;
+    overflow-y: auto;
+    text-align: left;
+    white-space: pre-line;
+    padding-right: 10px;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  
+  .lyrics-content::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .lyrics-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+  }
+  
+  .lyrics-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+  
+  .lyrics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    display: none;
+  }
+  
+  .lyrics-title {
+    font-size: 30px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 300px;
+  }
+  
+  .lyrics-artist {
+    font-size: 16px;
+    opacity: 0.75;
+    margin-bottom: 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 300px;
+  }
+
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 18px;
+  }
+  .controls i {
+    font-size: 32px;
+    cursor: pointer;
+    transition: 0.12s ease;
+  }
+  .controls i:active {
+    transform: scale(0.94);
+  }
+
+
+  
+  #volumeBtn {
+    font-size: 20px;
+  }
+
+  .lyrics-toggle {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+    z-index: 100;
+  }
+  
+  .lyrics-toggle:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+  
+  .lyrics-toggle i {
+    background-color: white;
+    width: 22px;
+    height: 22px;
+  }
+
+.icon {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background-color: white;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  transition: transform 0.1s ease, background-color 0.1s ease;
+}
+
+.icon:active {
+  transform: scale(0.94);
+}
+
+.icon-play {
+  mask-image: url('../img/icons/play.svg');
+  -webkit-mask-image: url('../img/icons/play.svg');
+}
+
+
+.icon-pause {
+  mask-image: url('../img/icons/pause.svg');
+  -webkit-mask-image: url('../img/icons/pause.svg');
+}
+
+
+.icon-volume {
+  mask-image: url('../img/icons/volume-loud.svg');
+  -webkit-mask-image: url('../img/icons/volume-loud.svg');
+}
+
+
+.icon-muted {
+  mask-image: url('../img/icons/mute.svg');
+  -webkit-mask-image: url('../img/icons/mute.svg');
+}
+
+
+
+.icon-lyrics {
+  mask-image: url('img/icons/lyrics.svg');
+  -webkit-mask-image: url('../img/icons/lyrics.svg');
+}
+
+.icon-lyrics-on {
+  mask-image: url('../img/icons/music.svg');
+  -webkit-mask-image: url('../img/icons/music.svg');
+}
+
+
+.icon-loop {
+  mask-image: url('../img/icons/repeat.svg');
+  -webkit-mask-image: url('../img/icons/repeat.svg');
+}
+
+
+.icon-loop.loop-active {
+  mask-image: url('../img/icons/repeat-1.svg'); /* with the "1" on it */
+  -webkit-mask-image: url('../img/icons/repeat-1.svg');
+  background-color: #00ff88;
+  transform: scale(1.1);
+}
+
+```
+
