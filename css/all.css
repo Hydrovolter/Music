@@ -977,6 +977,46 @@ background: rgba(255,255,255,0.2);
     color: #ccc; /* Lighter than main text */
 }
 
+/* Toast Notifications (add towards the end of all.css) */
+.toast-container {
+  position: fixed;
+  bottom: 20px; /* Adjust as needed, consider lyrics toggle */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000; /* Above most other elements */
+  display: flex;
+  flex-direction: column-reverse; /* New toasts appear above older ones if multiple */
+  align-items: center;
+  gap: 10px;
+  pointer-events: none; /* Allow clicks to pass through the container itself */
+}
+
+.toast-message {
+  /* Glassmorphism */
+  background-color: rgba(50, 50, 50, 0.6); /* Darker semi-transparent for contrast */
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  color: #f0f0f0;
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  max-width: 80vw; /* Prevent very wide toasts on large screens */
+
+  opacity: 0;
+  transform: translateY(30px) scale(0.95); /* Initial state for animation: off-screen and slightly smaller */
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+  pointer-events: auto; /* Toasts themselves are clickable/interactive if needed in future */
+}
+
+.toast-message.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
 
 /* Responsive adjustments */
 @media (max-width: 960px) { /* Adjust breakpoint as needed */
