@@ -1,16 +1,28 @@
-// js/search.js
+// --- Event Listeners for searchInput ---
+
+searchInput.addEventListener("focus", function () {
+  if (searchInput.value.trim() === "") {
+      displayRecentSearches();
+  }
+  // If there's text, the 'input' event will handle regular search suggestions or actual search
+});
 
 searchInput.addEventListener("input", function () {
-  clearTimeout(searchTimeout);
+  clearTimeout(searchTimeout); // searchTimeout should be defined (e.g., in init.js or top of this file)
+  const query = searchInput.value.trim();
 
-  searchTimeout = setTimeout(() => {
-      const query = searchInput.value.trim();
-      if (query.length > 1) {
+  if (query.length > 1) {
+      searchTimeout = setTimeout(() => {
           searchSongs(query);
-      } else {
-         if (typeof hideSearchResults === 'function') hideSearchResults();
-      }
-  }, 300);
+      }, 300);
+  } else if (query.length === 0) {
+      displayRecentSearches(); // Show recent searches if input is cleared
+  } else {
+      // Query is 1 char, or just spaces - hide main song search results
+      hideSearchResults(); 
+      // Optionally, you could still show recent searches here if desired,
+      // but typical behavior is to hide until input is empty or long enough for song search.
+  }
 });
 
 searchInput.addEventListener("keypress", function (e) {
@@ -18,23 +30,38 @@ searchInput.addEventListener("keypress", function (e) {
       clearTimeout(searchTimeout);
       const query = searchInput.value.trim();
       if (query.length > 1) {
-          searchSongs(query);
+          searchSongs(query); // searchSongs will handle adding to recent history on success
+      } else if (query.length === 0) {
+          hideSearchResults(); // Don't search an empty string on enter
       }
   }
 });
 
+// --- Main Search Function ---
 function searchSongs(query) {
+  if (!searchResults) { // Guard
+      console.error("Search results element not found");
+      return;
+  }
   searchResults.innerHTML = '<div class="loading">Searching...</div>';
   showSearchResults();
 
-  // Prioritize 'song' entity for better track matches
+  // SEARCH_EP should be globally available from endpoints.js
   const url = `${SEARCH_EP}${encodeURIComponent(query)}&media=music&entity=song&limit=10`;
 
   fetch(url)
       .then((response) => response.json())
       .then((data) => {
           console.log("iTunes search results:", data);
-          displaySearchResults(data.results);
+          // displaySearchResults is for song results. displayRecentSearches is for history.
+          if (data.results && data.results.length > 0) {
+              // Uses addRecentSearch() from history.js
+              addRecentSearch(query); 
+              displaySongSearchResults(data.results); // Renamed for clarity
+          } else {
+              // Don't add to history if no song results found for this query
+              displaySongSearchResults(data.results); // Will show "No results found"
+          }
       })
       .catch((error) => {
           console.error("Error searching iTunes:", error);
@@ -43,13 +70,18 @@ function searchSongs(query) {
       });
 }
 
-function displaySearchResults(results) {
+// Renamed your original displaySearchResults to avoid conflict with the new one for history
+// This function displays actual song search results from iTunes.
+function displaySongSearchResults(results) {
+  if (!searchResults) return; 
+
   if (!results || results.length === 0) {
       searchResults.innerHTML = '<div class="loading">No results found</div>';
+      // showSearchResults(); // Already called by searchSongs which calls this
       return;
   }
 
-  searchResults.innerHTML = ""; // Clear previous results
+  searchResults.innerHTML = ""; // Clear loading message or recent searches
 
   results.forEach((item) => {
       if (!item.trackName || !item.artistName || !item.trackId || !item.artworkUrl100) {
@@ -58,15 +90,12 @@ function displaySearchResults(results) {
       }
 
       const resultElement = document.createElement("div");
-      resultElement.className = "result-item";
+      resultElement.className = "result-item"; // For actual song results
 
-      // Store all necessary song data on the element for easy access
-      // This is an alternative to setting currentTrack globally before opening modal
       resultElement.dataset.trackId = item.trackId.toString();
       resultElement.dataset.trackName = item.trackName;
       resultElement.dataset.artistName = item.artistName;
       resultElement.dataset.artworkUrl100 = item.artworkUrl100;
-      // artworkUrl600 can be derived if needed: item.artworkUrl100.replace('100x100', '600x600')
 
       resultElement.innerHTML = `
           <div class="result-img">
@@ -80,77 +109,112 @@ function displaySearchResults(results) {
               <i class="icon icon-plus-circle"></i>
           </button>
       `;
-
-      // Click listener for the main result item (plays the song)
-      const infoAndImageArea = resultElement.querySelector('.result-info'); // Or bind to resultElement and check target
       
+      // Click listener for the main result item (plays the song)
       resultElement.addEventListener("click", (event) => {
           // Only play if the click was not on the "add to playlist" button
           if (event.target.closest('.add-to-playlist-search-btn')) {
-              return; // Do nothing if the button itself was clicked, its own listener will handle it
+              // The button's own click listener (below) will handle its action and stop propagation.
+              return; 
           }
 
-          if (typeof clearPlaylistContext === 'function') {
-              clearPlaylistContext();
-          }
-          // playSong expects trackId as string, and 100x100 artwork
+          // Clicked on song info/artwork area to play
+          if (typeof clearPlaylistContext === 'function') clearPlaylistContext();
           playSong(item.trackName, item.artistName, item.artworkUrl100, item.trackId.toString());
           hideSearchResults();
-          searchInput.value = "";
+          if (searchInput) searchInput.value = "";
+
+          // IMPORTANT: Stop this click from bubbling up to the document listener
+          event.stopPropagation();
       });
 
-      // Click listener for the "Add to Playlist" button within this search result
       const addToPlaylistBtnForResult = resultElement.querySelector('.add-to-playlist-search-btn');
       if (addToPlaylistBtnForResult) {
           addToPlaylistBtnForResult.addEventListener('click', (event) => {
-              event.stopPropagation(); // Prevent the parent resultElement's click listener from firing
-
-              // Prepare song data for the modal
+              event.stopPropagation(); // Crucial: Prevent parent (resultElement) click and document click
               const songDataForModal = {
-                  id: item.trackId.toString(), // Ensure ID is a string
+                  id: item.trackId.toString(),
                   title: item.trackName,
                   artist: item.artistName,
-                  artwork: item.artworkUrl100 // The 100x100 artwork is what playlist.js expects
-                  // artworkLarge is not strictly needed by the add to playlist modal itself
+                  artwork: item.artworkUrl100
               };
-
-              // Call a modified version of openAddToPlaylistModal or pass data directly
-              // For simplicity, let's assume openAddToPlaylistModal can accept songData (needs modification)
-              // OR we temporarily set a global variable that openAddToPlaylistModal reads
-              
-              // Option A: Modify openAddToPlaylistModal (preferred) - see js/playlist.js change below
               if (typeof openAddToPlaylistModal === 'function') {
                   openAddToPlaylistModal(songDataForModal);
               } else {
                   console.error("openAddToPlaylistModal function not found");
               }
-
-              // Option B: Temporarily set currentTrack (less clean, but works if openAddToPlaylistModal isn't changed)
-              /*
-              currentTrackForModal = { // Use a temporary distinct variable or carefully manage currentTrack
-                  id: item.trackId.toString(),
-                  title: item.trackName,
-                  artist: item.artistName,
-                  artwork: item.artworkUrl100,
-                  artworkLarge: item.artworkUrl100.replace('100x100', '600x600')
-              };
-              // Then call the original openAddToPlaylistModal which reads from global currentTrack
-              // This requires openAddToPlaylistModal to be robust about currentTrack's state.
-              // openAddToPlaylistModal(); 
-              */
-
-              // Do NOT hide search results here, user might want to add more songs
-              // searchInput.value = ""; // Also don't clear input
           });
       }
       searchResults.appendChild(resultElement);
   });
+  // showSearchResults(); // Already called by searchSongs which calls this
 }
 
+// --- Utility functions (showSearchResults, hideSearchResults) ---
+// These should be your existing functions:
 function showSearchResults() {
-  searchResults.classList.add("active");
+  if (searchResults) searchResults.classList.add("active");
 }
 
 function hideSearchResults() {
-  searchResults.classList.remove("active");
+  if (searchResults) searchResults.classList.remove("active");
+}
+
+// --- Display Logic for Recent Searches ---
+function displayRecentSearches() {
+  // Uses getRecentSearches() from history.js or this file
+  const recentSearches = getRecentSearches(); 
+
+  if (!searchResults) return; 
+
+  if (recentSearches.length === 0) {
+      searchResults.innerHTML = '<div class="loading" style="padding: 10px 0;">No recent searches.</div>';
+      showSearchResults(); 
+      return;
+  }
+
+  searchResults.innerHTML = ''; 
+  const title = document.createElement('div');
+  title.className = 'recent-searches-title';
+  title.textContent = 'Recent Searches';
+  searchResults.appendChild(title);
+
+  recentSearches.forEach(query => {
+      const recentItem = document.createElement('div');
+      recentItem.className = 'recent-search-item result-item'; 
+
+      recentItem.innerHTML = `
+          <span class="recent-search-query">${escapeHtml(query)}</span>
+          <button class="remove-recent-search-btn icon-action-btn" title="Remove from history">
+              <i class="icon icon-close"></i>
+          </button>
+      `;
+
+      // Event listener for the entire recentItem (covers clicking the query text area)
+      recentItem.addEventListener('click', (event) => {
+          // If the click was specifically on the remove button,
+          // let its own handler (which also stops propagation) do the work.
+          if (event.target.closest('.remove-recent-search-btn')) {
+              return;
+          }
+          
+          // This click is on the recent search item (likely the query text area) to initiate a search
+          searchInput.value = query; 
+          searchSongs(query); // This will refresh the searchResults content
+          
+          // IMPORTANT: Stop this click from bubbling up to the document listener
+          event.stopPropagation(); 
+      });
+
+      const removeBtn = recentItem.querySelector('.remove-recent-search-btn');
+      if (removeBtn) {
+          removeBtn.addEventListener('click', (event) => {
+              event.stopPropagation(); // Crucial: Prevent parent (recentItem) click and document click
+              removeRecentSearch(query); 
+              displayRecentSearches();   // Re-render the recent searches list immediately
+          });
+      }
+      searchResults.appendChild(recentItem);
+  });
+  showSearchResults(); 
 }

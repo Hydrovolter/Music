@@ -91,6 +91,65 @@ body {
   transform: translateY(0);
   visibility: visible;
 }
+
+/* Title for "Recent Searches" section in the dropdown */
+.recent-searches-title {
+  padding: 10px 16px 5px 16px;
+  font-size: 12px; /* Made it slightly smaller */
+  font-weight: 600; /* Made it a bit bolder */
+  color: rgba(255, 255, 255, 0.7); /* Slightly more visible */
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08); /* Softer border */
+  margin-bottom: 5px;
+}
+
+/* Individual recent search item */
+.recent-search-item {
+  /* .result-item class is also applied for base flex styling */
+  display: flex;
+  justify-content: space-between; /* Query left, button right */
+  align-items: center;
+  padding: 10px 16px; /* Consistent padding */
+  /* cursor: default; /* Optional: override .result-item's cursor if only text is clickable */
+}
+
+.recent-search-item:hover {
+  background-color: rgba(255, 255, 255, 0.08); /* Consistent hover */
+}
+
+/* The clickable query text */
+.recent-search-query {
+  flex-grow: 1;
+  cursor: pointer;
+  font-size: 15px; /* Match song title size or adjust */
+  color: #fff; /* Brighter for better readability */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-right: 10px; /* Space before the X button */
+}
+
+/* The remove button for a recent search item */
+.remove-recent-search-btn {
+  /* .icon-action-btn class is applied for base styling (padding, border-radius) */
+  /* We removed margin-left: auto from .icon-action-btn for this specific case if it was there,
+     or ensure it doesn't apply if it's not needed due to justify-content: space-between */
+  margin-left: 0; /* Explicitly override if .icon-action-btn has margin-left: auto */
+  flex-shrink: 0;
+}
+
+.remove-recent-search-btn .icon.icon-close {
+  /* .icon-action-btn .icon might set a default size (e.g., 16px) */
+  width: 14px;  /* Adjust size as needed for the 'x' */
+  height: 14px;
+  background-color: rgba(255, 255, 255, 0.5); /* Dimmer for 'x' */
+}
+
+.remove-recent-search-btn:hover .icon.icon-close {
+  background-color: #ff8080; /* Softer red on hover for 'x' */
+}
+
 .result-item {
   display: flex;
   align-items: center;
@@ -442,6 +501,10 @@ transform: scale(0.94);
   height: 18px; /* Match width */
 }
 
+.icon-close {
+  mask-image: url('../img/icons/close.svg');
+  -webkit-mask-image: url('../img/icons/close.svg');
+}
 
 .icon-arrow-left {
   mask-image: url('../img/icons/arrow-left.svg');
