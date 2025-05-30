@@ -559,12 +559,18 @@ function closeAddToPlaylistModal() {
 
 // --- PLAYLIST MANAGEMENT UI HANDLERS ---
 function handleCreateNewPlaylist() {
-    const playlistName = prompt("Enter name for new playlist:", "My Playlist " + (userPlaylists.length + 1));
-    if (playlistName && playlistName.trim() !== "") {
-        createPlaylist(playlistName.trim());
-        renderAllPlaylistsView();
-    } else if (playlistName !== null) {
-        showGeneralModal("Invalid Name", "Playlist name cannot be empty.");
+    if (typeof openCreatePlaylistModal === 'function') { // openCreatePlaylistModal is from modals.js
+        openCreatePlaylistModal();
+    } else {
+        console.error("openCreatePlaylistModal function not found!");
+        // Fallback to prompt if modal function isn't available
+        const playlistNameFallback = prompt("Enter name for new playlist (modal error):", "My Playlist");
+        if (playlistNameFallback && playlistNameFallback.trim() !== "") {
+            createPlaylist(playlistNameFallback.trim());
+            renderAllPlaylistsView();
+        } else if (playlistNameFallback !== null) {
+            alert("Playlist name cannot be empty.");
+        }
     }
 }
 

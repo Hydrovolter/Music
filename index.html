@@ -128,6 +128,21 @@
       </div>
   </div>
 
+  <div id="createPlaylistModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close-modal-btn" id="closeCreatePlaylistModal">×</span>
+        <h4 id="createPlaylistModalTitle">Create New Playlist</h4>
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label for="newPlaylistNameInput" style="display: block; margin-bottom: 8px; font-weight: 500;">Playlist Name:</label>
+            <input type="text" id="newPlaylistNameInput" class="modal-input" placeholder="My Awesome Playlist">
+        </div>
+        <div id="createPlaylistModalActions" style="text-align: right;">
+            <button id="cancelCreatePlaylistBtn" class="modal-button secondary" style="margin-right: 10px;">Cancel</button>
+            <button id="confirmCreatePlaylistBtn" class="modal-button success">Create</button>
+        </div>
+    </div>
+  </div>
+
 
 
     <script src="js/endpoints.js"></script>

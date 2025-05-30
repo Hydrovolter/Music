@@ -23,6 +23,37 @@ function initializeModals() {
         }
     });
     console.log("General Modal system initialized.");
+
+
+    // Initialize Create Playlist Modal Elements
+    createPlaylistModalElement = document.getElementById('createPlaylistModal');
+    // createPlaylistModalTitleElement = document.getElementById('createPlaylistModalTitle'); // If title is dynamic
+    newPlaylistNameInputElement = document.getElementById('newPlaylistNameInput');
+    confirmCreatePlaylistBtnElement = document.getElementById('confirmCreatePlaylistBtn');
+    cancelCreatePlaylistBtnElement = document.getElementById('cancelCreatePlaylistBtn');
+    closeCreatePlaylistModalBtnElement = document.getElementById('closeCreatePlaylistModal');
+
+    if (!createPlaylistModalElement || !newPlaylistNameInputElement || !confirmCreatePlaylistBtnElement ||
+        !cancelCreatePlaylistBtnElement || !closeCreatePlaylistModalBtnElement) {
+        console.error("Create Playlist modal DOM elements not found. This functionality will be limited.");
+    } else {
+        closeCreatePlaylistModalBtnElement.addEventListener('click', closeCreatePlaylistModal);
+        cancelCreatePlaylistBtnElement.addEventListener('click', closeCreatePlaylistModal);
+        confirmCreatePlaylistBtnElement.addEventListener('click', handleConfirmCreatePlaylist);
+        createPlaylistModalElement.addEventListener('click', (event) => {
+            if (event.target === createPlaylistModalElement) {
+                closeCreatePlaylistModal();
+            }
+        });
+        // Allow 'Enter' key in input field to submit
+        newPlaylistNameInputElement.addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevent default form submission if it were in a form
+                handleConfirmCreatePlaylist();
+            }
+        });
+        console.log("Create Playlist Modal system initialized.");
+    }
 }
 
 function showGeneralModal(title, message, buttonsConfig = []) {
@@ -70,6 +101,48 @@ function closeGeneralModal() {
     if (!generalModalElement) return;
     generalModalElement.style.display = 'none';
     // Callbacks are tied to buttons, so no need to reset module-level generalModalConfirmCallback here
+}
+
+function openCreatePlaylistModal() {
+    if (!createPlaylistModalElement || !newPlaylistNameInputElement) return;
+    newPlaylistNameInputElement.value = "My Playlist " + (typeof userPlaylists !== 'undefined' ? userPlaylists.length + 1 : 1); // Suggest a name
+    createPlaylistModalElement.style.display = 'flex';
+    newPlaylistNameInputElement.focus(); // Focus on the input field
+    newPlaylistNameInputElement.select(); // Select the suggested text
+}
+
+function closeCreatePlaylistModal() {
+    if (!createPlaylistModalElement) return;
+    createPlaylistModalElement.style.display = 'none';
+    if(newPlaylistNameInputElement) newPlaylistNameInputElement.value = ''; // Clear input
+}
+
+function handleConfirmCreatePlaylist() {
+    if (!newPlaylistNameInputElement) return;
+    const playlistName = newPlaylistNameInputElement.value.trim();
+
+    if (playlistName) {
+        // Call the actual createPlaylist function (which should be in playlist.js)
+        if (typeof createPlaylist === 'function') { // createPlaylist is from playlist.js
+            createPlaylist(playlistName);
+            if (typeof renderAllPlaylistsView === 'function') { // from playlist.js
+                 renderAllPlaylistsView(); // Refresh the sidebar
+            }
+            closeCreatePlaylistModal();
+        } else {
+            console.error("createPlaylist function not found.");
+            // Fallback to an alert if something is wrong with function availability
+            showGeneralModal("Error", "Could not create playlist. Functionality missing.");
+        }
+    } else {
+        // Use the general modal to show an error if the name is empty
+        if (typeof showGeneralModal === 'function') {
+            showGeneralModal("Invalid Name", "Playlist name cannot be empty.");
+        } else {
+            alert("Playlist name cannot be empty."); // Fallback
+        }
+        // Optionally, re-focus the input: newPlaylistNameInputElement.focus();
+    }
 }
 
 // Helper function for escaping HTML (can live here or in a general utils.js)

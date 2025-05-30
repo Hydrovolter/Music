@@ -78,3 +78,11 @@ let generalModalTitleElement;
 let generalModalMessageElement;
 let generalModalActionsElement;
 let closeGeneralModalBtnElement;
+
+// DOM Elements for Create Playlist Modal
+let createPlaylistModalElement;
+let createPlaylistModalTitleElement; // Though title is static here, good practice
+let newPlaylistNameInputElement;
+let confirmCreatePlaylistBtnElement;
+let cancelCreatePlaylistBtnElement;
+let closeCreatePlaylistModalBtnElement;

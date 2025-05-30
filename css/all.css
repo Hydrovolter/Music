@@ -915,6 +915,14 @@ background: rgba(255,255,255,0.2);
   background-color: #c53030;
 }
 
+.modal-button.success { /* NEW: For positive actions like "Create", "Save" */
+  background-color: #38A169; /* Green (Tailwind's green-600) */
+  color: white;
+}
+.modal-button.success:hover {
+  background-color: #2F855A; /* Darker Green (Tailwind's green-700) */
+}
+
 .modal-button.secondary { /* For secondary actions like "Cancel", "OK" for info */
   background-color: rgba(255, 255, 255, 0.15);
   color: #f0f0f0;
@@ -922,6 +930,38 @@ background: rgba(255,255,255,0.2);
 }
 .modal-button.secondary:hover {
   background-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Styles for input fields within modals */
+.modal-input {
+  width: 100%;
+  padding: 10px 12px;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f0f0f0;
+  border-radius: 6px;
+  font-size: 15px;
+  box-sizing: border-box; /* Ensure padding and border don't add to width */
+}
+.modal-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.4);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Specific styling for the create playlist modal actions if needed,
+   otherwise the general #generalModalActions styling might be sufficient if adapted.
+   The HTML above used text-align: right directly on #createPlaylistModalActions.
+*/
+#createPlaylistModalActions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end; /* Align buttons to the right */
+  gap: 10px;
+}
+
+.form-group label { /* Style for labels above inputs */
+    color: #ccc; /* Lighter than main text */
 }
 
 
