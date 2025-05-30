@@ -323,15 +323,23 @@ function createPlaylistOverviewItem(playlistData) {
     li.setAttribute('data-playlist-id', playlistData.id);
 
     const songsText = playlistData.songs.length === 1 ? "1 song" : `${playlistData.songs.length} songs`;
-
     let artworkSrc;
-    if (playlistData.id === LIKED_SONGS_PLAYLIST_ID) {
-        artworkSrc = 'img/liked_songs.png'; // Static artwork for Liked Songs
-    } else {
-        artworkSrc = playlistData.artwork || // For future custom playlist artwork
-                     (playlistData.songs.length > 0 && playlistData.songs[0].artwork ? playlistData.songs[0].artwork : 'img/empty_art.png');
-    }
 
+    if (playlistData.id === LIKED_SONGS_PLAYLIST_ID) {
+        artworkSrc = 'img/liked_songs.png';
+        // "Liked Songs" is not draggable
+    } else {
+        // This is a user-created playlist
+        li.setAttribute('draggable', true); // <<< MAKE USER PLAYLISTS DRAGGABLE
+        artworkSrc = playlistData.artwork ||
+                     (playlistData.songs.length > 0 && playlistData.songs[0].artwork ? playlistData.songs[0].artwork : 'img/empty_art.png');
+        
+        // Add drag event listeners for user playlists
+        li.addEventListener('dragstart', (event) => handlePlaylistDragStart(event, playlistData.id));
+        li.addEventListener('dragover', handlePlaylistDragOver);
+        li.addEventListener('drop', (event) => handlePlaylistDrop(event, playlistData.id)); // Pass targetPlaylistId
+        li.addEventListener('dragend', handlePlaylistDragEnd);
+    }
 
     let nameDisplay = `<div class="playlist-overview-item-name">${escapeHtml(playlistData.name)}</div>`;
     let actionsHtml = '';
@@ -353,29 +361,73 @@ function createPlaylistOverviewItem(playlistData) {
         ${actionsHtml}
     `;
 
+    // Keep existing click handlers for viewing playlist and actions, ensuring they don't interfere with drag
     const infoSection = li.querySelector('.playlist-overview-item-info');
     const artworkSection = li.querySelector('.playlist-overview-item-artwork');
-
     const viewPlaylistHandler = () => switchSidebarView('single_playlist_view', playlistData.id);
 
-    if (infoSection) infoSection.addEventListener('click', (e) => {
-        if (!e.target.closest('.playlist-item-actions') && !e.target.closest('.playlist-name-input')) {
-            viewPlaylistHandler();
+    // Modify click handlers to prevent triggering view change during a drag operation
+    const combinedClickHandler = (e) => {
+        // Check if the click originated from an action button or if a drag might be starting/active
+        if (e.target.closest('.playlist-item-actions') || 
+            e.target.closest('.playlist-name-input') ||
+            (draggedPlaylistElement && draggedPlaylistElement.classList.contains('dragging'))) { // Check if currently dragging
+            return;
         }
-    });
-    if (artworkSection) artworkSection.addEventListener('click', (e) => {
-         if (!e.target.closest('.playlist-item-actions') && !e.target.closest('.playlist-name-input')) {
-            viewPlaylistHandler();
-        }
-    });
+        viewPlaylistHandler();
+    };
+    
+    if (infoSection) infoSection.addEventListener('click', combinedClickHandler);
+    if (artworkSection) artworkSection.addEventListener('click', combinedClickHandler);
+
 
     if (playlistData.id !== LIKED_SONGS_PLAYLIST_ID) {
         const renameBtn = li.querySelector('.rename-playlist-btn');
         const deleteBtn = li.querySelector('.delete-playlist-btn');
-        if(renameBtn) renameBtn.addEventListener('click', () => handleRenamePlaylist(playlistData.id, li));
-        if(deleteBtn) deleteBtn.addEventListener('click', () => deletePlaylist(playlistData.id)); // Confirmation inside deletePlaylist
+        if(renameBtn) renameBtn.addEventListener('click', (e) => { e.stopPropagation(); handleRenamePlaylist(playlistData.id); });
+        if(deleteBtn) deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); deletePlaylist(playlistData.id); });
     }
     return li;
+}
+
+function reorderUserPlaylists(draggedInitialIndex, targetVisualIndex) {
+    // draggedInitialIndex: original index in userPlaylists
+    // targetVisualIndex: the index where it should appear *after* the move, relative to the original array.
+    // E.g., to move to the very start, targetVisualIndex = 0.
+    // To move to be the item at index K (pushing K and subsequent down), targetVisualIndex = K.
+
+    if (draggedInitialIndex < 0 || draggedInitialIndex >= userPlaylists.length ||
+        targetVisualIndex < 0 || targetVisualIndex > userPlaylists.length) { // targetVisualIndex can be userPlaylists.length for appending
+        console.warn("Invalid indices for playlist reorder", draggedInitialIndex, targetVisualIndex);
+        return;
+    }
+    
+    // If trying to drop in the same spot (no actual move needed)
+    // Note: if targetVisualIndex is intended to be "insert before this index"
+    // then if draggedInitialIndex === targetVisualIndex, no move.
+    // if targetVisualIndex is "insert after this index (targetVisualIndex-1)", then no move if draggedInitialIndex === targetVisualIndex-1
+    // Let's assume targetVisualIndex is "insert AT this index".
+    if (draggedInitialIndex === targetVisualIndex || draggedInitialIndex === targetVisualIndex -1 && targetVisualIndex > draggedInitialIndex) { // No actual move
+        // renderAllPlaylistsView(); // Still re-render to clear any drag artifacts
+        return;
+    }
+
+
+    const itemToMove = userPlaylists.splice(draggedInitialIndex, 1)[0];
+
+    // Adjust targetVisualIndex if the removal of itemToMove affected it
+    let effectiveTargetIndex = targetVisualIndex;
+    if (draggedInitialIndex < targetVisualIndex) {
+        effectiveTargetIndex--; // The target position shifted left because an item before it was removed
+    }
+    
+    // Clamp effectiveTargetIndex to be within the bounds of the (now shorter) array for insertion
+    effectiveTargetIndex = Math.max(0, Math.min(effectiveTargetIndex, userPlaylists.length));
+
+    userPlaylists.splice(effectiveTargetIndex, 0, itemToMove);
+
+    saveUserPlaylists();
+    renderAllPlaylistsView(); // Re-render the overview to reflect the new order and clear drag artifacts
 }
 
 function renderSinglePlaylistView(playlistId) {
@@ -744,6 +796,10 @@ let draggedSongIndex = null;
 let draggedSongElement = null;
 let dragOverPlaylistIdContext = null; // Stores playlist ID during drag operation
 
+// New state variables for playlist dragging
+let draggedPlaylistIndex = null;     // Index in the userPlaylists array
+let draggedPlaylistElement = null;
+
 function handleSongDragStart(event, index, playlistId) {
     draggedSongIndex = index;
     draggedSongElement = event.target;
@@ -810,6 +866,120 @@ function handleSongDragEnd(event) {
 
 function clearGapIndicators() {
     const items = playlistDisplayAreaElement.querySelectorAll('.playlist-item');
+    items.forEach(item => {
+        item.classList.remove('show-gap-above', 'show-gap-below');
+    });
+}
+
+// --- DRAG AND DROP FOR PLAYLIST OVERVIEW ITEMS ---
+
+function handlePlaylistDragStart(event, playlistId) {
+    draggedPlaylistIndex = userPlaylists.findIndex(p => p.id === playlistId);
+    // Explicitly prevent dragging "Liked Songs" even if draggable was somehow set
+    if (draggedPlaylistIndex === -1 || playlistId === LIKED_SONGS_PLAYLIST_ID) {
+        event.preventDefault();
+        return;
+    }
+
+    draggedPlaylistElement = event.target.closest('.playlist-overview-item');
+    if (!draggedPlaylistElement) { // Should not happen if event is on the li
+        event.preventDefault();
+        return;
+    }
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', playlistId); // Store playlistId
+
+    setTimeout(() => { // Timeout to allow browser to render drag image before class change
+        if (draggedPlaylistElement) draggedPlaylistElement.classList.add('dragging');
+    }, 0);
+}
+
+function handlePlaylistDragOver(event) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+
+    const targetLiElement = event.target.closest('.playlist-overview-item');
+
+    // Do not allow dropping on "Liked Songs" or on the item being dragged
+    if (!targetLiElement || targetLiElement === draggedPlaylistElement || 
+        targetLiElement.getAttribute('data-playlist-id') === LIKED_SONGS_PLAYLIST_ID) {
+        clearPlaylistGapIndicators(); // Clear any gaps if hovering over an invalid target
+        return;
+    }
+
+    clearPlaylistGapIndicators(); // Clear previous gaps
+
+    const rect = targetLiElement.getBoundingClientRect();
+    const offsetY = event.clientY - rect.top;
+    const middleY = rect.height / 2;
+
+    if (offsetY < middleY) {
+        targetLiElement.classList.add('show-gap-above');
+    } else {
+        targetLiElement.classList.add('show-gap-below');
+    }
+}
+
+function handlePlaylistDrop(event, targetPlaylistIdOnDrop) {
+    event.preventDefault();
+    clearPlaylistGapIndicators();
+
+    if (!draggedPlaylistElement || draggedPlaylistIndex === -1 || targetPlaylistIdOnDrop === LIKED_SONGS_PLAYLIST_ID) {
+        // Invalid drag operation or dropping on "Liked Songs"
+        if (draggedPlaylistElement) draggedPlaylistElement.classList.remove('dragging');
+        draggedPlaylistIndex = -1;
+        draggedPlaylistElement = null;
+        return;
+    }
+
+    const targetLiElement = event.target.closest('.playlist-overview-item');
+    if (!targetLiElement) { // Should not happen if drop event is on a valid target
+        if (draggedPlaylistElement) draggedPlaylistElement.classList.remove('dragging');
+        draggedPlaylistIndex = -1;
+        draggedPlaylistElement = null;
+        return;
+    }
+
+    const targetPlaylistIndexInUserPlaylists = userPlaylists.findIndex(p => p.id === targetPlaylistIdOnDrop);
+    if (targetPlaylistIndexInUserPlaylists === -1) { // Target playlist not found (error)
+        if (draggedPlaylistElement) draggedPlaylistElement.classList.remove('dragging');
+        draggedPlaylistIndex = -1;
+        draggedPlaylistElement = null;
+        return;
+    }
+
+    // Determine target insert position based on drop location relative to the target item's middle
+    let visualTargetIndex = targetPlaylistIndexInUserPlaylists; // This is the index of the item we are dropping ONTO
+
+    const rect = targetLiElement.getBoundingClientRect();
+    const offsetY = event.clientY - rect.top;
+    const middleY = rect.height / 2;
+
+    if (offsetY > middleY) { // Dropped on the lower half, so insert AFTER this item
+        visualTargetIndex++;
+    }
+    // If dropped on upper half, visualTargetIndex remains the index of the target item (insert BEFORE it)
+
+    reorderUserPlaylists(draggedPlaylistIndex, visualTargetIndex);
+    // Drag end will clean up remaining state and classes.
+    // reorderUserPlaylists will call renderAllPlaylistsView which also helps clean up.
+}
+
+function handlePlaylistDragEnd(event) {
+    clearPlaylistGapIndicators();
+    if (draggedPlaylistElement) {
+        draggedPlaylistElement.classList.remove('dragging');
+    }
+    // Failsafe removal
+    const allDraggingItems = playlistDisplayAreaElement.querySelectorAll('.playlist-overview-item.dragging');
+    allDraggingItems.forEach(item => item.classList.remove('dragging'));
+
+    draggedPlaylistIndex = -1;
+    draggedPlaylistElement = null;
+}
+
+function clearPlaylistGapIndicators() {
+    const items = playlistDisplayAreaElement.querySelectorAll('.playlist-overview-item');
     items.forEach(item => {
         item.classList.remove('show-gap-above', 'show-gap-below');
     });

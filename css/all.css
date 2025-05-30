@@ -785,6 +785,25 @@ mask-image: url('../img/icons/next.svg');
   padding-bottom: 55px; /* Same logic, makes space below this item's content. */
 }
 
+/* Styles for the playlist overview item being dragged */
+.playlist-overview-item.dragging {
+  opacity: 0.5;
+  background: rgba(255,255,255,0.2); /* Consistent with song dragging */
+  /* box-shadow: 0 4px 8px rgba(0,0,0,0.3); /* Optional */
+}
+
+/* Styles to create visual space when dragging over a playlist overview item */
+.playlist-overview-item.show-gap-above {
+  /* Adjust padding based on typical height of .playlist-overview-item */
+  /* .playlist-overview-item padding: 12px 8px; margin-bottom: 8px; artwork height: 50px */
+  /* Roughly 50px (art) + 2*12px (padding) + 8px (margin) = 82px. Let's use a bit less. */
+  padding-top: 75px;
+}
+
+.playlist-overview-item.show-gap-below {
+  padding-bottom: 75px;
+}
+
 .playlist-item-title {
 font-size: 15px;
 font-weight: 500;
