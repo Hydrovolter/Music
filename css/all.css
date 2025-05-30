@@ -538,38 +538,55 @@ mask-image: url('../img/icons/next.svg');
 
 .playlist-sidebar-header {
   display: flex;
-  justify-content: space-between;
+  /* justify-content: space-between; Keep this for overall structure */
   align-items: center;
   margin-bottom: 15px;
   padding-bottom: 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
+  position: relative; /* <<<< ADD THIS: For absolute positioning of title if needed, or for easier centering with flex */
 }
 
-.playlist-sidebar-header h3 {
-  font-size: 18px; /* Slightly smaller to fit buttons */
+.playlist-sidebar-header h3 { /* The #sidebarTitle element */
+  font-size: 18px;
   font-weight: 600;
-  margin: 0 auto; /* Center title if back button is hidden */
+  margin: 0; /* Reset default margins */
+
+  /* --- Centering Logic --- */
+  position: absolute;       /* <<<< METHOD 1: Absolute Positioning */
+  left: 50%;                /* <<<< METHOD 1 */
+  transform: translateX(-50%); /* <<<< METHOD 1 */
+  /* OR */
+  /* flex-grow: 1;          /* <<<< METHOD 2: Flexbox Centering (Remove if using METHOD 1) */
+  /* text-align: center;    /* <<<< METHOD 2 (Remove if using METHOD 1) */
+
+  /* Ensure it doesn't overlap buttons if title is too long */
+  max-width: calc(100% - 80px); /* Adjust 80px based on combined width of your back and create buttons + margins */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* Styles for the sidebar back button - REFINED */
+/* Styles for the sidebar back button - REFINED (Ensure this part is correct) */
 .playlist-sidebar-header .sidebar-back-button {
   background: none;
   border: none;
   cursor: pointer;
-  margin-right: auto; /* Pushes title and create button to the right */
+  /* margin-right: auto; REMOVE THIS LINE. We want the title to push against the create button. */
+  margin-right: 10px; /* <<<< ADD THIS: Add some space between back button and title */
   
   /* --- Key changes for perfect circle and centering --- */
-  width: 32px;  /* Explicit width - adjust as desired for button size */
-  height: 32px; /* Explicit height - MUST BE EQUAL TO WIDTH for a circle */
-  padding: 0;   /* Reset padding if using explicit width/height for the button itself */
-  border-radius: 50%; /* This makes it a circle */
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
   
-  display: flex; /* Use flex to center the icon child */
-  align-items: center; /* Vertical centering */
-  justify-content: center; /* Horizontal centering */
+  display: flex;
+  align-items: center;
+  justify-content: center;
   
   transition: background-color 0.2s ease;
+  flex-shrink: 0; /* <<<< ADD THIS: Prevent back button from shrinking */
 }
 
 .playlist-sidebar-header .sidebar-back-button:hover {
@@ -599,6 +616,8 @@ mask-image: url('../img/icons/next.svg');
   cursor: pointer;
   line-height: 28px; /* Align plus vertically */
   text-align: center;
+  margin-left: auto; /* <<<< ADD THIS: Add some space between title and create button */
+  flex-shrink: 0;   /* <<<< ADD THIS: Prevent create button from shrinking */
 }
 
 /* General list display for playlists and songs in playlist */
