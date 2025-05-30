@@ -314,7 +314,15 @@ function createPlaylistOverviewItem(playlistData) {
     li.setAttribute('data-playlist-id', playlistData.id);
 
     const songsText = playlistData.songs.length === 1 ? "1 song" : `${playlistData.songs.length} songs`;
-    const artworkSrc = playlistData.artwork || (playlistData.songs.length > 0 && playlistData.songs[0].artwork ? playlistData.songs[0].artwork : 'img/empty_art.png');
+
+    let artworkSrc;
+    if (playlistData.id === LIKED_SONGS_PLAYLIST_ID) {
+        artworkSrc = 'img/liked_songs.png'; // Static artwork for Liked Songs
+    } else {
+        artworkSrc = playlistData.artwork || // For future custom playlist artwork
+                     (playlistData.songs.length > 0 && playlistData.songs[0].artwork ? playlistData.songs[0].artwork : 'img/empty_art.png');
+    }
+
 
     let nameDisplay = `<div class="playlist-overview-item-name">${escapeHtml(playlistData.name)}</div>`;
     let actionsHtml = '';
