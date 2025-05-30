@@ -11,6 +11,7 @@ let likeBtnElement;
 let prevBtnElement;
 let nextBtnElement;
 
+
 function initializePlaylistSystem() {
     // DOM elements are fetched here because this function is called on DOMContentLoaded
     likedPlaylistContentElement = document.getElementById('likedPlaylistContent');
@@ -53,7 +54,7 @@ function saveLikedPlaylist() {
 function renderLikedPlaylist() {
     if (!likedPlaylistContentElement) return;
 
-    likedPlaylistContentElement.innerHTML = ''; // Clear existing content
+    likedPlaylistContentElement.innerHTML = '';
 
     if (likedPlaylist.length === 0) {
         likedPlaylistContentElement.innerHTML = '<p class="empty-playlist-message">Like some songs to see them here!</p>';
@@ -66,7 +67,8 @@ function renderLikedPlaylist() {
     likedPlaylist.forEach((song, index) => {
         const li = document.createElement('li');
         li.className = 'playlist-item';
-        li.setAttribute('data-song-id', song.id);
+        // IMPORTANT: Ensure id is a string for consistent dataset access
+        li.setAttribute('data-song-id', song.id.toString());
         li.setAttribute('draggable', true);
 
         if (currentPlayingPlaylistType === 'liked' && currentPlaylistTrackIndex === index && currentTrack && currentTrack.id === song.id) {
@@ -87,8 +89,9 @@ function renderLikedPlaylist() {
 
         // Drag and Drop event listeners
         li.addEventListener('dragstart', (event) => handleDragStart(event, index));
-        li.addEventListener('dragover', handleDragOver);
-        li.addEventListener('drop', (event) => handleDrop(event, index));
+        li.addEventListener('dragover', handleDragOver); // This will handle the "make space" visual
+        li.addEventListener('dragleave', handleDragLeave); // Optional: for removing gaps if mouse leaves item quickly
+        li.addEventListener('drop', (event) => handleDrop(event, index)); // index is of the item being dropped ONTO
         li.addEventListener('dragend', handleDragEnd);
 
         ul.appendChild(li);
@@ -238,34 +241,128 @@ function clearPlaylistContext() {
 let draggedItemIndex = null;
 let draggedItemElement = null;
 
+// --- Drag and Drop Handlers ---
+
 function handleDragStart(event, index) {
     draggedItemIndex = index;
-    draggedItemElement = event.target;
+    draggedItemElement = event.target; // event.target is the li element
     event.dataTransfer.effectAllowed = 'move';
-    event.target.classList.add('dragging');
-    // event.dataTransfer.setData('text/plain', index); // Not strictly needed if using module-level var
+    event.dataTransfer.setData('text/plain', index.toString()); // Good practice
+    
+    // Add class slightly later to allow browser to capture the drag image without opacity
+    setTimeout(() => {
+        if (draggedItemElement) draggedItemElement.classList.add('dragging');
+    }, 0);
+}
+
+function clearGapIndicators() {
+    const items = likedPlaylistContentElement.querySelectorAll('.playlist-item');
+    items.forEach(item => {
+        item.classList.remove('show-gap-above', 'show-gap-below');
+    });
 }
 
 function handleDragOver(event) {
-    event.preventDefault();
+    event.preventDefault(); // Necessary to allow dropping
     event.dataTransfer.dropEffect = 'move';
-    const targetElement = event.target.closest('.playlist-item');
-    if (targetElement && draggedItemElement && targetElement !== draggedItemElement) {
-        // Optional: visual feedback for drop target
+
+    const currentTargetLi = event.target.closest('.playlist-item');
+
+    if (!currentTargetLi || !draggedItemElement || currentTargetLi === draggedItemElement) {
+        // If not over a valid item, or over itself, clear any gaps and do nothing
+        // (Or if over itself, one might argue no gap should appear, handled by currentTargetLi === draggedItemElement)
+        // clearGapIndicators(); // This might cause flickering if cleared too aggressively.
+                             // Better to clear once and apply to new target.
+        return;
+    }
+    
+    clearGapIndicators(); // Clear previous gaps first
+
+    const rect = currentTargetLi.getBoundingClientRect();
+    const offsetY = event.clientY - rect.top; // Y position within the target element
+    const isDraggingOverUpperHalf = offsetY < rect.height / 2;
+
+    if (isDraggingOverUpperHalf) {
+        currentTargetLi.classList.add('show-gap-above');
+    } else {
+        currentTargetLi.classList.add('show-gap-below');
     }
 }
 
-function handleDrop(event, targetIndex) {
+function handleDragLeave(event) {
+    // When the mouse leaves a playlist item, if it's not entering another one immediately,
+    // the gap indicator on it should be removed.
+    // This is partially handled by clearGapIndicators() in handleDragOver.
+    // A more robust dragleave would check relatedTarget.
+    const leftItem = event.target.closest('.playlist-item');
+    if (leftItem) { // Check if we are still over any item of the list
+        const relatedTargetIsItem = event.relatedTarget && event.relatedTarget.closest && event.relatedTarget.closest('.playlist-item');
+        if(!relatedTargetIsItem || !likedPlaylistContentElement.contains(event.relatedTarget)) {
+            // If leaving an item and not entering another item within the playlist container immediately
+            leftItem.classList.remove('show-gap-above', 'show-gap-below');
+        }
+    }
+     // More simply, rely on handleDragOver to manage this or handleDragEnd for final cleanup.
+}
+
+
+function handleDrop(event, indexOfTheItemDroppedOn) {
     event.preventDefault();
-    if (draggedItemIndex === null || draggedItemIndex === targetIndex) {
+    clearGapIndicators(); // Clean up visual indicators
+
+    if (draggedItemIndex === null) { // Should not happen if dragstart was successful
         if (draggedItemElement) draggedItemElement.classList.remove('dragging');
-        draggedItemIndex = null;
-        draggedItemElement = null;
+        return;
+    }
+    
+    // The element that received the drop event
+    const droppedOnLiElement = event.currentTarget; // Since listener is on the li
+
+    // If dropped on the original dragged item's placeholder (less likely with this styling)
+    // or if somehow draggedItemIndex is same as indexOfTheItemDroppedOn initially,
+    // but the drop target check in dragOver should prevent this.
+    // For safety, if dropped on itself visually, do nothing (though array indices might differ due to removal).
+    const targetSongId = droppedOnLiElement.dataset.songId;
+    if (likedPlaylist[draggedItemIndex].id.toString() === targetSongId) {
+         // If the item being dragged has the same ID as the item it's dropped on,
+         // and no gap class was applied (meaning it was likely dropped directly on itself without shifting)
+         // then just clean up and return. This check might be redundant with proper gap logic.
+         if (!droppedOnLiElement.classList.contains('show-gap-above') && !droppedOnLiElement.classList.contains('show-gap-below')) {
+            if (draggedItemElement) draggedItemElement.classList.remove('dragging');
+            // draggedItemIndex = null; // Reset in dragend
+            // draggedItemElement = null; // Reset in dragend
+            return;
+         }
+    }
+
+
+    const itemToMove = likedPlaylist[draggedItemIndex]; // Get the item before splicing
+
+    // Determine if the drop was intended to be before or after the target item
+    const rect = droppedOnLiElement.getBoundingClientRect();
+    const offsetY = event.clientY - rect.top;
+    const insertBeforeTarget = offsetY < rect.height / 2;
+
+    // Perform the actual array manipulation
+    likedPlaylist.splice(draggedItemIndex, 1); // Remove from old position
+
+    // Find the new index of the item we dropped onto, *after* the dragged item was removed
+    let newDropTargetIndex = likedPlaylist.findIndex(song => song.id.toString() === targetSongId);
+    
+    if (newDropTargetIndex === -1) { // Should not happen if data is consistent
+        console.error("Drop target item not found in playlist after splice.");
+        // As a fallback, re-add the item to its original position or end, and re-render.
+        likedPlaylist.splice(draggedItemIndex, 0, itemToMove); // Put it back
+        renderLikedPlaylist();
         return;
     }
 
-    const itemToMove = likedPlaylist.splice(draggedItemIndex, 1)[0];
-    likedPlaylist.splice(targetIndex, 0, itemToMove);
+
+    if (insertBeforeTarget) {
+        likedPlaylist.splice(newDropTargetIndex, 0, itemToMove);
+    } else {
+        likedPlaylist.splice(newDropTargetIndex + 1, 0, itemToMove);
+    }
 
     // Adjust currentPlaylistTrackIndex if the playing song was moved
     if (currentPlayingPlaylistType === 'liked') {
@@ -274,25 +371,43 @@ function handleDrop(event, targetIndex) {
             const newPlayingIndex = likedPlaylist.findIndex(song => song.id === playingSongId);
             if (newPlayingIndex !== -1) {
                 currentPlaylistTrackIndex = newPlayingIndex;
-            } else { // Playing song somehow disappeared or ID mismatch after reorder
-                clearPlaylistContext();
+            } else {
+                // This case implies the playing song was the one moved, and its ID is now part of 'itemToMove'
+                // So, find 'itemToMove' (which is 'playingSongId') in the new 'likedPlaylist'
+                const currentSongNewIdx = likedPlaylist.findIndex(s => s.id === playingSongId);
+                if (currentSongNewIdx !== -1) {
+                     currentPlaylistTrackIndex = currentSongNewIdx;
+                } else {
+                    clearPlaylistContext(); // Should not happen if IDs are consistent
+                }
             }
         }
     }
 
     saveLikedPlaylist();
-    renderLikedPlaylist(); // Re-render with new order and correct 'playing' state
-    if (draggedItemElement) draggedItemElement.classList.remove('dragging');
-    draggedItemIndex = null;
-    draggedItemElement = null;
+    renderLikedPlaylist(); // Re-renders the list, which naturally removes dragging and gap classes
+                           // and correctly applies 'playing' class if needed.
+
+    // draggedItemIndex and draggedItemElement are reset in dragend
 }
 
+
 function handleDragEnd(event) {
-    // Clean up 'dragging' class if drop didn't occur on a valid target or outside window
-    if (draggedItemElement) draggedItemElement.classList.remove('dragging');
+    clearGapIndicators(); // Final cleanup of gap indicators
+
+    // Remove 'dragging' class from the original element if it still exists in the DOM
+    // and wasn't removed by a re-render (e.g., if drag was cancelled).
+    if (draggedItemElement) {
+        draggedItemElement.classList.remove('dragging');
+    }
+
+    // Fallback to ensure all items are visually clean,
+    // especially if drop happened outside valid area or was cancelled.
     const allItems = likedPlaylistContentElement.querySelectorAll('.playlist-item');
-    allItems.forEach(item => item.classList.remove('dragging')); // Failsafe
+    allItems.forEach(item => {
+        item.classList.remove('dragging', 'show-gap-above', 'show-gap-below');
+    });
+
     draggedItemIndex = null;
     draggedItemElement = null;
-    // renderLikedPlaylist(); // Re-render to ensure consistent UI, especially if drag was cancelled
 }

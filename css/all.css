@@ -437,42 +437,63 @@ overflow-y: auto; /* Enable scrolling for playlist items */
 }
 
 .playlist-item {
-display: flex;
-align-items: center;
-padding: 10px 5px;
-margin-bottom: 8px;
-border-radius: 6px;
-cursor: pointer;
-transition: background-color 0.2s ease;
-background-color: transparent;
-user-select: none; /* Prevent text selection during drag */
+  display: flex;
+  align-items: center;
+  padding: 10px 5px; /* Base padding */
+  margin-bottom: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: transparent;
+  user-select: none;
+  /* Add transitions for smooth "sliding" and opacity change */
+  transition: padding-top 0.15s ease-out, 
+              padding-bottom 0.15s ease-out, 
+              background-color 0.2s ease,
+              opacity 0.15s ease-out; /* Added opacity transition */
 }
 
 .playlist-item:hover {
-background-color: rgba(255, 255, 255, 0.08);
+  background-color: rgba(255, 255, 255, 0.08);
 }
 
 .playlist-item.playing {
-background-color: rgba(255, 255, 255, 0.15);
-/* font-weight: bold; /* Example: make playing item bold */
+  background-color: rgba(255, 255, 255, 0.15);
 }
 .playlist-item.playing .playlist-item-title {
-  color: #00ff88; /* Highlight playing track title */
+    color: #00ff88;
 }
 
-
 .playlist-item-artwork {
-width: 45px;
-height: 45px;
-border-radius: 4px;
-margin-right: 12px;
-object-fit: cover;
-flex-shrink: 0;
+  width: 45px;
+  height: 45px;
+  border-radius: 4px;
+  margin-right: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+  pointer-events: none; /* Make sure drag events go to the li */
 }
 
 .playlist-item-info {
-flex-grow: 1;
-overflow: hidden;
+  flex-grow: 1;
+  overflow: hidden;
+  pointer-events: none; /* Make sure drag events go to the li */
+}
+
+/* Styles for the item being dragged */
+.playlist-item.dragging {
+  opacity: 0.5; /* Make it semi-transparent */
+  background: rgba(255,255,255,0.1); /* Optional: slight background change */
+  /* box-shadow: 0 4px 8px rgba(0,0,0,0.3); /* Optional: lift effect */
+}
+
+/* Styles to create visual space when dragging over an item */
+.playlist-item.show-gap-above {
+  padding-top: 55px; /* Adjust this value: item height (approx 45px) + margin (8px) + small buffer */
+                      /* This pushes the content of *this* item down, making space above it. */
+}
+
+.playlist-item.show-gap-below {
+  padding-bottom: 55px; /* Same logic, makes space below this item's content. */
 }
 
 .playlist-item-title {
