@@ -1,4 +1,4 @@
-I have a static music player. I am going to provide you the filenames and the code for each file so you can understand my codebase. Then, in the following prompts I will ask you prompts to help me develop it and add new features. For now, just fully understand the codebase and the program so you can be ready to help me add more features and tweak things. 
+I have a static music play web app. I am going to paste in the files alongside their structure (e.g. their location) all below, so you can understand my codebase thoroughly. Then I will ask you to help me add more features in the following prompts. But for now, just understand the codebase and then I will ask you to help me develop and add features.
 
 index.html
 ```html
@@ -24,7 +24,7 @@ index.html
     <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.min.js"></script>
     <link rel="stylesheet" href="css/all.css" />
 
-    <link rel="icon" href="img/favicon.png" type="image/x-icon">
+    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
   </head>
   <body>
     <div class="app-container"> 
@@ -35,7 +35,6 @@ index.html
                 class="search-input"
                 placeholder="Search for any song..."
                 id="searchInput"
-                autocomplete="off"
             />
             <div class="search-results" id="searchResults">
             </div>
@@ -62,7 +61,6 @@ index.html
                             <i id="nextBtn" class="icon icon-next"></i>
                             <i id="volumeBtn" class="icon icon-volume"></i>
                             <i id="loopBtn" class="icon icon-loop"></i>
-                            <i id="shuffleBtn" class="icon icon-shuffle"></i> 
                             <i id="likeBtn" class="icon icon-heart-empty"></i>
                             <i id="addToPlaylistBtn" class="icon icon-plus-circle"></i>
                         </div>
@@ -164,18 +162,14 @@ index.html
     </div>
   </div>
 
-  <div id="toastContainer" class="toast-container">
-    <!-- Toasts will be dynamically added here -->
-  </div>
+
 
     <script src="js/endpoints.js"></script>
     <script src="js/init.js"></script>
     <script src="js/modals.js"></script>
-    <script src="js/toast.js"></script>
     <script src="js/bg.js"></script>
     <script src="js/playlist.js"></script>
     <script src="js/player.js"></script>
-    <script src="js/history.js"></script> 
     <script src="js/search.js"></script>
     <script src="js/play.js"></script>
     <script src="js/getYT.js"></script>
@@ -304,65 +298,6 @@ body {
   transform: translateY(0);
   visibility: visible;
 }
-
-/* Title for "Recent Searches" section in the dropdown */
-.recent-searches-title {
-  padding: 10px 16px 5px 16px;
-  font-size: 12px; /* Made it slightly smaller */
-  font-weight: 600; /* Made it a bit bolder */
-  color: rgba(255, 255, 255, 0.7); /* Slightly more visible */
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08); /* Softer border */
-  margin-bottom: 5px;
-}
-
-/* Individual recent search item */
-.recent-search-item {
-  /* .result-item class is also applied for base flex styling */
-  display: flex;
-  justify-content: space-between; /* Query left, button right */
-  align-items: center;
-  padding: 10px 16px; /* Consistent padding */
-  /* cursor: default; /* Optional: override .result-item's cursor if only text is clickable */
-}
-
-.recent-search-item:hover {
-  background-color: rgba(255, 255, 255, 0.08); /* Consistent hover */
-}
-
-/* The clickable query text */
-.recent-search-query {
-  flex-grow: 1;
-  cursor: pointer;
-  font-size: 15px; /* Match song title size or adjust */
-  color: #fff; /* Brighter for better readability */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-right: 10px; /* Space before the X button */
-}
-
-/* The remove button for a recent search item */
-.remove-recent-search-btn {
-  /* .icon-action-btn class is applied for base styling (padding, border-radius) */
-  /* We removed margin-left: auto from .icon-action-btn for this specific case if it was there,
-     or ensure it doesn't apply if it's not needed due to justify-content: space-between */
-  margin-left: 0; /* Explicitly override if .icon-action-btn has margin-left: auto */
-  flex-shrink: 0;
-}
-
-.remove-recent-search-btn .icon.icon-close {
-  /* .icon-action-btn .icon might set a default size (e.g., 16px) */
-  width: 14px;  /* Adjust size as needed for the 'x' */
-  height: 14px;
-  background-color: rgba(255, 255, 255, 0.5); /* Dimmer for 'x' */
-}
-
-.remove-recent-search-btn:hover .icon.icon-close {
-  background-color: #ff8080; /* Softer red on hover for 'x' */
-}
-
 .result-item {
   display: flex;
   align-items: center;
@@ -390,8 +325,6 @@ body {
 .result-info {
   flex: 1;
   overflow: hidden; /* Ensure text ellipsis works */
-  flex-grow: 1;
-  margin-right: 8px;
 }
 .result-title {
   font-weight: 600;
@@ -703,21 +636,6 @@ transform: scale(0.94);
   background-color: #ff6b6b; /* Change icon color on hover - e.g., red for delete */
 }
 
-.add-to-playlist-search-btn {
-  flex-shrink: 0; /* Prevents the button from shrinking */
-  /* .icon-action-btn already provides margin-left: auto and other base styles */
-}
-
-/* 4. Style the icon INSIDE the button for specific size */
-.add-to-playlist-search-btn .icon.icon-plus-circle {
-  width: 18px;  /* Or 16px to match other .icon-action-btn .icon, or 20px. Adjust to taste. */
-  height: 18px; /* Match width */
-}
-
-.icon-close {
-  mask-image: url('../img/icons/close.svg');
-  -webkit-mask-image: url('../img/icons/close.svg');
-}
 
 .icon-arrow-left {
   mask-image: url('../img/icons/arrow-left.svg');
@@ -732,19 +650,6 @@ transform: scale(0.94);
   mask-image: url('../img/icons/trash.svg');
   -webkit-mask-image: url('../img/icons/trash.svg');
 }
-
-/* Add near other icon definitions */
-.icon-shuffle {
-  mask-image: url('../img/icons/shuffle.svg');
-  -webkit-mask-image: url('../img/icons/shuffle.svg');
-}
-
-/* Add near .icon-loop.loop-active for active state styling */
-.icon-shuffle.shuffle-active {
-  background-color: #00ff88; /* Green color, same as active loop */
-  transform: scale(1.1); /* Optional: visual feedback */
-}
-
 /* Adjust size for these small action buttons if needed */
 .playlist-item-actions .icon {
     width: 1em; /* Or a fixed px value like 14px */
@@ -760,7 +665,7 @@ transform: scale(0.94);
 .icon-plus-circle {
   mask-image: url('../img/icons/plus-circle.svg');
   -webkit-mask-image: url('../img/icons/plus-circle.svg');
-
+  width: 22px; height: 22px; /* Match likeBtn */
 }
 .icon-loop { /* Base style for the loop button - uses repeat.svg */
   mask-image: url('../img/icons/repeat.svg');
@@ -786,23 +691,23 @@ transform: scale(0.94);
 .icon-heart-empty {
 mask-image: url('../img/icons/heart-empty.svg');
 -webkit-mask-image: url('../img/icons/heart-empty.svg');
-
+width: 22px; height: 22px;
 }
 .icon-heart-filled {
 mask-image: url('../img/icons/heart-filled.svg');
 -webkit-mask-image: url('../img/icons/heart-filled.svg');
 background-color: #ff6b6b; /* Liked color */
-
+width: 22px; height: 22px;
 }
 .icon-prev {
 mask-image: url('../img/icons/prev.svg');
 -webkit-mask-image: url('../img/icons/prev.svg');
-
+width: 26px; height: 26px;
 }
 .icon-next {
 mask-image: url('../img/icons/next.svg');
 -webkit-mask-image: url('../img/icons/next.svg');
-
+width: 26px; height: 26px;
 }
 
 /* Playlist Sidebar Styles - Focus here */
@@ -827,55 +732,38 @@ mask-image: url('../img/icons/next.svg');
 
 .playlist-sidebar-header {
   display: flex;
-  /* justify-content: space-between; Keep this for overall structure */
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
   padding-bottom: 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
-  position: relative; /* <<<< ADD THIS: For absolute positioning of title if needed, or for easier centering with flex */
 }
 
-.playlist-sidebar-header h3 { /* The #sidebarTitle element */
-  font-size: 18px;
+.playlist-sidebar-header h3 {
+  font-size: 18px; /* Slightly smaller to fit buttons */
   font-weight: 600;
-  margin: 0; /* Reset default margins */
-
-  /* --- Centering Logic --- */
-  position: absolute;       /* <<<< METHOD 1: Absolute Positioning */
-  left: 50%;                /* <<<< METHOD 1 */
-  transform: translateX(-50%); /* <<<< METHOD 1 */
-  /* OR */
-  /* flex-grow: 1;          /* <<<< METHOD 2: Flexbox Centering (Remove if using METHOD 1) */
-  /* text-align: center;    /* <<<< METHOD 2 (Remove if using METHOD 1) */
-
-  /* Ensure it doesn't overlap buttons if title is too long */
-  max-width: calc(100% - 80px); /* Adjust 80px based on combined width of your back and create buttons + margins */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin: 0 auto; /* Center title if back button is hidden */
 }
 
-/* Styles for the sidebar back button - REFINED (Ensure this part is correct) */
+/* Styles for the sidebar back button - REFINED */
 .playlist-sidebar-header .sidebar-back-button {
   background: none;
   border: none;
   cursor: pointer;
-  /* margin-right: auto; REMOVE THIS LINE. We want the title to push against the create button. */
-  margin-right: 10px; /* <<<< ADD THIS: Add some space between back button and title */
+  margin-right: auto; /* Pushes title and create button to the right */
   
   /* --- Key changes for perfect circle and centering --- */
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border-radius: 50%;
+  width: 32px;  /* Explicit width - adjust as desired for button size */
+  height: 32px; /* Explicit height - MUST BE EQUAL TO WIDTH for a circle */
+  padding: 0;   /* Reset padding if using explicit width/height for the button itself */
+  border-radius: 50%; /* This makes it a circle */
   
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex; /* Use flex to center the icon child */
+  align-items: center; /* Vertical centering */
+  justify-content: center; /* Horizontal centering */
   
   transition: background-color 0.2s ease;
-  flex-shrink: 0; /* <<<< ADD THIS: Prevent back button from shrinking */
 }
 
 .playlist-sidebar-header .sidebar-back-button:hover {
@@ -905,8 +793,6 @@ mask-image: url('../img/icons/next.svg');
   cursor: pointer;
   line-height: 28px; /* Align plus vertically */
   text-align: center;
-  margin-left: auto; /* <<<< ADD THIS: Add some space between title and create button */
-  flex-shrink: 0;   /* <<<< ADD THIS: Prevent create button from shrinking */
 }
 
 /* General list display for playlists and songs in playlist */
@@ -1072,25 +958,6 @@ mask-image: url('../img/icons/next.svg');
 
 .playlist-item.show-gap-below {
   padding-bottom: 55px; /* Same logic, makes space below this item's content. */
-}
-
-/* Styles for the playlist overview item being dragged */
-.playlist-overview-item.dragging {
-  opacity: 0.5;
-  background: rgba(255,255,255,0.2); /* Consistent with song dragging */
-  /* box-shadow: 0 4px 8px rgba(0,0,0,0.3); /* Optional */
-}
-
-/* Styles to create visual space when dragging over a playlist overview item */
-.playlist-overview-item.show-gap-above {
-  /* Adjust padding based on typical height of .playlist-overview-item */
-  /* .playlist-overview-item padding: 12px 8px; margin-bottom: 8px; artwork height: 50px */
-  /* Roughly 50px (art) + 2*12px (padding) + 8px (margin) = 82px. Let's use a bit less. */
-  padding-top: 75px;
-}
-
-.playlist-overview-item.show-gap-below {
-  padding-bottom: 75px;
 }
 
 .playlist-item-title {
@@ -1304,46 +1171,6 @@ background: rgba(255,255,255,0.2);
     color: #ccc; /* Lighter than main text */
 }
 
-/* Toast Notifications (add towards the end of all.css) */
-.toast-container {
-  position: fixed;
-  bottom: 20px; /* Adjust as needed, consider lyrics toggle */
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2000; /* Above most other elements */
-  display: flex;
-  flex-direction: column-reverse; /* New toasts appear above older ones if multiple */
-  align-items: center;
-  gap: 10px;
-  pointer-events: none; /* Allow clicks to pass through the container itself */
-}
-
-.toast-message {
-  /* Glassmorphism */
-  background-color: rgba(50, 50, 50, 0.6); /* Darker semi-transparent for contrast */
-  backdrop-filter: blur(10px) saturate(150%);
-  -webkit-backdrop-filter: blur(10px) saturate(150%);
-  color: #f0f0f0;
-  padding: 12px 20px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-  font-size: 14px;
-  font-weight: 500;
-  text-align: center;
-  max-width: 80vw; /* Prevent very wide toasts on large screens */
-
-  opacity: 0;
-  transform: translateY(30px) scale(0.95); /* Initial state for animation: off-screen and slightly smaller */
-  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
-  pointer-events: auto; /* Toasts themselves are clickable/interactive if needed in future */
-}
-
-.toast-message.show {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-}
-
 
 /* Responsive adjustments */
 @media (max-width: 960px) { /* Adjust breakpoint as needed */
@@ -1414,6 +1241,7 @@ background: rgba(255,255,255,0.2);
   }
 }
 ```
+
 
 js/bg.js
 ```js
@@ -1687,61 +1515,6 @@ async function getYT(query) {
 }
 ```
 
-js/history.js
-```js
-// js/history.js
-
-const RECENT_SEARCHES_KEY = 'musicPlayer_recentSearches';
-const MAX_RECENT_SEARCHES = 3;
-
-/**
- * Retrieves the list of recent search queries from localStorage.
- * @returns {string[]} An array of recent search queries.
- */
-function getRecentSearches() {
-    const storedSearches = localStorage.getItem(RECENT_SEARCHES_KEY);
-    return storedSearches ? JSON.parse(storedSearches) : [];
-}
-
-/**
- * Adds a search query to the recent searches list.
- * Moves existing query to the top if already present.
- * Limits the list to MAX_RECENT_SEARCHES.
- * @param {string} query The search query to add.
- */
-function addRecentSearch(query) {
-    if (!query || typeof query !== 'string' || query.trim() === "") return;
-    query = query.trim(); // Normalize
-
-    let searches = getRecentSearches();
-    // Remove the query if it already exists, to move it to the top (most recent)
-    searches = searches.filter(s => s.toLowerCase() !== query.toLowerCase());
-    // Add the new query to the beginning
-    searches.unshift(query);
-    // Limit the number of recent searches
-    if (searches.length > MAX_RECENT_SEARCHES) {
-        searches = searches.slice(0, MAX_RECENT_SEARCHES);
-    }
-    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(searches));
-}
-
-/**
- * Removes a specific search query from the recent searches list.
- * @param {string} queryToRemove The search query to remove.
- */
-function removeRecentSearch(queryToRemove) {
-    if (!queryToRemove || typeof queryToRemove !== 'string' || queryToRemove.trim() === "") return;
-    queryToRemove = queryToRemove.trim();
-
-    let searches = getRecentSearches();
-    searches = searches.filter(s => s.toLowerCase() !== queryToRemove.toLowerCase());
-    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(searches));
-
-    // This function will be called from search.js, which can then decide to re-render
-    // For example, after removing, if search input is focused and empty, search.js will call displayRecentSearches()
-}
-```
-
 js/init.js
 ```js
 // js/init.js
@@ -1765,13 +1538,11 @@ const lyricsSongTitle = document.getElementById("lyricsSongTitle");
 const lyricsArtistName = document.getElementById("lyricsArtistName");
 const lyricsContent = document.getElementById("lyricsContent");
 const loopBtn = document.getElementById("loopBtn");
-const shuffleBtn = document.getElementById("shuffleBtn");
-
+// Note: likeBtn, prevBtn, nextBtn are primarily handled in playlist.js init
 
 let showingLyrics = false;
 let isMuted = false;
 let loopState = 'none';
-let isShuffleActive = false;
 
 let player; // YouTube player instance
 let isPlaying = false; // Player's playing state
@@ -1894,7 +1665,8 @@ lyricsToggle.addEventListener("click", function () {
         lyricsContent.textContent = "No lyrics available.";
       });
   }
-  ```
+  
+```
 
 js/modals.js
 ```js
@@ -2291,7 +2063,6 @@ function togglePlayback() {
 ```
 
 js/player.js
-
 ```js
 // js/player.js
 
@@ -2331,7 +2102,6 @@ function onPlayerReady(event) {
   playPauseBtn.addEventListener("click", togglePlayback); // togglePlayback is global from playback.js
   volumeBtn.addEventListener("click", toggleMute);
   loopBtn.addEventListener("click", toggleLoop);
-  if (shuffleBtn) shuffleBtn.addEventListener("click", toggleShuffle);
 
   seekBar.addEventListener("mousedown", startSeek); // startSeek from playback.js
   document.addEventListener("mousemove", dragSeek); // dragSeek from playback.js
@@ -2339,7 +2109,6 @@ function onPlayerReady(event) {
 
   setInterval(updateProgress, 500); // updateProgress from playback.js
   updateLoopButtonIcon(); // Initialize loop button icon based on global loopState
-  updateShuffleButtonIcon();
 
   // Initial color logic - unchanged
   if (albumCover.complete && albumCover.src && !albumCover.src.endsWith('img/empty_art.png')) {
@@ -2390,10 +2159,12 @@ function toggleLoop() {
 }
 
 function onPlayerStateChange(event) {
-  console.log("Player state:", event.data, "| Loop:", loopState, "| Shuffle:", isShuffleActive, "| PlaylistID:", currentPlayingPlaylistId, "| TrackIdx:", currentPlaylistTrackIndex);
+  // loopState, currentPlayingPlaylistId, currentPlaylistTrackIndex are global
+  // getPlaylistById, playNextTrackInCurrentPlaylist are from playlist.js
+  console.log("Player state:", event.data, "| Loop:", loopState, "| PlaylistID:", currentPlayingPlaylistId, "| TrackIdx:", currentPlaylistTrackIndex);
 
   if (event.data === YT.PlayerState.PLAYING) {
-    isPlaying = true;
+    isPlaying = true; // isPlaying is global
     playPauseBtn.classList.remove("icon-play");
     playPauseBtn.classList.add("icon-pause");
   } else if (event.data === YT.PlayerState.PAUSED) {
@@ -2408,24 +2179,22 @@ function onPlayerStateChange(event) {
     if (loopState === 'song' && player) {
       player.seekTo(0, true);
       player.playVideo();
-    } else if (isShuffleActive && currentPlayingPlaylistId) { // SHUFFLE takes precedence over simple playlist next
-        playNextTrackInCurrentPlaylist(); // This will use shuffle logic
     } else if (currentPlayingPlaylistId && typeof getPlaylistById === 'function' && typeof playNextTrackInCurrentPlaylist === 'function') {
-        // Non-shuffled playlist logic
         const currentPlaylist = getPlaylistById(currentPlayingPlaylistId);
         if (currentPlaylist && currentPlaylist.songs && currentPlaylist.songs.length > 0) {
             const isLastTrack = currentPlaylistTrackIndex >= currentPlaylist.songs.length - 1;
+
             if (loopState === 'playlist') {
-                playNextTrackInCurrentPlaylist();
+                playNextTrackInCurrentPlaylist(); // Will wrap to start if it was the last track
             } else if (loopState === 'none' && !isLastTrack) {
-                playNextTrackInCurrentPlaylist();
-            } else {
+                playNextTrackInCurrentPlaylist(); // Proceed to next song in playlist
+            } else { // loopState is 'none' AND it was the last track, or playlist became invalid
                 clearPlayerStateOnEnd();
             }
-        } else {
+        } else { // Playlist might have become empty or invalid
              clearPlayerStateOnEnd();
         }
-    } else {
+    } else { // Not in a playlist or song not set to loop
       clearPlayerStateOnEnd();
     }
   } else if (event.data === YT.PlayerState.CUED && currentTrack && currentTrack.id !== null && !isPlaying) {
@@ -2502,49 +2271,6 @@ function toggleMute() {
     isMuted = true;
   }
 }
-
-// --- SHUFFLE FUNCTIONS ---
-function updateShuffleButtonIcon() {
-  if (!shuffleBtn) return;
-  if (isShuffleActive) {
-      shuffleBtn.classList.add('shuffle-active');
-  } else {
-      shuffleBtn.classList.remove('shuffle-active');
-  }
-}
-
-function toggleShuffle() {
-  if (!currentPlayingPlaylistId) { // Shuffle only makes sense with an active playlist
-      // Optionally inform user or just do nothing
-      console.warn("Shuffle toggled but no active playlist.");
-      isShuffleActive = false; // Ensure it's off
-      updateShuffleButtonIcon();
-      return;
-  }
-
-  isShuffleActive = !isShuffleActive;
-  console.log("Shuffle state changed to:", isShuffleActive);
-
-  if (isShuffleActive) {
-      // If shuffle is activated, and a playlist is playing, initialize shuffle queues
-      const playlist = getPlaylistById(currentPlayingPlaylistId);
-      if (playlist && playlist.songs.length > 0) {
-          // Pass the currently playing track's ID so it can be handled correctly
-          const currentTrackIdForShuffle = currentTrack && currentTrack.id ? currentTrack.id : null;
-          initializeShuffleQueues(playlist.songs, currentTrackIdForShuffle);
-      } else {
-          // Playlist became empty or invalid, turn shuffle off
-          isShuffleActive = false;
-      }
-  } else {
-      // Shuffle turned off, clear queues
-      shuffleUpcomingQueue = [];
-      shufflePlayedQueue = [];
-  }
-  updateShuffleButtonIcon();
-  // No need to immediately play next song; current song continues.
-  // The next/prev or song end logic will use the new shuffle state.
-}
 ```
 
 js/playlist.js
@@ -2585,7 +2311,7 @@ function initializePlaylistSystem() {
     prevBtnElement.addEventListener('click', playPreviousTrackInCurrentPlaylist);
     backToPlaylistsBtnElement.addEventListener('click', () => switchSidebarView('all_playlists'));
     createNewPlaylistBtnElement.addEventListener('click', handleCreateNewPlaylist);
-    addToPlaylistBtnElement.addEventListener('click', () => { openAddToPlaylistModal(); });
+    addToPlaylistBtnElement.addEventListener('click', openAddToPlaylistModal);
     closeModalAddToPlaylistBtnElement.addEventListener('click', closeAddToPlaylistModal);
 
     window.addEventListener('click', (event) => {
@@ -2610,31 +2336,17 @@ function saveLikedPlaylist() {
 function addSongToLikedPlaylist(songData) {
     if (!songData || !songData.id) {
         console.error("Cannot add to liked: missing song data or ID.", songData);
-        // Optionally show an error toast here too if desired using showGeneralModal or showToast for errors
         return;
     }
     if (!likedPlaylist.find(s => s.id === songData.id)) {
         likedPlaylist.push(songData);
         saveLikedPlaylist();
-
-        // Show success toast
-        if (typeof showToast === 'function') { // Ensure showToast is available
-            const message = `"${escapeHtml(songData.title)}" added to Liked Songs!`;
-            showToast(message, 3000);
-        }
-
         if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === LIKED_SONGS_PLAYLIST_ID) {
             renderSinglePlaylistView(LIKED_SONGS_PLAYLIST_ID);
         }
-        updateLikeButtonState(true); // Update the like button for the current track if it's the one being liked
-    } else {
-        // Song is already liked - show an informational toast or general modal
-        if (typeof showToast === 'function') {
-            const message = `"${escapeHtml(songData.title)}" is already in Liked Songs.`;
-            showToast(message, 3000);
-        }
-        // Or use showGeneralModal for a more prominent message:
-        // showGeneralModal("Already Liked", `"${escapeHtml(songData.title)}" is already in your Liked Songs.`);
+        // If Liked Songs playlist is currently playing, this new song is now at the end of its queue.
+        // No specific index adjustment needed here unless we want to auto-play it.
+        updateLikeButtonState(true); // Update the like button for the current track
     }
 }
 
@@ -2791,34 +2503,12 @@ function addSongToUserPlaylist(playlistId, songData) {
         if (!playlist.songs.find(s => s.id === songData.id)) {
             playlist.songs.push(songData);
             saveUserPlaylists();
-
-            // Show success toast
-            if (typeof showToast === 'function') { // Ensure showToast is available
-                const message = `"${escapeHtml(songData.title)}" added to ${escapeHtml(playlist.name)}!`;
-                showToast(message, 3000);
-            }
-
             if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === playlistId) {
                 renderSinglePlaylistView(playlistId);
             }
             console.log(`Song "${songData.title}" added to playlist "${playlist.name}"`);
         } else {
-            // Song already exists in this specific user playlist
-            if (typeof showToast === 'function') {
-                const message = `"${escapeHtml(songData.title)}" is already in ${escapeHtml(playlist.name)}.`;
-                showToast(message, 3000);
-            }
-            // Original showGeneralModal for this case:
-            // showGeneralModal("Song Exists", `"${escapeHtml(songData.title)}" is already in the playlist "${escapeHtml(playlist.name)}".`);
-            // You can choose whether a toast or a modal is better for this "already exists" message.
-            // Toasts are less intrusive.
-        }
-    } else {
-        if (!playlist) console.error("Playlist not found for ID:", playlistId);
-        if (!songData || !songData.id) console.error("Invalid song data for addSongToUserPlaylist:", songData);
-        // Optionally show an error toast/modal if playlist or songData is invalid
-        if (typeof showToast === 'function') {
-             showToast("Error: Could not add song to playlist.", 3000);
+            showGeneralModal("Song Exists", `"${escapeModalHtml(songData.title)}" is already in the playlist "${escapeModalHtml(playlist.name)}".`);
         }
     }
 }
@@ -2910,23 +2600,15 @@ function createPlaylistOverviewItem(playlistData) {
     li.setAttribute('data-playlist-id', playlistData.id);
 
     const songsText = playlistData.songs.length === 1 ? "1 song" : `${playlistData.songs.length} songs`;
-    let artworkSrc;
 
+    let artworkSrc;
     if (playlistData.id === LIKED_SONGS_PLAYLIST_ID) {
-        artworkSrc = 'img/liked_songs.png';
-        // "Liked Songs" is not draggable
+        artworkSrc = 'img/liked_songs.png'; // Static artwork for Liked Songs
     } else {
-        // This is a user-created playlist
-        li.setAttribute('draggable', true); // <<< MAKE USER PLAYLISTS DRAGGABLE
-        artworkSrc = playlistData.artwork ||
+        artworkSrc = playlistData.artwork || // For future custom playlist artwork
                      (playlistData.songs.length > 0 && playlistData.songs[0].artwork ? playlistData.songs[0].artwork : 'img/empty_art.png');
-        
-        // Add drag event listeners for user playlists
-        li.addEventListener('dragstart', (event) => handlePlaylistDragStart(event, playlistData.id));
-        li.addEventListener('dragover', handlePlaylistDragOver);
-        li.addEventListener('drop', (event) => handlePlaylistDrop(event, playlistData.id)); // Pass targetPlaylistId
-        li.addEventListener('dragend', handlePlaylistDragEnd);
     }
+
 
     let nameDisplay = `<div class="playlist-overview-item-name">${escapeHtml(playlistData.name)}</div>`;
     let actionsHtml = '';
@@ -2948,73 +2630,29 @@ function createPlaylistOverviewItem(playlistData) {
         ${actionsHtml}
     `;
 
-    // Keep existing click handlers for viewing playlist and actions, ensuring they don't interfere with drag
     const infoSection = li.querySelector('.playlist-overview-item-info');
     const artworkSection = li.querySelector('.playlist-overview-item-artwork');
+
     const viewPlaylistHandler = () => switchSidebarView('single_playlist_view', playlistData.id);
 
-    // Modify click handlers to prevent triggering view change during a drag operation
-    const combinedClickHandler = (e) => {
-        // Check if the click originated from an action button or if a drag might be starting/active
-        if (e.target.closest('.playlist-item-actions') || 
-            e.target.closest('.playlist-name-input') ||
-            (draggedPlaylistElement && draggedPlaylistElement.classList.contains('dragging'))) { // Check if currently dragging
-            return;
+    if (infoSection) infoSection.addEventListener('click', (e) => {
+        if (!e.target.closest('.playlist-item-actions') && !e.target.closest('.playlist-name-input')) {
+            viewPlaylistHandler();
         }
-        viewPlaylistHandler();
-    };
-    
-    if (infoSection) infoSection.addEventListener('click', combinedClickHandler);
-    if (artworkSection) artworkSection.addEventListener('click', combinedClickHandler);
-
+    });
+    if (artworkSection) artworkSection.addEventListener('click', (e) => {
+         if (!e.target.closest('.playlist-item-actions') && !e.target.closest('.playlist-name-input')) {
+            viewPlaylistHandler();
+        }
+    });
 
     if (playlistData.id !== LIKED_SONGS_PLAYLIST_ID) {
         const renameBtn = li.querySelector('.rename-playlist-btn');
         const deleteBtn = li.querySelector('.delete-playlist-btn');
-        if(renameBtn) renameBtn.addEventListener('click', (e) => { e.stopPropagation(); handleRenamePlaylist(playlistData.id); });
-        if(deleteBtn) deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); deletePlaylist(playlistData.id); });
+        if(renameBtn) renameBtn.addEventListener('click', () => handleRenamePlaylist(playlistData.id, li));
+        if(deleteBtn) deleteBtn.addEventListener('click', () => deletePlaylist(playlistData.id)); // Confirmation inside deletePlaylist
     }
     return li;
-}
-
-function reorderUserPlaylists(draggedInitialIndex, targetVisualIndex) {
-    // draggedInitialIndex: original index in userPlaylists
-    // targetVisualIndex: the index where it should appear *after* the move, relative to the original array.
-    // E.g., to move to the very start, targetVisualIndex = 0.
-    // To move to be the item at index K (pushing K and subsequent down), targetVisualIndex = K.
-
-    if (draggedInitialIndex < 0 || draggedInitialIndex >= userPlaylists.length ||
-        targetVisualIndex < 0 || targetVisualIndex > userPlaylists.length) { // targetVisualIndex can be userPlaylists.length for appending
-        console.warn("Invalid indices for playlist reorder", draggedInitialIndex, targetVisualIndex);
-        return;
-    }
-    
-    // If trying to drop in the same spot (no actual move needed)
-    // Note: if targetVisualIndex is intended to be "insert before this index"
-    // then if draggedInitialIndex === targetVisualIndex, no move.
-    // if targetVisualIndex is "insert after this index (targetVisualIndex-1)", then no move if draggedInitialIndex === targetVisualIndex-1
-    // Let's assume targetVisualIndex is "insert AT this index".
-    if (draggedInitialIndex === targetVisualIndex || draggedInitialIndex === targetVisualIndex -1 && targetVisualIndex > draggedInitialIndex) { // No actual move
-        // renderAllPlaylistsView(); // Still re-render to clear any drag artifacts
-        return;
-    }
-
-
-    const itemToMove = userPlaylists.splice(draggedInitialIndex, 1)[0];
-
-    // Adjust targetVisualIndex if the removal of itemToMove affected it
-    let effectiveTargetIndex = targetVisualIndex;
-    if (draggedInitialIndex < targetVisualIndex) {
-        effectiveTargetIndex--; // The target position shifted left because an item before it was removed
-    }
-    
-    // Clamp effectiveTargetIndex to be within the bounds of the (now shorter) array for insertion
-    effectiveTargetIndex = Math.max(0, Math.min(effectiveTargetIndex, userPlaylists.length));
-
-    userPlaylists.splice(effectiveTargetIndex, 0, itemToMove);
-
-    saveUserPlaylists();
-    renderAllPlaylistsView(); // Re-render the overview to reflect the new order and clear drag artifacts
 }
 
 function renderSinglePlaylistView(playlistId) {
@@ -3088,122 +2726,37 @@ function renderSinglePlaylistView(playlistId) {
 }
 
 // --- PLAYBACK LOGIC ADAPTATIONS ---
-function playSongFromCurrentPlaylist(playlistId, songIndexInOriginalPlaylist) {
-    const playlist = getPlaylistById(playlistId);
-    if (!playlist || !playlist.songs || songIndexInOriginalPlaylist < 0 || songIndexInOriginalPlaylist >= playlist.songs.length) {
-        console.warn(`Cannot play song: invalid playlist or index. Playlist ID: ${playlistId}, Index: ${songIndexInOriginalPlaylist}`);
+function playSongFromCurrentPlaylist(playlistId, songIndex) {
+    const playlist = getPlaylistById(playlistId); // This now gets a full playlist object
+    if (!playlist || !playlist.songs || songIndex < 0 || songIndex >= playlist.songs.length) {
+        console.warn(`Cannot play song: invalid playlist or index. Playlist ID: ${playlistId}, Index: ${songIndex}`);
         clearPlaylistContext();
         return;
     }
 
-    const songToPlay = playlist.songs[songIndexInOriginalPlaylist];
-
-    if (isShuffleActive && currentPlayingPlaylistId === playlistId) {
-        // User manually selected a song from the playlist view while shuffle is on.
-        // This song "jumps the queue" and becomes the current one.
-        // It should be removed from upcoming and added to played.
-
-        const upcomingIndex = shuffleUpcomingQueue.findIndex(s => s.id === songToPlay.id);
-        if (upcomingIndex > -1) {
-            shuffleUpcomingQueue.splice(upcomingIndex, 1);
-        }
-
-        const playedIndex = shufflePlayedQueue.findIndex(s => s.id === songToPlay.id);
-        if (playedIndex > -1) {
-            // If it was already played, remove it to avoid duplicate in playedQueue later
-            // (though push will add it as most recent)
-            shufflePlayedQueue.splice(playedIndex, 1);
-        }
-        shufflePlayedQueue.push(songToPlay); // Add to end of played queue (most recent)
-        console.log(`Shuffle: User selected "${songToPlay.title}". Upcoming: ${shuffleUpcomingQueue.length}, Played: ${shufflePlayedQueue.length}`);
-    } else if (isShuffleActive && currentPlayingPlaylistId !== playlistId) {
-        // User started a new playlist while shuffle was on from a previous one.
-        // Or, shuffle was just turned on by toggleShuffle before this call (less likely path here)
-        initializeShuffleQueues(playlist.songs, songToPlay.id);
-    }
-    // If shuffle is NOT active OR shuffle was just initialized for THIS song:
-    // The currentTrack, currentPlayingPlaylistId, currentPlaylistTrackIndex will be set below.
-
+    const songToPlay = playlist.songs[songIndex];
     currentPlayingPlaylistId = playlistId;
-    currentPlaylistTrackIndex = songIndexInOriginalPlaylist; // Always store original index
+    currentPlaylistTrackIndex = songIndex;
 
+    // Call the global playSong function (defined in play.js)
     if (typeof playSong === 'function') {
         playSong(songToPlay.title, songToPlay.artist, songToPlay.artwork, songToPlay.id.toString());
     } else {
         console.error("Global playSong function not found!");
     }
 
-    renderSidebar();
-    updatePlaylistControlsVisibility(); // This now also updates shuffle button visibility
+    renderSidebar(); // Re-render to highlight playing song
+    updatePlaylistControlsVisibility();
 }
 
 function playNextTrackInCurrentPlaylist() {
     if (!currentPlayingPlaylistId) return;
-
     const playlist = getPlaylistById(currentPlayingPlaylistId);
-    if (!playlist || !playlist.songs || playlist.songs.length === 0) {
-        clearPlaylistContext();
-        return;
-    }
 
-    if (isShuffleActive) {
-        if (shuffleUpcomingQueue.length === 0) {
-            if (loopState === 'playlist') {
-                console.log("Shuffle: Upcoming empty, looping playlist.");
-                initializeShuffleQueues(playlist.songs);
-                 // After re-initializing, check if there are still songs to play
-                if (shuffleUpcomingQueue.length > 0) {
-                    const nextSongToPlay = shuffleUpcomingQueue.shift();
-                    shufflePlayedQueue.push(nextSongToPlay);
-                    const originalIndexOfNextSong = playlist.songs.findIndex(s => s.id === nextSongToPlay.id);
-                    currentPlaylistTrackIndex = originalIndexOfNextSong;
-                    currentPlayingPlaylistId = playlist.id;
-                    console.log(`Shuffle: Playing next "${nextSongToPlay.title}" after loop. Upcoming: ${shuffleUpcomingQueue.length}, Played: ${shufflePlayedQueue.length}`);
-                    if (typeof playSong === 'function') {
-                        playSong(nextSongToPlay.title, nextSongToPlay.artist, nextSongToPlay.artwork, nextSongToPlay.id.toString());
-                    }
-                    renderSidebar();
-                    updatePlaylistControlsVisibility();
-                    return; // Important: exit after handling the looped shuffle
-                } else {
-                    // Playlist became empty even after trying to loop shuffle (e.g. 0 songs playlist)
-                    clearPlaylistContext();
-                    return;
-                }
-            } else {
-                console.log("Shuffle: Upcoming empty, no loop. Showing toast.");
-                if (typeof showToast === 'function') { // <<<< ADDED TOAST
-                    showToast("Last track in shuffle. Enable loop to replay.", 3500);
-                }
-                return; // Stop here, don't proceed to play
-            }
-        }
-
-        // This block is for when shuffleUpcomingQueue.length > 0 (normal shuffle next)
-        const nextSongToPlay = shuffleUpcomingQueue.shift();
-        shufflePlayedQueue.push(nextSongToPlay);
-        const originalIndexOfNextSong = playlist.songs.findIndex(s => s.id === nextSongToPlay.id);
-        currentPlaylistTrackIndex = originalIndexOfNextSong;
-        currentPlayingPlaylistId = playlist.id;
-        console.log(`Shuffle: Playing next "${nextSongToPlay.title}". Upcoming: ${shuffleUpcomingQueue.length}, Played: ${shufflePlayedQueue.length}`);
-        if (typeof playSong === 'function') {
-            playSong(nextSongToPlay.title, nextSongToPlay.artist, nextSongToPlay.artwork, nextSongToPlay.id.toString());
-        }
-        renderSidebar();
-        updatePlaylistControlsVisibility();
-
-    } else { // Original non-shuffle logic
+    if (playlist && playlist.songs.length > 0) {
         let nextIndex = currentPlaylistTrackIndex + 1;
         if (nextIndex >= playlist.songs.length) {
-            if (loopState === 'playlist') {
-                nextIndex = 0;
-            } else {
-                console.log("Playlist: Last track, no loop. Showing toast.");
-                if (typeof showToast === 'function') { // <<<< ADDED TOAST
-                    showToast("End of playlist! Enable loop to continue.", 3500);
-                }
-                return; // Stop here, don't proceed to play
-            }
+            nextIndex = 0; // Loop for 'playlist' loop state, or if user clicks next on last song
         }
         playSongFromCurrentPlaylist(currentPlayingPlaylistId, nextIndex);
     }
@@ -3211,60 +2764,25 @@ function playNextTrackInCurrentPlaylist() {
 
 function playPreviousTrackInCurrentPlaylist() {
     if (!currentPlayingPlaylistId) return;
-
     const playlist = getPlaylistById(currentPlayingPlaylistId);
-     if (!playlist || !playlist.songs || playlist.songs.length === 0) {
-        clearPlaylistContext();
-        return;
-    }
 
-    if (isShuffleActive) {
-        if (shufflePlayedQueue.length < 2) { // Need at least 2 songs in played: one current, one previous
-            console.log("Shuffle: Not enough played history to go previous.");
-            return; // Or play the first song of the shuffle cycle if desired
-        }
-
-        const currentSongFromPlayed = shufflePlayedQueue.pop(); // Remove current from played
-        shuffleUpcomingQueue.unshift(currentSongFromPlayed); // Add it back to start of upcoming
-
-        const previousSongToPlay = shufflePlayedQueue[shufflePlayedQueue.length - 1]; // Peek at new last (actual prev)
-        
-        const originalIndexOfPrevSong = playlist.songs.findIndex(s => s.id === previousSongToPlay.id);
-
-        currentPlaylistTrackIndex = originalIndexOfPrevSong;
-        currentPlayingPlaylistId = playlist.id;
-
-        console.log(`Shuffle: Playing previous "${previousSongToPlay.title}". Upcoming: ${shuffleUpcomingQueue.length}, Played: ${shufflePlayedQueue.length}`);
-        if (typeof playSong === 'function') {
-            playSong(previousSongToPlay.title, previousSongToPlay.artist, previousSongToPlay.artwork, previousSongToPlay.id.toString());
-        }
-        renderSidebar();
-        updatePlaylistControlsVisibility();
-
-    } else { // Original non-shuffle logic
+    if (playlist && playlist.songs.length > 0) {
         let prevIndex = currentPlaylistTrackIndex - 1;
         if (prevIndex < 0) {
-            // If loop playlist is active, wrap to last song, otherwise stop at first.
-            if (loopState === 'playlist') {
-                 prevIndex = playlist.songs.length - 1;
-            } else {
-                return; // Don't wrap if not looping playlist
-            }
+            prevIndex = playlist.songs.length - 1;
         }
         playSongFromCurrentPlaylist(currentPlayingPlaylistId, prevIndex);
     }
 }
-function updatePlaylistControlsVisibility() {
-    if (!prevBtnElement || !nextBtnElement || !shuffleBtn) return; // Add shuffleBtn check
-    const playlist = getPlaylistById(currentPlayingPlaylistId);
-    const showControls = playlist && playlist.songs && playlist.songs.length > 0;
 
+function updatePlaylistControlsVisibility() {
+    if (!prevBtnElement || !nextBtnElement) return;
+    const playlist = getPlaylistById(currentPlayingPlaylistId);
+    const showControls = playlist && playlist.songs && playlist.songs.length > 0; // Show if any playlist has songs
     prevBtnElement.style.display = showControls ? 'inline-block' : 'none';
     nextBtnElement.style.display = showControls ? 'inline-block' : 'none';
-    shuffleBtn.style.display = showControls ? 'inline-block' : 'none'; // <<< ADD THIS
 
-    if (typeof updateLoopButtonIcon === 'function') updateLoopButtonIcon();
-    if (typeof updateShuffleButtonIcon === 'function') updateShuffleButtonIcon(); // <<< ADD THIS
+    if (typeof updateLoopButtonIcon === 'function') updateLoopButtonIcon(); // Defined in player.js
 }
 
 function clearPlaylistContext() {
@@ -3272,40 +2790,29 @@ function clearPlaylistContext() {
     currentPlayingPlaylistId = null;
     currentPlaylistTrackIndex = -1;
 
-    isShuffleActive = false; // <<< ADD THIS
-    shuffleUpcomingQueue = []; // <<< ADD THIS
-    shufflePlayedQueue = [];   // <<< ADD THIS
-    if(typeof updateShuffleButtonIcon === 'function') updateShuffleButtonIcon(); // <<< ADD THIS
-
     if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId) {
          const playlistBeingViewed = getPlaylistById(selectedPlaylistToViewId);
-         if(playlistBeingViewed) renderSinglePlaylistView(selectedPlaylistToViewId);
+         if(playlistBeingViewed) renderSinglePlaylistView(selectedPlaylistToViewId); // Re-render to remove playing highlight
+    } else if (currentSidebarView === 'all_playlists') {
+        // If playing from "All Playlists" view (e.g. clicking play on a playlist overview - future feature)
+        // For now, this else if might not be strictly necessary.
     }
 
     updatePlaylistControlsVisibility();
 
     if (wasPlayingPlaylist && typeof loopState !== 'undefined' && loopState === 'playlist') {
-        loopState = 'none'; // If playlist context cleared, playlist loop should also conceptually reset
+        loopState = 'none';
         if (typeof updateLoopButtonIcon === 'function') updateLoopButtonIcon();
     }
 }
 
 // --- "ADD TO PLAYLIST" MODAL ---
-function openAddToPlaylistModal(songDataOverride = null) {
-    const songToAdd = songDataOverride || currentTrack; // Use override if provided, else global currentTrack
-
-    if (!songToAdd || songToAdd.id == null) { // Check songToAdd.id
-        showGeneralModal("Cannot Add Song", "No song selected or currently playing to add to a playlist.");
+function openAddToPlaylistModal() {
+    if (!currentTrack || currentTrack.id == null) {
+        // Assumes showGeneralModal and escapeModalHtml are global from modals.js
+        showGeneralModal("Cannot Add Song", "No song is currently playing to add to a playlist.");
         return;
     }
-    // Ensure songToAdd has all necessary properties (id, title, artist, artwork)
-    if (!songToAdd.title || !songToAdd.artist || !songToAdd.artwork) {
-        console.error("Song data for modal is incomplete:", songToAdd);
-        showGeneralModal("Error", "Cannot add song due to incomplete data.");
-        return;
-    }
-
-
     modalPlaylistListElement.innerHTML = '';
 
     // Option to add to Liked Songs
@@ -3313,13 +2820,7 @@ function openAddToPlaylistModal(songDataOverride = null) {
     likedItem.className = 'modal-playlist-item';
     likedItem.textContent = "Liked Songs";
     likedItem.onclick = () => {
-        // Use the data from songToAdd
-        addSongToLikedPlaylist({
-            id: songToAdd.id.toString(),
-            title: songToAdd.title,
-            artist: songToAdd.artist,
-            artwork: songToAdd.artwork
-        });
+        addSongToLikedPlaylist({ id: currentTrack.id, title: currentTrack.title, artist: currentTrack.artist, artwork: currentTrack.artwork });
         closeAddToPlaylistModal();
     };
     modalPlaylistListElement.appendChild(likedItem);
@@ -3329,19 +2830,13 @@ function openAddToPlaylistModal(songDataOverride = null) {
         playlistItem.className = 'modal-playlist-item';
         playlistItem.textContent = escapeHtml(playlist.name);
         playlistItem.onclick = () => {
-            // Use the data from songToAdd
-            addSongToUserPlaylist(playlist.id, {
-                id: songToAdd.id.toString(),
-                title: songToAdd.title,
-                artist: songToAdd.artist,
-                artwork: songToAdd.artwork
-            });
+            addSongToUserPlaylist(playlist.id, { id: currentTrack.id, title: currentTrack.title, artist: currentTrack.artist, artwork: currentTrack.artwork });
             closeAddToPlaylistModal();
         };
         modalPlaylistListElement.appendChild(playlistItem);
     });
 
-    if (modalPlaylistListElement.children.length === 1 && userPlaylists.length === 0) {
+    if (modalPlaylistListElement.children.length === 1 && userPlaylists.length === 0) { // Only "Liked Songs" showing and no user playlists
          const noUserPlaylistsMsg = document.createElement('p');
          noUserPlaylistsMsg.textContent = 'No other playlists. Create one first!';
          noUserPlaylistsMsg.style.textAlign = 'center';
@@ -3403,10 +2898,6 @@ function handleRenamePlaylist(playlistIdToEdit /*, listItemElement - no longer n
 let draggedSongIndex = null;
 let draggedSongElement = null;
 let dragOverPlaylistIdContext = null; // Stores playlist ID during drag operation
-
-// New state variables for playlist dragging
-let draggedPlaylistIndex = null;     // Index in the userPlaylists array
-let draggedPlaylistElement = null;
 
 function handleSongDragStart(event, index, playlistId) {
     draggedSongIndex = index;
@@ -3479,161 +2970,6 @@ function clearGapIndicators() {
     });
 }
 
-// --- DRAG AND DROP FOR PLAYLIST OVERVIEW ITEMS ---
-
-function handlePlaylistDragStart(event, playlistId) {
-    draggedPlaylistIndex = userPlaylists.findIndex(p => p.id === playlistId);
-    // Explicitly prevent dragging "Liked Songs" even if draggable was somehow set
-    if (draggedPlaylistIndex === -1 || playlistId === LIKED_SONGS_PLAYLIST_ID) {
-        event.preventDefault();
-        return;
-    }
-
-    draggedPlaylistElement = event.target.closest('.playlist-overview-item');
-    if (!draggedPlaylistElement) { // Should not happen if event is on the li
-        event.preventDefault();
-        return;
-    }
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData('text/plain', playlistId); // Store playlistId
-
-    setTimeout(() => { // Timeout to allow browser to render drag image before class change
-        if (draggedPlaylistElement) draggedPlaylistElement.classList.add('dragging');
-    }, 0);
-}
-
-function handlePlaylistDragOver(event) {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-
-    const targetLiElement = event.target.closest('.playlist-overview-item');
-
-    // Do not allow dropping on "Liked Songs" or on the item being dragged
-    if (!targetLiElement || targetLiElement === draggedPlaylistElement || 
-        targetLiElement.getAttribute('data-playlist-id') === LIKED_SONGS_PLAYLIST_ID) {
-        clearPlaylistGapIndicators(); // Clear any gaps if hovering over an invalid target
-        return;
-    }
-
-    clearPlaylistGapIndicators(); // Clear previous gaps
-
-    const rect = targetLiElement.getBoundingClientRect();
-    const offsetY = event.clientY - rect.top;
-    const middleY = rect.height / 2;
-
-    if (offsetY < middleY) {
-        targetLiElement.classList.add('show-gap-above');
-    } else {
-        targetLiElement.classList.add('show-gap-below');
-    }
-}
-
-function handlePlaylistDrop(event, targetPlaylistIdOnDrop) {
-    event.preventDefault();
-    clearPlaylistGapIndicators();
-
-    if (!draggedPlaylistElement || draggedPlaylistIndex === -1 || targetPlaylistIdOnDrop === LIKED_SONGS_PLAYLIST_ID) {
-        // Invalid drag operation or dropping on "Liked Songs"
-        if (draggedPlaylistElement) draggedPlaylistElement.classList.remove('dragging');
-        draggedPlaylistIndex = -1;
-        draggedPlaylistElement = null;
-        return;
-    }
-
-    const targetLiElement = event.target.closest('.playlist-overview-item');
-    if (!targetLiElement) { // Should not happen if drop event is on a valid target
-        if (draggedPlaylistElement) draggedPlaylistElement.classList.remove('dragging');
-        draggedPlaylistIndex = -1;
-        draggedPlaylistElement = null;
-        return;
-    }
-
-    const targetPlaylistIndexInUserPlaylists = userPlaylists.findIndex(p => p.id === targetPlaylistIdOnDrop);
-    if (targetPlaylistIndexInUserPlaylists === -1) { // Target playlist not found (error)
-        if (draggedPlaylistElement) draggedPlaylistElement.classList.remove('dragging');
-        draggedPlaylistIndex = -1;
-        draggedPlaylistElement = null;
-        return;
-    }
-
-    // Determine target insert position based on drop location relative to the target item's middle
-    let visualTargetIndex = targetPlaylistIndexInUserPlaylists; // This is the index of the item we are dropping ONTO
-
-    const rect = targetLiElement.getBoundingClientRect();
-    const offsetY = event.clientY - rect.top;
-    const middleY = rect.height / 2;
-
-    if (offsetY > middleY) { // Dropped on the lower half, so insert AFTER this item
-        visualTargetIndex++;
-    }
-    // If dropped on upper half, visualTargetIndex remains the index of the target item (insert BEFORE it)
-
-    reorderUserPlaylists(draggedPlaylistIndex, visualTargetIndex);
-    // Drag end will clean up remaining state and classes.
-    // reorderUserPlaylists will call renderAllPlaylistsView which also helps clean up.
-}
-
-function handlePlaylistDragEnd(event) {
-    clearPlaylistGapIndicators();
-    if (draggedPlaylistElement) {
-        draggedPlaylistElement.classList.remove('dragging');
-    }
-    // Failsafe removal
-    const allDraggingItems = playlistDisplayAreaElement.querySelectorAll('.playlist-overview-item.dragging');
-    allDraggingItems.forEach(item => item.classList.remove('dragging'));
-
-    draggedPlaylistIndex = -1;
-    draggedPlaylistElement = null;
-}
-
-function clearPlaylistGapIndicators() {
-    const items = playlistDisplayAreaElement.querySelectorAll('.playlist-overview-item');
-    items.forEach(item => {
-        item.classList.remove('show-gap-above', 'show-gap-below');
-    });
-}
-
-// --- SHUFFLE HELPER ---
-function shuffleArray(array) {
-    let newArray = [...array]; // Create a copy
-    for (let i = newArray.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-    }
-    return newArray;
-}
-
-// --- SHUFFLE QUEUE MANAGEMENT ---
-function initializeShuffleQueues(playlistSongs, currentlyPlayingSongId = null) {
-    if (!isShuffleActive || !playlistSongs || playlistSongs.length === 0) {
-        shuffleUpcomingQueue = [];
-        shufflePlayedQueue = [];
-        isShuffleActive = false; // Turn off if no songs
-        if (typeof updateShuffleButtonIcon === 'function') updateShuffleButtonIcon();
-        return;
-    }
-
-    // Create a queue of song *objects* or just *IDs*. IDs are simpler for queue management.
-    // Let's use song objects for now to easily access details later.
-    shuffleUpcomingQueue = shuffleArray(playlistSongs);
-    shufflePlayedQueue = [];
-
-    if (currentlyPlayingSongId) {
-        const currentSongIndexInUpcoming = shuffleUpcomingQueue.findIndex(s => s.id === currentlyPlayingSongId);
-        if (currentSongIndexInUpcoming > -1) {
-            const currentSongObject = shuffleUpcomingQueue.splice(currentSongIndexInUpcoming, 1)[0];
-            shufflePlayedQueue.push(currentSongObject); // Current song is first in played queue
-        } else {
-            // If current song wasn't in the list for some reason, just proceed.
-        }
-    }
-    console.log("Shuffle queues initialized. Upcoming:", shuffleUpcomingQueue.map(s=>s.title), "Played:", shufflePlayedQueue.map(s=>s.title));
-}
-
-
-
-
-
 // Helper to prevent XSS
 function escapeHtml(unsafe) {
     if (typeof unsafe !== 'string') {
@@ -3651,31 +2987,19 @@ function escapeHtml(unsafe) {
 
 js/search.js
 ```js
-// --- Event Listeners for searchInput ---
-
-searchInput.addEventListener("focus", function () {
-  if (searchInput.value.trim() === "") {
-      displayRecentSearches();
-  }
-  // If there's text, the 'input' event will handle regular search suggestions or actual search
-});
+// js/search.js
 
 searchInput.addEventListener("input", function () {
-  clearTimeout(searchTimeout); // searchTimeout should be defined (e.g., in init.js or top of this file)
-  const query = searchInput.value.trim();
+  clearTimeout(searchTimeout);
 
-  if (query.length > 1) {
-      searchTimeout = setTimeout(() => {
+  searchTimeout = setTimeout(() => {
+      const query = searchInput.value.trim();
+      if (query.length > 1) {
           searchSongs(query);
-      }, 300);
-  } else if (query.length === 0) {
-      displayRecentSearches(); // Show recent searches if input is cleared
-  } else {
-      // Query is 1 char, or just spaces - hide main song search results
-      hideSearchResults(); 
-      // Optionally, you could still show recent searches here if desired,
-      // but typical behavior is to hide until input is empty or long enough for song search.
-  }
+      } else {
+         if (typeof hideSearchResults === 'function') hideSearchResults();
+      }
+  }, 300);
 });
 
 searchInput.addEventListener("keypress", function (e) {
@@ -3683,38 +3007,23 @@ searchInput.addEventListener("keypress", function (e) {
       clearTimeout(searchTimeout);
       const query = searchInput.value.trim();
       if (query.length > 1) {
-          searchSongs(query); // searchSongs will handle adding to recent history on success
-      } else if (query.length === 0) {
-          hideSearchResults(); // Don't search an empty string on enter
+          searchSongs(query);
       }
   }
 });
 
-// --- Main Search Function ---
 function searchSongs(query) {
-  if (!searchResults) { // Guard
-      console.error("Search results element not found");
-      return;
-  }
   searchResults.innerHTML = '<div class="loading">Searching...</div>';
   showSearchResults();
 
-  // SEARCH_EP should be globally available from endpoints.js
+  // Prioritize 'song' entity for better track matches
   const url = `${SEARCH_EP}${encodeURIComponent(query)}&media=music&entity=song&limit=10`;
 
   fetch(url)
       .then((response) => response.json())
       .then((data) => {
           console.log("iTunes search results:", data);
-          // displaySearchResults is for song results. displayRecentSearches is for history.
-          if (data.results && data.results.length > 0) {
-              // Uses addRecentSearch() from history.js
-              addRecentSearch(query); 
-              displaySongSearchResults(data.results); // Renamed for clarity
-          } else {
-              // Don't add to history if no song results found for this query
-              displaySongSearchResults(data.results); // Will show "No results found"
-          }
+          displaySearchResults(data.results);
       })
       .catch((error) => {
           console.error("Error searching iTunes:", error);
@@ -3723,234 +3032,57 @@ function searchSongs(query) {
       });
 }
 
-// Renamed your original displaySearchResults to avoid conflict with the new one for history
-// This function displays actual song search results from iTunes.
-function displaySongSearchResults(results) {
-  if (!searchResults) return; 
-
+function displaySearchResults(results) {
   if (!results || results.length === 0) {
       searchResults.innerHTML = '<div class="loading">No results found</div>';
-      // showSearchResults(); // Already called by searchSongs which calls this
       return;
   }
 
-  searchResults.innerHTML = ""; // Clear loading message or recent searches
+  searchResults.innerHTML = ""; // Clear previous results
 
   results.forEach((item) => {
+      // Ensure essential data is present, especially trackId for liking
       if (!item.trackName || !item.artistName || !item.trackId || !item.artworkUrl100) {
           console.warn("Skipping search result due to missing data:", item);
           return;
       }
 
       const resultElement = document.createElement("div");
-      resultElement.className = "result-item"; // For actual song results
-
-      resultElement.dataset.trackId = item.trackId.toString();
-      resultElement.dataset.trackName = item.trackName;
-      resultElement.dataset.artistName = item.artistName;
-      resultElement.dataset.artworkUrl100 = item.artworkUrl100;
-
+      resultElement.className = "result-item";
       resultElement.innerHTML = `
-          <div class="result-img">
-              <img src="${item.artworkUrl100}" alt="${escapeHtml(item.trackName)}" crossorigin="anonymous">
-          </div>
-          <div class="result-info">
-              <div class="result-title">${escapeHtml(item.trackName)}</div>
-              <div class="result-artist">${escapeHtml(item.artistName)}</div>
-          </div>
-          <button class="add-to-playlist-search-btn icon-action-btn" title="Add to playlist">
-              <i class="icon icon-plus-circle"></i>
-          </button>
-      `;
-      
-      // Click listener for the main result item (plays the song)
-      resultElement.addEventListener("click", (event) => {
-          // Only play if the click was not on the "add to playlist" button
-          if (event.target.closest('.add-to-playlist-search-btn')) {
-              // The button's own click listener (below) will handle its action and stop propagation.
-              return; 
+      <div class="result-img">
+        <img src="${item.artworkUrl100}" alt="${item.trackName}" crossorigin="anonymous">
+      </div>
+      <div class="result-info">
+        <div class="result-title">${item.trackName}</div>
+        <div class="result-artist">${item.artistName}</div>
+      </div>
+    `;
+
+      resultElement.addEventListener("click", () => {
+          // When playing from search, it's not from the "liked" playlist context initially.
+          if (typeof clearPlaylistContext === 'function') {
+              clearPlaylistContext(); // Reset active playlist context
           }
 
-          // Clicked on song info/artwork area to play
-          if (typeof clearPlaylistContext === 'function') clearPlaylistContext();
+          // Pass trackId as a string, and the 100x100 artwork.
+          // playSong will derive the larger artwork.
           playSong(item.trackName, item.artistName, item.artworkUrl100, item.trackId.toString());
-          hideSearchResults();
-          if (searchInput) searchInput.value = "";
 
-          // IMPORTANT: Stop this click from bubbling up to the document listener
-          event.stopPropagation();
+          hideSearchResults();
+          searchInput.value = ""; // Clear search input
       });
 
-      const addToPlaylistBtnForResult = resultElement.querySelector('.add-to-playlist-search-btn');
-      if (addToPlaylistBtnForResult) {
-          addToPlaylistBtnForResult.addEventListener('click', (event) => {
-              event.stopPropagation(); // Crucial: Prevent parent (resultElement) click and document click
-              const songDataForModal = {
-                  id: item.trackId.toString(),
-                  title: item.trackName,
-                  artist: item.artistName,
-                  artwork: item.artworkUrl100
-              };
-              if (typeof openAddToPlaylistModal === 'function') {
-                  openAddToPlaylistModal(songDataForModal);
-              } else {
-                  console.error("openAddToPlaylistModal function not found");
-              }
-          });
-      }
       searchResults.appendChild(resultElement);
   });
-  // showSearchResults(); // Already called by searchSongs which calls this
 }
 
-// --- Utility functions (showSearchResults, hideSearchResults) ---
-// These should be your existing functions:
 function showSearchResults() {
-  if (searchResults) searchResults.classList.add("active");
+  searchResults.classList.add("active");
 }
 
 function hideSearchResults() {
-  if (searchResults) searchResults.classList.remove("active");
-}
-
-// --- Display Logic for Recent Searches ---
-function displayRecentSearches() {
-  // Uses getRecentSearches() from history.js or this file
-  const recentSearches = getRecentSearches(); 
-
-  if (!searchResults) return; 
-
-  if (recentSearches.length === 0) {
-      searchResults.innerHTML = '<div class="loading" style="padding: 10px 0;">No recent searches.</div>';
-      showSearchResults(); 
-      return;
-  }
-
-  searchResults.innerHTML = ''; 
-  const title = document.createElement('div');
-  title.className = 'recent-searches-title';
-  title.textContent = 'Recent Searches';
-  searchResults.appendChild(title);
-
-  recentSearches.forEach(query => {
-      const recentItem = document.createElement('div');
-      recentItem.className = 'recent-search-item result-item'; 
-
-      recentItem.innerHTML = `
-          <span class="recent-search-query">${escapeHtml(query)}</span>
-          <button class="remove-recent-search-btn icon-action-btn" title="Remove from history">
-              <i class="icon icon-close"></i>
-          </button>
-      `;
-
-      // Event listener for the entire recentItem (covers clicking the query text area)
-      recentItem.addEventListener('click', (event) => {
-          // If the click was specifically on the remove button,
-          // let its own handler (which also stops propagation) do the work.
-          if (event.target.closest('.remove-recent-search-btn')) {
-              return;
-          }
-          
-          // This click is on the recent search item (likely the query text area) to initiate a search
-          searchInput.value = query; 
-          searchSongs(query); // This will refresh the searchResults content
-          
-          // IMPORTANT: Stop this click from bubbling up to the document listener
-          event.stopPropagation(); 
-      });
-
-      const removeBtn = recentItem.querySelector('.remove-recent-search-btn');
-      if (removeBtn) {
-          removeBtn.addEventListener('click', (event) => {
-              event.stopPropagation(); // Crucial: Prevent parent (recentItem) click and document click
-              removeRecentSearch(query); 
-              displayRecentSearches();   // Re-render the recent searches list immediately
-          });
-      }
-      searchResults.appendChild(recentItem);
-  });
-  showSearchResults(); 
-}
-```
-
-js/toast.js
-```js
-// js/toast.js
-
-const toastContainer = document.getElementById('toastContainer');
-const MAX_TOASTS = 1; // Define the maximum number of toasts allowed
-
-// Store references to active toasts and their removal timeouts
-let activeToasts = []; // Array of { element: toastElement, timeoutId: id }
-
-/**
- * Displays a toast message, managing the maximum number of toasts.
- * @param {string} message The message to display.
- * @param {number} duration How long the toast should be visible in milliseconds (default: 3000).
- */
-function showToast(message, duration = 3000) {
-    if (!toastContainer) {
-        console.error("Toast container not found!");
-        alert(message); // Fallback
-        return;
-    }
-
-    // If max toasts (or more) are considered active, remove the oldest one.
-    // "Oldest" here refers to the one added first to our activeToasts array.
-    if (activeToasts.length >= MAX_TOASTS) {
-        const oldestToastEntry = activeToasts.shift(); // Remove from beginning of our tracking array
-        if (oldestToastEntry) {
-            clearTimeout(oldestToastEntry.timeoutId); // Stop its scheduled removal
-            // Force remove its 'show' class and then remove from DOM without waiting for transition
-            // This is to make space immediately.
-            if (oldestToastEntry.element.parentNode) {
-                oldestToastEntry.element.classList.remove('show'); // Start fade if desired, but removal is next
-                oldestToastEntry.element.remove(); // Immediate DOM removal
-            }
-        }
-    }
-
-    const toastElement = document.createElement('div');
-    toastElement.className = 'toast-message';
-    toastElement.textContent = message;
-
-    toastContainer.appendChild(toastElement);
-
-    // Trigger the animation for showing
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            toastElement.classList.add('show');
-        });
-    });
-
-    const removalTimeoutId = setTimeout(() => {
-        // Start fade out animation
-        toastElement.classList.remove('show');
-
-        // Remove from DOM after transition
-        const transitionEndHandler = () => {
-            if (toastElement.parentNode) {
-                toastElement.parentNode.removeChild(toastElement);
-            }
-            // Clean up from our activeToasts array
-            activeToasts = activeToasts.filter(t => t.element !== toastElement);
-            toastElement.removeEventListener('transitionend', transitionEndHandler); // Clean up listener
-        };
-        toastElement.addEventListener('transitionend', transitionEndHandler);
-
-        // Fallback: if transitionend doesn't fire (e.g. element removed by other means, or no transition)
-        // remove it from activeToasts after a bit longer than the transition duration
-        setTimeout(() => {
-            activeToasts = activeToasts.filter(t => t.element !== toastElement);
-            if (toastElement.parentNode) { // If still in DOM and transitionend didn't fire
-                 toastElement.remove();
-            }
-        }, duration + 500); // duration of show + css transition time (e.g., 300ms) + buffer
-
-    }, duration);
-
-    // Add to our tracking array
-    activeToasts.push({ element: toastElement, timeoutId: removalTimeoutId });
+  searchResults.classList.remove("active");
 }
 ```
 
@@ -3974,5 +3106,3 @@ img/icons/repeat-1.svg
 img/icons/repeat.svg
 img/icons/trash.svg
 img/icons/volume-loud.svg
-img/icons/shuffle.svg
-img/icons/close.svg
