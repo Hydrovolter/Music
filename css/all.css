@@ -24,16 +24,22 @@ body {
   display: flex;
   padding: 20px;
   width: 100%;
-  min-height: calc(100vh - 40px); /* Account for body padding */
+  /* min-height: calc(100vh - 40px); /* This sets a minimum, but flex items can still grow it */
+  height: calc(100vh - 40px); /* Try setting a fixed height for the container */
+  max-height: calc(100vh - 40px); /* And a max-height to prevent overflow */
   gap: 20px;
+  box-sizing: border-box; /* Ensure padding is included in height calculation */
 }
 
 .main-content {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  align-items: center; /* Center search bar and player area within this column */
-  /* max-width: calc(100% - var(--sidebar-width) - 20px); Remove if sidebar can be below */
+  align-items: center;
+  /* Crucial: Allow main content to scroll if its content is too tall,
+     but try to keep it from expanding app-container beyond viewport height. */
+  overflow-y: auto;
+  min-height: 0; /* Fix for flex item overflow issues in some browsers */
 }
 
 .search-container {
@@ -224,42 +230,50 @@ body {
   padding: 20px;
   color: rgba(255, 255, 255, 0.7);
 }
+/* Custom Scrollbar Styles (these should already be present and apply to .playlist-content) */
 .search-results::-webkit-scrollbar,
 .lyrics-content::-webkit-scrollbar,
 .playlist-content::-webkit-scrollbar {
-  width: 6px;
+  width: 8px; /* Slightly wider for better grab-ability if desired */
 }
 .search-results::-webkit-scrollbar-track,
 .lyrics-content::-webkit-scrollbar-track,
 .playlist-content::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 3px;
+  border-radius: 4px; /* Match thumb radius */
 }
 .search-results::-webkit-scrollbar-thumb,
 .lyrics-content::-webkit-scrollbar-thumb,
 .playlist-content::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.35); /* Slightly more visible thumb */
+  border-radius: 4px;
 }
+
+/*
+.playlist-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+*/
 
 
 /* Lyrics view */
 .lyrics-info {
   flex: 1;
-  display: none; /* Initially hidden */
+  display: none;
   flex-direction: column;
   justify-content: flex-start;
   text-shadow: 0px 0px 12px rgba(0, 0, 0, 0.3);
-  min-width: 0; /* Fix for flex item text overflow */
-  max-height: 220px; /* Match album art height */
+  min-width: 0;
+  max-height: 220px; /* This should already be set to match album art */
+  overflow: hidden; /* Ensures content that overflows max-height doesn't push parent */
 }
 
 .lyrics-content {
-  flex-grow: 1; /* Allow content to take available space and scroll */
-  overflow-y: auto;
+  flex-grow: 1;
+  overflow-y: auto; /* This should already be there for lyrics scrolling */
   text-align: left;
   white-space: pre-line;
-  padding-right: 10px; /* Space for scrollbar */
+  padding-right: 10px;
   font-size: 16px;
   line-height: 1.6;
 }
@@ -402,39 +416,47 @@ mask-image: url('../img/icons/next.svg');
 width: 26px; height: 26px;
 }
 
-
-/* Playlist Sidebar Styles */
+/* Playlist Sidebar Styles - Focus here */
 .playlist-sidebar {
-width: var(--sidebar-width);
-min-width: 280px; /* Minimum width before it gets too cramped */
-/* height: calc(100vh - 40px); /* Full height minus app-container padding */
-height: 100%; /* Take full height of app-container flex item */
-background: rgba(0, 0, 0, 0.1);
-backdrop-filter: blur(8px);
-border-radius: 12px;
-padding: 20px;
-display: flex;
-flex-direction: column;
-box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-overflow: hidden; /* Prevent content from spilling out before scroll kicks in */
+  width: var(--sidebar-width);
+  min-width: 280px;
+  /* Important: Set a specific height or max-height for the sidebar.
+     It should take available space in the flex container but not exceed it. */
+  display: flex; /* Keep this to allow flex-grow on playlist-content */
+  flex-direction: column; /* Keep this */
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  /* Core change: ensure sidebar doesn't grow beyond available vertical space */
+  height: 100%; /* Take full height of its flex container slot if possible */
+  max-height: 100%; /* Prevent it from exceeding the allocated height */
+  overflow: hidden; /* This will hide any direct children overflow, forcing .playlist-content to scroll */
+  min-height: 0; /* Another flexbox fix for potential overflow issues */
 }
 
 .playlist-header {
-margin-bottom: 15px;
-padding-bottom: 10px;
-border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-flex-shrink: 0; /* Prevent header from shrinking */
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0; /* Prevent header from shrinking - GOOD */
 }
 
 .playlist-header h3 {
-font-size: 20px;
-font-weight: 600;
+  font-size: 20px;
+  font-weight: 600;
 }
 
 .playlist-content {
-flex-grow: 1;
-overflow-y: auto; /* Enable scrolling for playlist items */
+  flex-grow: 1; /* Allows this to take up remaining space in .playlist-sidebar - GOOD */
+  overflow-y: auto; /* This enables the internal scrollbar - GOOD */
+  min-height: 0; /* Flex item fix, ensures it can shrink and show scrollbar */
+  padding-right: 8px; /* Adjust if scrollbar overlaps content slightly */
+  scrollbar-width: thin; /* "auto" or "thin" */
+  scrollbar-color: rgba(255, 255, 255, 0.35) rgba(255, 255, 255, 0.05); /* thumb track */
 }
+
 
 .playlist-item {
   display: flex;
@@ -528,11 +550,11 @@ background: rgba(255,255,255,0.2);
 
 /* Responsive adjustments */
 @media (max-width: 960px) { /* Adjust breakpoint as needed */
-.app-container {
-  flex-direction: column;
-  height: auto; /* Allow content to define height */
-  min-height: 100vh; /* Ensure it still tries to fill screen */
-}
+  .app-container {
+    flex-direction: column;
+    height: auto; /* Allow app container to grow if content is very tall */
+    min-height: 100vh;
+  }
 .main-content {
   max-width: 100%; /* Allow main content to use full width */
   order: 1; /* Player first */
