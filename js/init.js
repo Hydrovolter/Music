@@ -23,7 +23,7 @@ const loopBtn = document.getElementById("loopBtn");
 
 let showingLyrics = false;
 let isMuted = false;
-let isLooping = false; // For single track loop
+let loopState = 'none';
 
 let player; // YouTube player instance
 let isPlaying = false; // Player's playing state

@@ -197,16 +197,18 @@ function playSongFromLikedPlaylist(index) {
         updatePlaylistControlsVisibility();
     }
 }
-
 function playNextTrackInCurrentPlaylist() {
+    // This function is now called when loopState is 'playlist' OR user manually clicks next.
+    // If called because loopState is 'playlist' and it's the end, it should go to the start.
+    // If user clicks next and it's the last song, currentPlaylistTrackIndex will be updated,
+    // and if they play it, fine. If song ends and loopState isn't 'playlist', it stops.
     if (currentPlayingPlaylistType === 'liked' && likedPlaylist.length > 0) {
         let nextIndex = currentPlaylistTrackIndex + 1;
+
         if (nextIndex >= likedPlaylist.length) {
-            nextIndex = 0; // Loop to the beginning
-        }
-        if (likedPlaylist.length === 1 && currentPlaylistTrackIndex === 0 && !isLooping) {
-             // If only one song and not looping, effectively "ends". Handled by onPlayerStateChange.
-             return;
+            // If called in a 'loop playlist' context (checked by onPlayerStateChange), this loops.
+            // If called by user clicking "next" on last song, it will try to play index 0.
+            nextIndex = 0;
         }
         playSongFromLikedPlaylist(nextIndex);
     }
@@ -230,10 +232,22 @@ function updatePlaylistControlsVisibility() {
 }
 
 function clearPlaylistContext() {
+    const wasPlayingPlaylist = currentPlayingPlaylistType !== null;
     currentPlayingPlaylistType = null;
     currentPlaylistTrackIndex = -1;
     renderLikedPlaylist(); // Remove any 'playing' highlight
     updatePlaylistControlsVisibility();
+
+    // If a playlist was active and loop mode was 'playlist', reset to 'none'
+    // because there's no longer an active playlist to loop.
+    // loopState is global (from init.js)
+    if (wasPlayingPlaylist && typeof loopState !== 'undefined' && loopState === 'playlist') {
+        loopState = 'none';
+        if (typeof updateLoopButtonIcon === 'function') {
+            updateLoopButtonIcon(); // Update the button visual
+        }
+        console.log("Playlist context cleared, loopState reset from 'playlist' to 'none'.");
+    }
 }
 
 

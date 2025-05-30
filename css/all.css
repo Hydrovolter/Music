@@ -386,11 +386,24 @@ transform: scale(0.94);
 .icon-muted { mask-image: url('../img/icons/mute.svg'); -webkit-mask-image: url('../img/icons/mute.svg'); }
 .icon-lyrics { mask-image: url('../img/icons/lyrics.svg'); -webkit-mask-image: url('../img/icons/lyrics.svg'); }
 .icon-lyrics-on { mask-image: url('../img/icons/music.svg'); -webkit-mask-image: url('../img/icons/music.svg'); }
-.icon-loop { mask-image: url('../img/icons/repeat.svg'); -webkit-mask-image: url('../img/icons/repeat.svg'); }
-.icon-loop.loop-active {
-mask-image: url('../img/icons/repeat-1.svg');
--webkit-mask-image: url('../img/icons/repeat-1.svg');
-background-color: #00ff88;
+.icon-loop { /* Base style for the loop button - uses repeat.svg */
+  mask-image: url('../img/icons/repeat.svg');
+  -webkit-mask-image: url('../img/icons/repeat.svg');
+  /* Default color is white (from .icon) */
+}
+
+/* New: Loop Playlist State (repeat.svg but green) */
+.icon-loop.loop-playlist-active {
+  /* Uses the default repeat.svg mask from .icon-loop */
+  background-color: #00ff88; /* Green color */
+  transform: scale(1.1); /* Optional: visual feedback, matches loop-song */
+}
+
+.icon-loop.loop-active { /* This class now specifically means "loop current song" */
+  mask-image: url('../img/icons/repeat-1.svg'); /* with the "1" on it */
+  -webkit-mask-image: url('../img/icons/repeat-1.svg');
+  background-color: #00ff88; /* Green color */
+  transform: scale(1.1); /* You already had this, good */
 }
 
 /* New Playlist Icons */
