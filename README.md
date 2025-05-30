@@ -1,6 +1,8 @@
 # Static Music Player
-A fully static music player, with a polished look.
+A fully static web music player, with a polished look.
 No ads. No faff. Just pure music.
+
+![Hydrovolter's Music Player](img/splash.png)
 
 ## Features
 * **Music Source & Playback**
