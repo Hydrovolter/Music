@@ -118,6 +118,8 @@ body {
 .result-info {
   flex: 1;
   overflow: hidden; /* Ensure text ellipsis works */
+  flex-grow: 1;
+  margin-right: 8px;
 }
 .result-title {
   font-weight: 600;
@@ -427,6 +429,17 @@ transform: scale(0.94);
 
 .icon-action-btn:hover .icon {
   background-color: #ff6b6b; /* Change icon color on hover - e.g., red for delete */
+}
+
+.add-to-playlist-search-btn {
+  flex-shrink: 0; /* Prevents the button from shrinking */
+  /* .icon-action-btn already provides margin-left: auto and other base styles */
+}
+
+/* 4. Style the icon INSIDE the button for specific size */
+.add-to-playlist-search-btn .icon.icon-plus-circle {
+  width: 18px;  /* Or 16px to match other .icon-action-btn .icon, or 20px. Adjust to taste. */
+  height: 18px; /* Match width */
 }
 
 

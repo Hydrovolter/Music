@@ -704,12 +704,21 @@ function clearPlaylistContext() {
 }
 
 // --- "ADD TO PLAYLIST" MODAL ---
-function openAddToPlaylistModal() {
-    if (!currentTrack || currentTrack.id == null) {
-        // Assumes showGeneralModal and escapeModalHtml are global from modals.js
-        showGeneralModal("Cannot Add Song", "No song is currently playing to add to a playlist.");
+function openAddToPlaylistModal(songDataOverride = null) {
+    const songToAdd = songDataOverride || currentTrack; // Use override if provided, else global currentTrack
+
+    if (!songToAdd || songToAdd.id == null) { // Check songToAdd.id
+        showGeneralModal("Cannot Add Song", "No song selected or currently playing to add to a playlist.");
         return;
     }
+    // Ensure songToAdd has all necessary properties (id, title, artist, artwork)
+    if (!songToAdd.title || !songToAdd.artist || !songToAdd.artwork) {
+        console.error("Song data for modal is incomplete:", songToAdd);
+        showGeneralModal("Error", "Cannot add song due to incomplete data.");
+        return;
+    }
+
+
     modalPlaylistListElement.innerHTML = '';
 
     // Option to add to Liked Songs
@@ -717,7 +726,13 @@ function openAddToPlaylistModal() {
     likedItem.className = 'modal-playlist-item';
     likedItem.textContent = "Liked Songs";
     likedItem.onclick = () => {
-        addSongToLikedPlaylist({ id: currentTrack.id, title: currentTrack.title, artist: currentTrack.artist, artwork: currentTrack.artwork });
+        // Use the data from songToAdd
+        addSongToLikedPlaylist({
+            id: songToAdd.id.toString(),
+            title: songToAdd.title,
+            artist: songToAdd.artist,
+            artwork: songToAdd.artwork
+        });
         closeAddToPlaylistModal();
     };
     modalPlaylistListElement.appendChild(likedItem);
@@ -727,13 +742,19 @@ function openAddToPlaylistModal() {
         playlistItem.className = 'modal-playlist-item';
         playlistItem.textContent = escapeHtml(playlist.name);
         playlistItem.onclick = () => {
-            addSongToUserPlaylist(playlist.id, { id: currentTrack.id, title: currentTrack.title, artist: currentTrack.artist, artwork: currentTrack.artwork });
+            // Use the data from songToAdd
+            addSongToUserPlaylist(playlist.id, {
+                id: songToAdd.id.toString(),
+                title: songToAdd.title,
+                artist: songToAdd.artist,
+                artwork: songToAdd.artwork
+            });
             closeAddToPlaylistModal();
         };
         modalPlaylistListElement.appendChild(playlistItem);
     });
 
-    if (modalPlaylistListElement.children.length === 1 && userPlaylists.length === 0) { // Only "Liked Songs" showing and no user playlists
+    if (modalPlaylistListElement.children.length === 1 && userPlaylists.length === 0) {
          const noUserPlaylistsMsg = document.createElement('p');
          noUserPlaylistsMsg.textContent = 'No other playlists. Create one first!';
          noUserPlaylistsMsg.style.textAlign = 'center';
