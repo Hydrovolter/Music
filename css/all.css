@@ -309,11 +309,10 @@ body {
 .controls {
   display: flex;
   align-items: center;
-  gap: 18px; /* Slightly reduced gap */
+  gap: 16px; /* Adjusted gap if needed */
   margin-bottom: 18px;
 }
-.controls i {
-  font-size: 32px; /* Base size for play/pause */
+.controls i { /* Base icon style in controls */
   cursor: pointer;
   transition: 0.12s ease;
 }
@@ -321,17 +320,12 @@ body {
   transform: scale(0.94);
 }
 
-#prevBtn, #nextBtn {
-  font-size: 26px; /* Slightly smaller for prev/next */
-  display: none; /* Initially hidden, JS will control */
-}
-#volumeBtn {
-  font-size: 20px;
-}
-#likeBtn { /* Specific size for like button if needed */
-    font-size: 22px;
-}
-
+#playPause { font-size: 32px; }
+#prevBtn, #nextBtn { font-size: 26px; display: none; }
+#volumeBtn { font-size: 20px; }
+#loopBtn { font-size: 22px; } /* Assuming you want loop button size */
+#likeBtn { font-size: 22px; }
+#addToPlaylistBtn { font-size: 22px; } /* New Add to Playlist button */
 
 .lyrics-toggle {
   position: fixed;
@@ -380,12 +374,32 @@ transition: transform 0.1s ease, background-color 0.1s ease;
 transform: scale(0.94);
 }
 
+
+.icon-edit {
+  mask-image: url('../img/icons/edit.svg');
+  -webkit-mask-image: url('../img/icons/edit.svg');
+}
+.icon-trash {
+  mask-image: url('../img/icons/trash.svg');
+  -webkit-mask-image: url('../img/icons/trash.svg');
+}
+/* Adjust size for these small action buttons if needed */
+.playlist-item-actions .icon {
+    width: 1em; /* Or a fixed px value like 14px */
+    height: 1em;
+    background-color: currentColor; /* Inherit color from button */
+}
 .icon-play { mask-image: url('../img/icons/play.svg'); -webkit-mask-image: url('../img/icons/play.svg'); }
 .icon-pause { mask-image: url('../img/icons/pause.svg'); -webkit-mask-image: url('../img/icons/pause.svg'); }
 .icon-volume { mask-image: url('../img/icons/volume-loud.svg'); -webkit-mask-image: url('../img/icons/volume-loud.svg'); }
 .icon-muted { mask-image: url('../img/icons/mute.svg'); -webkit-mask-image: url('../img/icons/mute.svg'); }
 .icon-lyrics { mask-image: url('../img/icons/lyrics.svg'); -webkit-mask-image: url('../img/icons/lyrics.svg'); }
 .icon-lyrics-on { mask-image: url('../img/icons/music.svg'); -webkit-mask-image: url('../img/icons/music.svg'); }
+.icon-plus-circle {
+  mask-image: url('../img/icons/plus-circle.svg');
+  -webkit-mask-image: url('../img/icons/plus-circle.svg');
+  width: 22px; height: 22px; /* Match likeBtn */
+}
 .icon-loop { /* Base style for the loop button - uses repeat.svg */
   mask-image: url('../img/icons/repeat.svg');
   -webkit-mask-image: url('../img/icons/repeat.svg');
@@ -449,16 +463,142 @@ width: 26px; height: 26px;
   min-height: 0; /* Another flexbox fix for potential overflow issues */
 }
 
-.playlist-header {
+.playlist-sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 15px;
   padding-bottom: 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  flex-shrink: 0; /* Prevent header from shrinking - GOOD */
+  flex-shrink: 0;
 }
 
-.playlist-header h3 {
-  font-size: 20px;
+.playlist-sidebar-header h3 {
+  font-size: 18px; /* Slightly smaller to fit buttons */
   font-weight: 600;
+  margin: 0 auto; /* Center title if back button is hidden */
+}
+
+.playlist-sidebar-header .sidebar-back-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 5px 8px;
+  margin-right: auto; /* Pushes title and create button to the right */
+}
+.playlist-sidebar-header .sidebar-back-button:hover {
+  opacity: 0.8;
+}
+
+.playlist-sidebar-header .create-playlist-btn {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  line-height: 28px; /* Align plus vertically */
+  text-align: center;
+}
+
+/* General list display for playlists and songs in playlist */
+.playlist-list-container { /* Wrapper for the ul if needed, or style #playlistDisplayArea directly */
+  flex-grow: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding-right: 8px; /* Gap for scrollbar */
+}
+.playlist-list-container ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+
+.create-playlist-btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+/* Individual Playlist Item (in the list of playlists) */
+.playlist-overview-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 8px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  position: relative; /* For delete/rename buttons */
+}
+.playlist-overview-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+.playlist-overview-item-artwork {
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  margin-right: 15px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.playlist-overview-item-info {
+  flex-grow: 1;
+  overflow: hidden;
+}
+.playlist-overview-item-name {
+  font-size: 16px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 3px;
+}
+.playlist-overview-item-count {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+.playlist-item-actions button { /* For delete/rename buttons on playlist overview */
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    padding: 3px;
+    font-size: 14px;
+    margin-left: 5px;
+}
+.playlist-item-actions button:hover {
+    color: white;
+}
+
+/* Styling for input field when creating/renaming */
+.playlist-name-input {
+  width: calc(100% - 60px); /* Adjust based on sibling elements if any */
+  padding: 8px;
+  margin-bottom: 5px;
+  background-color: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: white;
+  border-radius: 4px;
+  font-size: 16px;
+}
+.playlist-overview-item-info .playlist-name-input { /* When renaming inline */
+  font-size: 16px;
+  font-weight: 500;
+  width: 100%;
+}
+
+/* Playlist content scrollbar (ensure it's styled nicely) */
+#playlistDisplayArea::-webkit-scrollbar { width: 8px; }
+#playlistDisplayArea::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 4px; }
+#playlistDisplayArea::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.35); border-radius: 4px; }
+#playlistDisplayArea {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) rgba(255, 255, 255, 0.05);
 }
 
 .playlist-content {
@@ -560,6 +700,112 @@ opacity: 0.5;
 background: rgba(255,255,255,0.2);
 }
 
+/* Modal Styles - Updated for Glassmorphism */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  /* The overlay itself remains semi-transparent black to dim the background */
+  background-color: rgba(0,0,0,0.4); /* Slightly less dark overlay maybe */
+  /* backdrop-filter: blur(2px); /* Optional: blur the entire page behind the modal - can be performance heavy */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px; /* Add some padding so modal doesn't hit screen edges on small viewports */
+}
+
+.modal-content {
+  /* Glassmorphism Background */
+  background-color: rgba(255, 255, 255, 0.1); /* Very light, semi-transparent white */
+  backdrop-filter: blur(15px) saturate(150%); /* Key for the frosted glass effect, adjust blur amount */
+  -webkit-backdrop-filter: blur(15px) saturate(150%); /* For Safari */
+
+  color: #f0f0f0; /* Adjust text color for readability on the new background */
+  
+  padding: 25px 30px;
+  border-radius: 12px; /* Slightly larger radius can look nice */
+  
+  /* Subtle Border to define edges */
+  border: 1px solid rgba(255, 255, 255, 0.18);
+
+  width: 90%;
+  max-width: 380px;
+  
+  /* Softer Shadow */
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.17); /* Softer, more diffused shadow */
+  /* Or a simpler one: box-shadow: 0 4px 15px rgba(0,0,0,0.2); */
+
+  position: relative;
+  text-align: left;
+  /* overflow: hidden; /* Can help if content inside tries to break border-radius with its own bg */
+}
+
+.close-modal-btn {
+  color: rgba(255, 255, 255, 0.7); /* Adjust for new background */
+  position: absolute;
+  top: 12px; /* Adjust position slightly if needed */
+  right: 15px;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+.close-modal-btn:hover,
+.close-modal-btn:focus {
+  color: white;
+}
+
+.modal-content h4 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  color: #ffffff; /* Ensure title is clearly visible */
+}
+
+#modalPlaylistList {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 10px;
+  padding-right: 5px; /* Space for scrollbar if items are wide */
+}
+
+#modalPlaylistList .modal-playlist-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-radius: 6px; /* Match overall aesthetic */
+  margin-bottom: 6px;
+  font-size: 15px;
+  color: #e0e0e0; /* Slightly softer than pure white */
+  transition: background-color 0.2s ease, color 0.2s ease;
+  /* Optional: add a very subtle divider if needed, or rely on hover */
+  /* border-bottom: 1px solid rgba(255,255,255,0.05); */
+}
+/* #modalPlaylistList .modal-playlist-item:last-child {
+  border-bottom: none; 
+} */
+
+#modalPlaylistList .modal-playlist-item:hover {
+  background-color: rgba(255,255,255,0.15); /* Slightly lighter hover */
+  color: #ffffff;
+}
+
+/* Scrollbar for modal playlist list - keep it subtle */
+#modalPlaylistList::-webkit-scrollbar { width: 6px; }
+#modalPlaylistList::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 3px; }
+#modalPlaylistList::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 3px; } /* Slightly lighter thumb */
+#modalPlaylistList::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+#modalPlaylistList {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) rgba(255, 255, 255, 0.05);
+}
+
 
 /* Responsive adjustments */
 @media (max-width: 960px) { /* Adjust breakpoint as needed */
@@ -590,6 +836,8 @@ background: rgba(255,255,255,0.2);
 .search-results {
     max-width: 570px; /* Match player width */
 }
+
+
 
 }
 

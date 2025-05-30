@@ -1,15 +1,16 @@
 // js/player.js
 
+// YouTube Iframe API setup (tag, firstScriptTag) - unchanged
 const tag = document.createElement("script");
 tag.src = "https://www.youtube.com/iframe_api";
 const firstScriptTag = document.getElementsByTagName("script")[0];
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
 function onYouTubeIframeAPIReady() {
-  player = new YT.Player("ytPlayer", {
-    height: "1", // Keep small and out of sight
+  player = new YT.Player("ytPlayer", { // player is global
+    height: "1",
     width: "1",
-    videoId: "-", // Initial dummy videoId, will be replaced
+    videoId: "-",
     playerVars: {
       playsinline: 1,
       controls: 0,
@@ -17,33 +18,34 @@ function onYouTubeIframeAPIReady() {
       modestbranding: 1,
       rel: 0,
       showinfo: 0,
-      autoplay: 0, // Important: We control play/pause via API
+      autoplay: 0,
     },
     events: {
       onReady: onPlayerReady,
       onStateChange: onPlayerStateChange,
-      onError: onPlayerError // Add an error handler
+      onError: onPlayerError
     },
   });
 }
 
 function onPlayerReady(event) {
   console.log("Player is ready");
-  // Don't autoplay on ready unless a song is already cued by logic
 
-  playPauseBtn.addEventListener("click", togglePlayback);
+  // playPauseBtn, volumeBtn, loopBtn are global from init.js
+  // seekBar is global from init.js
+  playPauseBtn.addEventListener("click", togglePlayback); // togglePlayback is global from playback.js
   volumeBtn.addEventListener("click", toggleMute);
   loopBtn.addEventListener("click", toggleLoop);
 
-  seekBar.addEventListener("mousedown", startSeek);
-  document.addEventListener("mousemove", dragSeek);
-  document.addEventListener("mouseup", endSeek);
+  seekBar.addEventListener("mousedown", startSeek); // startSeek from playback.js
+  document.addEventListener("mousemove", dragSeek); // dragSeek from playback.js
+  document.addEventListener("mouseup", endSeek);   // endSeek from playback.js
 
-  setInterval(updateProgress, 500);
-  updateLoopButtonIcon();
+  setInterval(updateProgress, 500); // updateProgress from playback.js
+  updateLoopButtonIcon(); // Initialize loop button icon based on global loopState
 
-  // Initial color logic if albumCover is already loaded (e.g. from cache or default)
-  if (albumCover.complete && albumCover.src !== window.location.href + 'img/empty_art.png' && albumCover.src !== 'img/empty_art.png') {
+  // Initial color logic - unchanged
+  if (albumCover.complete && albumCover.src && !albumCover.src.endsWith('img/empty_art.png')) {
     try {
       const dominantColor = colorThief.getColor(albumCover);
       applyColors(dominantColor);
@@ -51,17 +53,52 @@ function onPlayerReady(event) {
       console.error("Initial color extraction failed (already complete):", e);
       applyColors([100,100,100]);
     }
-  } else if (albumCover.src === window.location.href + 'img/empty_art.png' || albumCover.src === 'img/empty_art.png') {
-    applyColors([115, 98, 86]); // Default for empty art
+  } else if (albumCover.src && albumCover.src.endsWith('img/empty_art.png')) {
+    applyColors([115, 98, 86]);
   }
-  // albumCover.onload is set in play.js
+}
+
+// Updates the visual state of the loop button based on global 'loopState'
+function updateLoopButtonIcon() {
+    if (!loopBtn) return; // loopBtn is global
+    loopBtn.classList.remove('loop-active', 'loop-playlist-active');
+
+    if (loopState === 'song') {
+        loopBtn.classList.add('loop-active'); // For repeat-1.svg, green
+    } else if (loopState === 'playlist') {
+        loopBtn.classList.add('loop-playlist-active'); // For repeat.svg, green
+    }
+    // If 'none', no extra class, uses default .icon-loop style
+}
+
+// Manages cycling through loop states
+function toggleLoop() {
+    if (!player) return; // player is global
+
+    // currentPlayingPlaylistId is global from init.js
+    // likedPlaylist and userPlaylists are global from init.js
+    const activePlaylist = getPlaylistById(currentPlayingPlaylistId); // from playlist.js
+    const playlistIsEffectivelyActive = activePlaylist && activePlaylist.songs && activePlaylist.songs.length > 0;
+
+    if (playlistIsEffectivelyActive) {
+        if (loopState === 'none') loopState = 'playlist';
+        else if (loopState === 'playlist') loopState = 'song';
+        else loopState = 'none'; // 'song' -> 'none'
+    } else { // No playlist active, or active playlist is empty
+        if (loopState === 'none') loopState = 'song';
+        else loopState = 'none'; // 'song' -> 'none'
+    }
+    console.log("Loop state changed to:", loopState, "| Playlist active for looping:", playlistIsEffectivelyActive);
+    updateLoopButtonIcon();
 }
 
 function onPlayerStateChange(event) {
-  console.log("Player state changed:", event.data, "| Loop state:", loopState, "| Current Playlist Track Index:", currentPlaylistTrackIndex, "| Liked Playlist Length:", (typeof likedPlaylist !== 'undefined' ? likedPlaylist.length : 'N/A'));
+  // loopState, currentPlayingPlaylistId, currentPlaylistTrackIndex are global
+  // getPlaylistById, playNextTrackInCurrentPlaylist are from playlist.js
+  console.log("Player state:", event.data, "| Loop:", loopState, "| PlaylistID:", currentPlayingPlaylistId, "| TrackIdx:", currentPlaylistTrackIndex);
 
   if (event.data === YT.PlayerState.PLAYING) {
-    isPlaying = true;
+    isPlaying = true; // isPlaying is global
     playPauseBtn.classList.remove("icon-play");
     playPauseBtn.classList.add("icon-pause");
   } else if (event.data === YT.PlayerState.PAUSED) {
@@ -73,44 +110,35 @@ function onPlayerStateChange(event) {
     playPauseBtn.classList.remove("icon-pause");
     playPauseBtn.classList.add("icon-play");
 
-    if (loopState === 'song' && player) { // Loop current song - PRIORITY 1
+    if (loopState === 'song' && player) {
       player.seekTo(0, true);
       player.playVideo();
-    } else if (currentPlayingPlaylistType === 'liked' && // Check if it's the liked playlist - PRIORITY 2 (for playlist progression)
-               typeof likedPlaylist !== 'undefined' && likedPlaylist.length > 0 &&
-               typeof playNextTrackInCurrentPlaylist === 'function') {
+    } else if (currentPlayingPlaylistId && typeof getPlaylistById === 'function' && typeof playNextTrackInCurrentPlaylist === 'function') {
+        const currentPlaylist = getPlaylistById(currentPlayingPlaylistId);
+        if (currentPlaylist && currentPlaylist.songs && currentPlaylist.songs.length > 0) {
+            const isLastTrack = currentPlaylistTrackIndex >= currentPlaylist.songs.length - 1;
 
-        const isLastTrackInPlaylist = (currentPlaylistTrackIndex >= likedPlaylist.length - 1);
-
-        if (loopState === 'playlist') { // Loop the entire playlist
-            console.log("Song ended, looping liked playlist (loopState='playlist'). Playing next/first.");
-            playNextTrackInCurrentPlaylist(); // This will handle wrapping from last to first
-        } else if (loopState === 'none' && !isLastTrackInPlaylist) { // No loop, but not the last song
-            console.log("Song ended, playing next in liked playlist (loopState='none', not last track).");
-            playNextTrackInCurrentPlaylist();
-        } else {
-            // loopState is 'none' AND it was the last track OR
-            // it's some other playlist type not explicitly handled for progression
-            console.log("Song ended. Playlist finished (or not configured for auto-advance) and no loop active.");
-            clearPlayerStateOnEnd();
+            if (loopState === 'playlist') {
+                playNextTrackInCurrentPlaylist(); // Will wrap to start if it was the last track
+            } else if (loopState === 'none' && !isLastTrack) {
+                playNextTrackInCurrentPlaylist(); // Proceed to next song in playlist
+            } else { // loopState is 'none' AND it was the last track, or playlist became invalid
+                clearPlayerStateOnEnd();
+            }
+        } else { // Playlist might have become empty or invalid
+             clearPlayerStateOnEnd();
         }
-    } else {
-      // Not in a 'liked' playlist context, or likedPlaylist is empty/undefined
-      // AND not looping the current song (already handled by 'if loopState === song')
-      console.log("Song ended. Not in a playlist or not looping song.");
+    } else { // Not in a playlist or song not set to loop
       clearPlayerStateOnEnd();
     }
   } else if (event.data === YT.PlayerState.CUED && currentTrack && currentTrack.id !== null && !isPlaying) {
-    // If a video is cued (e.g. after loadVideoById) and we intend to play it, start playback.
-    // This can help if YT's own autoplay after loadVideoById is unreliable.
-    // Be careful not to create play loops.
-    console.log("Video cued, attempting to play.");
-    player.playVideo();
+    if (player && typeof player.playVideo === 'function') player.playVideo();
   }
 }
 
 function clearPlayerStateOnEnd() {
-    // Reset progress bar, time
+    // progressBar, currentTimeSpan, remainingTimeSpan are global
+    // formatTime is from playback.js
     if(progressBar) progressBar.style.width = "0%";
     if(currentTimeSpan) currentTimeSpan.textContent = formatTime(0);
     if (player && typeof player.getDuration === 'function') {
@@ -119,52 +147,43 @@ function clearPlayerStateOnEnd() {
     } else {
         if(remainingTimeSpan) remainingTimeSpan.textContent = "-0:00";
     }
-    // Optionally, clear current track display if you want it to revert to "Not Playing"
-    // currentTrack = { id: null, title: "Not Playing", artist: "Not Playing", artwork: "img/empty_art.png", artworkLarge: "img/empty_art.png" };
-    // trackTitle.textContent = currentTrack.title;
-    // artistName.textContent = currentTrack.artist;
-    // albumCover.src = currentTrack.artworkLarge;
-    // applyColors([115, 98, 86]);
-    // if (typeof updateLikeButtonState === 'function') updateLikeButtonState(false);
-    if (typeof clearPlaylistContext === 'function') {
-        // clearPlaylistContext(); // This might be too aggressive here, consider context
-    }
+    // Optionally, clear current track display if desired, but typically not needed
+    // as the UI still shows the last played song until a new one starts.
 }
 
-
 function onPlayerError(event) {
-  console.error("YouTube Player Error:", event.data, "Song:", currentTrack.title);
-  isPlaying = false;
-  playPauseBtn.classList.remove("icon-pause");
-  playPauseBtn.classList.add("icon-play");
+    console.error("YouTube Player Error:", event.data, "Song:", currentTrack ? currentTrack.title : "N/A");
+    isPlaying = false;
+    if (playPauseBtn) {
+        playPauseBtn.classList.remove("icon-pause");
+        playPauseBtn.classList.add("icon-play");
+    }
 
-  if (event.data === 101 || event.data === 150) {
-      alert(`Error: "${currentTrack.title}" cannot be played due to embedding restrictions by the owner.`);
-  }
+    if (event.data === 101 || event.data === 150) { // Embedding restricted
+        alert(`Error: "${currentTrack ? currentTrack.title : "This song"}" cannot be played due to embedding restrictions.`);
+    }
 
-  // Attempt to play next if in a 'loop playlist' context
-  if (loopState === 'playlist' && // Check if playlist loop is active
-      typeof playNextTrackInCurrentPlaylist === 'function' &&
-      currentPlayingPlaylistType === 'liked' && likedPlaylist && likedPlaylist.length > 0) {
-      console.warn("Player error, attempting to play next track in liked playlist (playlist loop active).");
-      playNextTrackInCurrentPlaylist();
-  } else if (loopState !== 'song') { // If not looping the current song (which would retry itself)
-      clearPlayerStateOnEnd();
-  }
-  // If loopState === 'song', it will likely error again on retry. We might want to break this cycle.
-  // For now, if looping song and error, it will retry. Consider adding error counter to break loop.
-  if (loopState === 'song' && (event.data === 101 || event.data === 150)) {
-      console.warn("Error on a song set to loop. Disabling loop to prevent error cycle.");
-      loopState = 'none'; // Revert to no loop to prevent error loop
-      updateLoopButtonIcon();
-      clearPlayerStateOnEnd();
-  }
+    if (loopState === 'playlist' && currentPlayingPlaylistId && typeof playNextTrackInCurrentPlaylist === 'function') {
+        console.warn("Player error, attempting next track due to 'loop playlist' state.");
+        playNextTrackInCurrentPlaylist();
+    } else if (loopState === 'song' && (event.data === 101 || event.data === 150)) {
+        // If looping a song that causes an embedding error, stop looping it.
+        console.warn("Embedding error on a looping song. Disabling loop for this track.");
+        loopState = 'none';
+        updateLoopButtonIcon();
+        clearPlayerStateOnEnd();
+    } else if (loopState !== 'song') { // If not looping the current song (which would retry itself)
+        clearPlayerStateOnEnd();
+    }
+    // If loopState is 'song' and it's a different error, it will try to replay and likely error again.
+    // A counter for repeated errors on the same song might be useful for breaking such loops.
 }
 
 // Toggle Mute function
 function toggleMute() {
   if (!player || typeof player.isMuted !== 'function') return;
-
+  // isMuted is global
+  // volumeBtn is global
   if (player.isMuted()) {
     player.unMute();
     volumeBtn.classList.remove("icon-muted");
@@ -176,47 +195,4 @@ function toggleMute() {
     volumeBtn.classList.add("icon-muted");
     isMuted = true;
   }
-}
-
-function toggleLoop() {
-  if (!player) return;
-
-  const playlistIsActive = (currentPlayingPlaylistType !== null && typeof likedPlaylist !== 'undefined' && likedPlaylist.length > 0);
-
-  if (playlistIsActive) {
-      // Cycle through 3 states: none -> playlist -> song -> none
-      if (loopState === 'none') {
-          loopState = 'playlist';
-      } else if (loopState === 'playlist') {
-          loopState = 'song';
-      } else { // loopState === 'song'
-          loopState = 'none';
-      }
-  } else {
-      // No playlist active, cycle through 2 states: none -> song -> none
-      if (loopState === 'none') {
-          loopState = 'song';
-      } else { // loopState === 'song'
-          loopState = 'none';
-      }
-  }
-  console.log("Loop state changed to:", loopState, "| Playlist active:", playlistIsActive);
-  updateLoopButtonIcon();
-}
-
-// New function to update the loop button's visual state
-function updateLoopButtonIcon() {
-  if (!loopBtn) return;
-
-  // Remove all potentially active loop classes first
-  loopBtn.classList.remove('loop-active', 'loop-playlist-active');
-
-  if (loopState === 'song') {
-      // Add class for "loop current song" (repeat-1.svg, green)
-      loopBtn.classList.add('loop-active');
-  } else if (loopState === 'playlist') {
-      // Add class for "loop playlist" (repeat.svg, green)
-      loopBtn.classList.add('loop-playlist-active');
-  }
-  // If loopState is 'none', no extra class is added, so it uses default .icon-loop style
 }

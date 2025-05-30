@@ -58,6 +58,7 @@
                             <i id="volumeBtn" class="icon icon-volume"></i>
                             <i id="loopBtn" class="icon icon-loop"></i>
                             <i id="likeBtn" class="icon icon-heart-empty"></i>
+                            <i id="addToPlaylistBtn" class="icon icon-plus-circle"></i>
                         </div>
                         <div id="seekbar" class="seekbar"><div id="progress"></div></div>
                         <div class="timecodes">
@@ -82,13 +83,16 @@
         </div>
 
         <div class="playlist-sidebar" id="playlistSidebar">
-            <div class="playlist-header">
-                <h3>Liked Songs</h3>
-            </div>
-            <div class="playlist-content" id="likedPlaylistContent">
-                <p class="empty-playlist-message">Like some songs to see them here!</p>
-            </div>
-        </div>
+          <div class="playlist-sidebar-header">
+              <button id="backToPlaylistsBtn" class="sidebar-back-button" style="display: none;">< Back</button>
+              <h3 id="sidebarTitle">Your Playlists</h3>
+              <button id="createNewPlaylistBtn" class="create-playlist-btn">+</button>
+          </div>
+          <div class="playlist-content" id="playlistDisplayArea">
+          </div>
+      </div>
+
+
     </div>
 
 
@@ -101,8 +105,19 @@
       <div id="ytPlayer"></div>
     </div>
 
-    <script src="js/endpoints.js"></script>
+    <div id="addToPlaylistModal" class="modal" style="display:none;">
+      <div class="modal-content">
+          <span class="close-modal-btn" id="closeAddToPlaylistModal">×</span>
+          <h4>Add to Playlist</h4>
+          <div id="modalPlaylistList">
+              <!-- Playlists will be dynamically inserted here -->
+          </div>
+      </div>
+    </div>
 
+
+
+    <script src="js/endpoints.js"></script>
     <script src="js/init.js"></script>
     <script src="js/bg.js"></script>
     <script src="js/playlist.js"></script>
