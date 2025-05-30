@@ -392,7 +392,7 @@ function renderSinglePlaylistView(playlistId) {
 
         let removeButtonHtml = '';
         if (playlistId !== LIKED_SONGS_PLAYLIST_ID) {
-            removeButtonHtml = `<button class="remove-song-from-playlist-btn" title="Remove from playlist">×</button>`;
+            removeButtonHtml = `<button class="remove-song-from-playlist-btn icon-action-btn" title="Remove from playlist"><i class="icon icon-trash"></i></button>`;
         }
 
 

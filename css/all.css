@@ -356,6 +356,8 @@ body {
   height: 22px;
 }
 
+
+
 .icon {
 display: inline-block;
 width: 32px; /* Default width, can be overridden by ID */
@@ -374,7 +376,65 @@ transition: transform 0.1s ease, background-color 0.1s ease;
 transform: scale(0.94);
 }
 
+/* Optional: common styling for icon-only buttons if you have more */
+.icon-button { /* You added this class to the button in HTML */
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px; /* Example padding */
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+.icon-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+.icon-button .icon {
+  width: 20px; /* Default icon size for icon-buttons */
+  height: 20px;
+  background-color: white;
+}
 
+/* New/Refined Styles for Action Buttons within list items */
+.icon-action-btn { /* Common style for small icon buttons like remove/edit */
+  background: none;
+  border: none;
+  padding: 5px; /* Adjust padding to control clickable area and spacing */
+  cursor: pointer;
+  display: inline-flex; /* Helps align icon inside */
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%; /* Make it circular */
+  transition: background-color 0.2s ease;
+  /* Position it to the right if desired within the playlist item flex layout */
+  margin-left: auto; /* Pushes button to the far right of its flex container if .playlist-item is display:flex */
+}
+
+.icon-action-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1); /* Subtle hover effect */
+}
+
+
+.icon-action-btn .icon { /* Style for the icon INSIDE these action buttons */
+  width: 16px;
+  height: 16px;
+  background-color: rgba(255, 255, 255, 0.7);
+  transition: background-color 0.2s ease;
+  pointer-events: none; /* <<<<<<<<<<<<<<<<<<< ADD THIS LINE */
+}
+
+.icon-action-btn:hover .icon {
+  background-color: #ff6b6b; /* Change icon color on hover - e.g., red for delete */
+}
+
+
+.icon-arrow-left {
+  mask-image: url('../img/icons/arrow-left.svg');
+  -webkit-mask-image: url('../img/icons/arrow-left.svg');
+  /* background-color will be inherited or set by .sidebar-back-button .icon */
+}
 .icon-edit {
   mask-image: url('../img/icons/edit.svg');
   -webkit-mask-image: url('../img/icons/edit.svg');
@@ -479,18 +539,40 @@ width: 26px; height: 26px;
   margin: 0 auto; /* Center title if back button is hidden */
 }
 
+/* Styles for the sidebar back button - REFINED */
 .playlist-sidebar-header .sidebar-back-button {
   background: none;
   border: none;
-  color: white;
-  font-size: 16px;
   cursor: pointer;
-  padding: 5px 8px;
   margin-right: auto; /* Pushes title and create button to the right */
+  
+  /* --- Key changes for perfect circle and centering --- */
+  width: 32px;  /* Explicit width - adjust as desired for button size */
+  height: 32px; /* Explicit height - MUST BE EQUAL TO WIDTH for a circle */
+  padding: 0;   /* Reset padding if using explicit width/height for the button itself */
+  border-radius: 50%; /* This makes it a circle */
+  
+  display: flex; /* Use flex to center the icon child */
+  align-items: center; /* Vertical centering */
+  justify-content: center; /* Horizontal centering */
+  
+  transition: background-color 0.2s ease;
 }
+
 .playlist-sidebar-header .sidebar-back-button:hover {
-  opacity: 0.8;
+  /* opacity: 0.8; Remove this, use background-color change instead for icon buttons */
+  background-color: rgba(255, 255, 255, 0.1);
 }
+
+.playlist-sidebar-header .sidebar-back-button .icon {
+  /* Icon size should be smaller than the button's width/height
+     to fit comfortably within the circle. */
+  width: 18px;  /* Adjust icon size */
+  height: 18px; /* Adjust icon size */
+  background-color: white; /* Icon color */
+  /* No need for margins on the icon if the button is using flex to center it */
+}
+
 
 .playlist-sidebar-header .create-playlist-btn {
   background: rgba(255,255,255,0.1);
