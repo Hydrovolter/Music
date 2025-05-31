@@ -386,13 +386,26 @@ function switchSidebarView(view, playlistId = null) {
 
 function renderAllPlaylistsView() {
     if (!playlistDisplayAreaElement || !sidebarTitleElement || !backToPlaylistsBtnElement || !createNewPlaylistBtnElement) return;
+
+    // --- BEGIN MODIFICATION: Store scroll and clear title class ---
+    let currentScrollTop = 0;
+    if (playlistDisplayAreaElement) {
+        currentScrollTop = playlistDisplayAreaElement.scrollTop;
+    }
+
+    if (sidebarTitleElement) { // Ensure element exists
+        sidebarTitleElement.textContent = "Your Playlists";
+        sidebarTitleElement.classList.remove('playing-playlist-title'); // Remove the class here
+    }
+    // --- END MODIFICATION ---
+
     playlistDisplayAreaElement.innerHTML = '';
-    sidebarTitleElement.textContent = "Your Playlists";
+    // sidebarTitleElement.textContent = "Your Playlists"; // Moved up
     backToPlaylistsBtnElement.style.display = 'none';
     createNewPlaylistBtnElement.style.display = 'inline-block';
 
     const ul = document.createElement('ul');
-    // ul.className = 'playlist-list-overview'; // Ensure this class is defined in CSS
+    // ul.className = 'playlist-list-overview';
 
     const likedSongsData = { id: LIKED_SONGS_PLAYLIST_ID, name: "Liked Songs", songs: likedPlaylist };
     ul.appendChild(createPlaylistOverviewItem(likedSongsData));
@@ -402,7 +415,12 @@ function renderAllPlaylistsView() {
     });
 
     playlistDisplayAreaElement.appendChild(ul);
-    playlistDisplayAreaElement.scrollTop = 0;
+
+    // --- BEGIN MODIFICATION: Restore scroll position ---
+    if (playlistDisplayAreaElement) {
+        playlistDisplayAreaElement.scrollTop = currentScrollTop;
+    }
+    // --- END MODIFICATION ---
 }
 
 function createPlaylistOverviewItem(playlistData) {
@@ -414,10 +432,9 @@ function createPlaylistOverviewItem(playlistData) {
     let artworkSrc;
 
     if (playlistData.id === LIKED_SONGS_PLAYLIST_ID) {
-        artworkSrc = 'img/liked_songs.png'; // Specific art for Liked Songs
+        artworkSrc = 'img/liked_songs.png';
     } else {
         li.setAttribute('draggable', true);
-        // New artwork logic: custom > first song > empty
         if (playlistData.customArtwork) {
             artworkSrc = playlistData.customArtwork;
         } else if (playlistData.songs.length > 0 && playlistData.songs[0].artwork) {
@@ -425,16 +442,21 @@ function createPlaylistOverviewItem(playlistData) {
         } else {
             artworkSrc = 'img/empty_art.png';
         }
-
         li.addEventListener('dragstart', (event) => handlePlaylistDragStart(event, playlistData.id));
         li.addEventListener('dragover', handlePlaylistDragOver);
         li.addEventListener('drop', (event) => handlePlaylistDrop(event, playlistData.id));
         li.addEventListener('dragend', handlePlaylistDragEnd);
     }
 
-    let nameDisplay = `<div class="playlist-overview-item-name">${escapeHtml(playlistData.name)}</div>`;
-    let actionsHtml = '';
+    // --- BEGIN MODIFICATION: Add class if this is the playing playlist ---
+    let nameDisplayClasses = "playlist-overview-item-name";
+    if (currentPlayingPlaylistId === playlistData.id) {
+        nameDisplayClasses += " playing-playlist-title";
+    }
+    let nameDisplay = `<div class="${nameDisplayClasses}">${escapeHtml(playlistData.name)}</div>`;
+    // --- END MODIFICATION ---
 
+    let actionsHtml = '';
     if (playlistData.id !== LIKED_SONGS_PLAYLIST_ID) {
         actionsHtml = `
             <div class="playlist-item-actions">
@@ -452,6 +474,7 @@ function createPlaylistOverviewItem(playlistData) {
         ${actionsHtml}
     `;
 
+    // ... (rest of the event listeners in this function remain the same)
     const infoSection = li.querySelector('.playlist-overview-item-info');
     const artworkSection = li.querySelector('.playlist-overview-item-artwork');
     const viewPlaylistHandler = () => switchSidebarView('single_playlist_view', playlistData.id);
@@ -463,15 +486,15 @@ function createPlaylistOverviewItem(playlistData) {
         }
         viewPlaylistHandler();
     };
-
+    
     if (infoSection) infoSection.addEventListener('click', combinedClickHandler);
     if (artworkSection) artworkSection.addEventListener('click', combinedClickHandler);
 
 
     if (playlistData.id !== LIKED_SONGS_PLAYLIST_ID) {
-        const editBtn = li.querySelector('.edit-playlist-btn'); // Changed from .rename-playlist-btn
+        const editBtn = li.querySelector('.edit-playlist-btn');
         const deleteBtn = li.querySelector('.delete-playlist-btn');
-        if(editBtn) editBtn.addEventListener('click', (e) => { e.stopPropagation(); handleEditPlaylist(playlistData.id); }); // Changed handler
+        if(editBtn) editBtn.addEventListener('click', (e) => { e.stopPropagation(); handleEditPlaylist(playlistData.id); });
         if(deleteBtn) deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); deletePlaylist(playlistData.id); });
     }
     return li;
@@ -533,9 +556,18 @@ function renderSinglePlaylistView(playlistId) {
 
     playlistDisplayAreaElement.innerHTML = '';
     sidebarTitleElement.textContent = escapeHtml(playlist.name);
+
+    // --- BEGIN MODIFICATION: Add class to sidebar title if it's the playing playlist ---
+    sidebarTitleElement.classList.remove('playing-playlist-title'); // Remove first to handle deselection
+    if (currentPlayingPlaylistId === playlistId) {
+        sidebarTitleElement.classList.add('playing-playlist-title');
+    }
+    // --- END MODIFICATION ---
+
     backToPlaylistsBtnElement.style.display = 'inline-block';
     createNewPlaylistBtnElement.style.display = 'none';
 
+    // ... (rest of renderSinglePlaylistView, including song list rendering, remains the same)
     if (playlist.songs.length === 0) {
         playlistDisplayAreaElement.innerHTML = `<p class="empty-playlist-message">This playlist is empty.</p>`;
         if (playlistDisplayAreaElement) {
@@ -550,28 +582,24 @@ function renderSinglePlaylistView(playlistId) {
         const li = document.createElement('li');
         li.className = 'playlist-item';
         li.setAttribute('data-song-id', song.id.toString());
-        li.setAttribute('draggable', true); // Still draggable to reorder liked songs
+        li.setAttribute('draggable', true); 
 
         if (currentPlayingPlaylistId === playlistId && currentPlaylistTrackIndex === index && currentTrack && currentTrack.id === song.id) {
             li.classList.add('playing');
         }
-
-        // --- BEGIN MODIFICATION: Conditional button for liked songs ---
+        
         let actionButtonHtml = '';
         if (playlistId === LIKED_SONGS_PLAYLIST_ID) {
-            // For "Liked Songs", use a filled heart icon to "unlike"
             actionButtonHtml = `
                 <button class="unlike-song-from-liked-playlist-btn icon-action-btn" title="Remove from Liked Songs">
-                    <i class="icon icon-heart-filled"></i>
+                    <i class="icon icon-heart-filled"></i> 
                 </button>`;
         } else {
-            // For user-created playlists, use the trash icon
             actionButtonHtml = `
                 <button class="remove-song-from-playlist-btn icon-action-btn" title="Remove from playlist">
                     <i class="icon icon-trash"></i>
                 </button>`;
         }
-        // --- END MODIFICATION ---
 
         li.innerHTML = `
             <img src="${song.artwork || 'img/empty_art.png'}" alt="${escapeHtml(song.title)}" class="playlist-item-artwork">
@@ -579,24 +607,22 @@ function renderSinglePlaylistView(playlistId) {
                 <div class="playlist-item-title">${escapeHtml(song.title)}</div>
                 <div class="playlist-item-artist">${escapeHtml(song.artist)}</div>
             </div>
-            ${actionButtonHtml}
+            ${actionButtonHtml} 
         `;
 
         li.addEventListener('click', (e) => {
-            // --- BEGIN MODIFICATION: Update click handler for new button ---
             const unlikeButton = e.target.closest('.unlike-song-from-liked-playlist-btn');
             const removeButton = e.target.closest('.remove-song-from-playlist-btn');
 
-            if (unlikeButton) { // Clicked on the heart ("unlike") button in Liked Songs
+            if (unlikeButton) { 
                 e.stopPropagation();
-                removeSongFromLikedPlaylist(song.id); // This already updates the like button in the player
-            } else if (removeButton) { // Clicked on the trash button in a user playlist
+                removeSongFromLikedPlaylist(song.id); 
+            } else if (removeButton) { 
                 e.stopPropagation();
                 removeSongFromUserPlaylist(playlistId, song.id);
-            } else { // Clicked to play the song
+            } else { 
                 playSongFromCurrentPlaylist(playlistId, index);
             }
-            // --- END MODIFICATION ---
         });
 
         li.addEventListener('dragstart', (event) => handleSongDragStart(event, index, playlistId));
@@ -650,6 +676,7 @@ function playSongFromCurrentPlaylist(playlistId, songIndexInOriginalPlaylist) {
     // If shuffle is NOT active OR shuffle was just initialized for THIS song:
     // The currentTrack, currentPlayingPlaylistId, currentPlaylistTrackIndex will be set below.
 
+    const previousPlayingPlaylistId = currentPlayingPlaylistId;
     currentPlayingPlaylistId = playlistId;
     currentPlaylistTrackIndex = songIndexInOriginalPlaylist; // Always store original index
 
@@ -798,20 +825,27 @@ function clearPlaylistContext() {
     currentPlayingPlaylistId = null;
     currentPlaylistTrackIndex = -1;
 
-    isShuffleActive = false; // <<< ADD THIS
-    shuffleUpcomingQueue = []; // <<< ADD THIS
-    shufflePlayedQueue = [];   // <<< ADD THIS
-    if(typeof updateShuffleButtonIcon === 'function') updateShuffleButtonIcon(); // <<< ADD THIS
+    isShuffleActive = false;
+    shuffleUpcomingQueue = [];
+    shufflePlayedQueue = [];
+    if(typeof updateShuffleButtonIcon === 'function') updateShuffleButtonIcon();
 
-    if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId) {
-         const playlistBeingViewed = getPlaylistById(selectedPlaylistToViewId);
-         if(playlistBeingViewed) renderSinglePlaylistView(selectedPlaylistToViewId);
+    // --- MODIFICATION: Explicitly call renderSidebar if the view might need an update ---
+    // This ensures that if the overview or a single playlist view was showing the "playing" state,
+    // it gets cleared.
+    if (wasPlayingPlaylist) { // Only re-render if something *was* playing from a playlist
+        renderSidebar(); // This will call either renderAllPlaylistsView or renderSinglePlaylistView
+    } else {
+        // If nothing was playing from a playlist, but controls still need update (e.g. shuffle toggled off)
+        updatePlaylistControlsVisibility();
     }
+    // --- END MODIFICATION ---
 
-    updatePlaylistControlsVisibility();
+
+    // updatePlaylistControlsVisibility(); // Original call - renderSidebar above covers its visual aspect for titles
 
     if (wasPlayingPlaylist && typeof loopState !== 'undefined' && loopState === 'playlist') {
-        loopState = 'none'; // If playlist context cleared, playlist loop should also conceptually reset
+        loopState = 'none';
         if (typeof updateLoopButtonIcon === 'function') updateLoopButtonIcon();
     }
 }

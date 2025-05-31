@@ -759,6 +759,14 @@ mask-image: url('../img/icons/next.svg');
   margin-bottom: 3px;
   /* max-width: is not strictly needed here if parent (.playlist-overview-item-info) handles overflow */
 }
+
+.playlist-overview-item-name.playing-playlist-title,
+#sidebarTitle.playing-playlist-title { /* Target the h3 directly by its ID */
+  color: #00ff88; /* Same green as playing song titles in playlist items */
+  /* Optionally, add a bit more visual weight if desired */
+  /* font-weight: 600; */ /* Or whatever your playing song title weight is */
+}
+
 .playlist-overview-item-count {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.7);
