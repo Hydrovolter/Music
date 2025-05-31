@@ -1339,6 +1339,56 @@ background: rgba(255,255,255,0.2);
   transform: translateY(0) scale(1);
 }
 
+/* Credits Footer */
+.credits-footer {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1); /* Subtle light glass */
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+  font-weight: 400;
+  z-index: 95; /* Below main controls (100) but above general background */
+  transition: transform 0.25s ease-out, box-shadow 0.25s ease-out;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  display: flex; /* For vertical alignment if needed, though simple text should align */
+  align-items: center;
+}
+
+.credits-footer:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  background: rgba(255, 255, 255, 0.15); /* Slightly brighter on hover */
+}
+
+.credits-footer .credit-heart {
+  color: #e74c3c; /* Red heart */
+  display: inline-block; /* Allows transform */
+  margin: 0 3px; /* Spacing around heart */
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy transition */
+}
+
+.credits-footer:hover .credit-heart {
+  transform: scale(1.3);
+}
+
+.credits-footer .credit-link {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  margin-left: 3px; /* Spacing before link */
+}
+
+.credits-footer .credit-link:hover {
+  color: #ffffff;
+  text-decoration: underline;
+} 
 
 /* Responsive adjustments */
 @media (max-width: 960px) { /* Adjust breakpoint as needed */
@@ -1369,6 +1419,7 @@ background: rgba(255,255,255,0.2);
 .search-results {
     max-width: 570px; /* Match player width */
 }
+
 
 
 
@@ -1406,5 +1457,12 @@ background: rgba(255,255,255,0.2);
   }
   .lyrics-artist {
       font-size: 16px;
+  }
+
+  .credits-footer {
+    font-size: 11px; /* Slightly smaller on very small screens */
+    padding: 6px 10px;
+    bottom: 15px;
+    left: 15px;
   }
 }
