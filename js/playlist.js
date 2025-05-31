@@ -59,31 +59,31 @@ function saveLikedPlaylist() {
 function addSongToLikedPlaylist(songData) {
     if (!songData || !songData.id) {
         console.error("Cannot add to liked: missing song data or ID.", songData);
-        // Optionally show an error toast here too if desired using showGeneralModal or showToast for errors
         return;
     }
     if (!likedPlaylist.find(s => s.id === songData.id)) {
         likedPlaylist.push(songData);
         saveLikedPlaylist();
 
-        // Show success toast
-        if (typeof showToast === 'function') { // Ensure showToast is available
+        if (typeof showToast === 'function') {
             const message = `"${escapeHtml(songData.title)}" added to Liked Songs!`;
             showToast(message, 3000);
         }
 
+        // --- BEGIN MODIFICATION ---
         if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === LIKED_SONGS_PLAYLIST_ID) {
             renderSinglePlaylistView(LIKED_SONGS_PLAYLIST_ID);
+        } else if (currentSidebarView === 'all_playlists') { // If viewing the overview
+            renderAllPlaylistsView(); // Refresh the overview
         }
-        updateLikeButtonState(true); // Update the like button for the current track if it's the one being liked
+        // --- END MODIFICATION ---
+
+        updateLikeButtonState(true);
     } else {
-        // Song is already liked - show an informational toast or general modal
         if (typeof showToast === 'function') {
             const message = `"${escapeHtml(songData.title)}" is already in Liked Songs.`;
             showToast(message, 3000);
         }
-        // Or use showGeneralModal for a more prominent message:
-        // showGeneralModal("Already Liked", `"${escapeHtml(songData.title)}" is already in your Liked Songs.`);
     }
 }
 
@@ -95,28 +95,33 @@ function removeSongFromLikedPlaylist(songId) {
 
     if (likedPlaylist.length < initialLength) {
         saveLikedPlaylist();
+
+        // --- BEGIN MODIFICATION ---
         if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === LIKED_SONGS_PLAYLIST_ID) {
             renderSinglePlaylistView(LIKED_SONGS_PLAYLIST_ID);
+        } else if (currentSidebarView === 'all_playlists') { // If viewing the overview
+            renderAllPlaylistsView(); // Refresh the overview
         }
+        // --- END MODIFICATION ---
+
+        if (songBeingRemoved && typeof showToast === 'function') {
+            showToast(`"${escapeHtml(songBeingRemoved.title)}" removed from Liked Songs.`, 3000);
+        }
+
+
         if (currentPlayingPlaylistId === LIKED_SONGS_PLAYLIST_ID && currentTrack && currentTrack.id === songId) {
-            // If the removed song was the one playing from liked playlist
-            // The player.js onPlayerStateChange will handle song end. If more songs, it might play next.
-            // We might need to adjust currentPlaylistTrackIndex if the removed song was *before* the current one.
-            // For simplicity, let's assume if current playing is removed, player stops or plays next if available.
-            // A more robust way would be to re-calculate currentPlaylistTrackIndex
             const oldPlayingSongId = currentTrack.id;
             const newIndex = likedPlaylist.findIndex(s => s.id === oldPlayingSongId);
             if (newIndex === -1 && likedPlaylist.length > 0 && currentPlaylistTrackIndex >= likedPlaylist.length) {
-                // If the song was last and removed, try to point to new last or 0
                 currentPlaylistTrackIndex = Math.max(0, likedPlaylist.length - 1);
             } else if (newIndex !== -1) {
-                 currentPlaylistTrackIndex = newIndex; // If it was another song.
+                 currentPlaylistTrackIndex = newIndex;
             } else if (likedPlaylist.length === 0) {
-                clearPlaylistContext();
+                clearPlaylistContext(); // This also handles player controls visibility
             }
         }
         if (currentTrack && currentTrack.id === songId) {
-            updateLikeButtonState(false);
+            updateLikeButtonState(false); // Update player's heart icon
         }
     }
 }
@@ -258,31 +263,29 @@ function addSongToUserPlaylist(playlistId, songData) {
             playlist.songs.push(songData);
             saveUserPlaylists();
 
-            // Show success toast
-            if (typeof showToast === 'function') { // Ensure showToast is available
+            if (typeof showToast === 'function') {
                 const message = `"${escapeHtml(songData.title)}" added to ${escapeHtml(playlist.name)}!`;
                 showToast(message, 3000);
             }
 
+            // --- BEGIN MODIFICATION ---
             if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === playlistId) {
                 renderSinglePlaylistView(playlistId);
+            } else if (currentSidebarView === 'all_playlists') { // If viewing the overview
+                renderAllPlaylistsView(); // Refresh the overview
             }
+            // --- END MODIFICATION ---
+
             console.log(`Song "${songData.title}" added to playlist "${playlist.name}"`);
         } else {
-            // Song already exists in this specific user playlist
             if (typeof showToast === 'function') {
                 const message = `"${escapeHtml(songData.title)}" is already in ${escapeHtml(playlist.name)}.`;
                 showToast(message, 3000);
             }
-            // Original showGeneralModal for this case:
-            // showGeneralModal("Song Exists", `"${escapeHtml(songData.title)}" is already in the playlist "${escapeHtml(playlist.name)}".`);
-            // You can choose whether a toast or a modal is better for this "already exists" message.
-            // Toasts are less intrusive.
         }
     } else {
         if (!playlist) console.error("Playlist not found for ID:", playlistId);
         if (!songData || !songData.id) console.error("Invalid song data for addSongToUserPlaylist:", songData);
-        // Optionally show an error toast/modal if playlist or songData is invalid
         if (typeof showToast === 'function') {
              showToast("Error: Could not add song to playlist.", 3000);
         }
@@ -293,16 +296,48 @@ function removeSongFromUserPlaylist(playlistId, songId) {
     const playlist = userPlaylists.find(p => p.id === playlistId);
     if (playlist) {
         const initialLength = playlist.songs.length;
+        const songBeingRemoved = playlist.songs.find(s => s.id === songId);
         playlist.songs = playlist.songs.filter(s => s.id !== songId);
+
         if (playlist.songs.length < initialLength) {
             saveUserPlaylists();
+
+            // --- BEGIN MODIFICATION ---
             if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === playlistId) {
                 renderSinglePlaylistView(playlistId);
+            } else if (currentSidebarView === 'all_playlists') { // If viewing the overview
+                renderAllPlaylistsView(); // Refresh the overview
             }
-            // If the removed song was playing from this user playlist
+            // --- END MODIFICATION ---
+            
+            if (songBeingRemoved && typeof showToast === 'function') {
+                showToast(`"${escapeHtml(songBeingRemoved.title)}" removed from ${escapeHtml(playlist.name)}.`, 3000);
+            }
+
             if (currentPlayingPlaylistId === playlistId && currentTrack && currentTrack.id === songId) {
-                // More complex logic similar to removeSongFromLikedPlaylist might be needed here
-                // For now, player.js will handle the ENDED state.
+                // If the removed song was playing from this user playlist
+                // Player.js ENDED state or next/prev logic will handle advancing if possible.
+                // We might need to adjust currentPlaylistTrackIndex if the removed song was *before* current.
+                // For simplicity, if current playing is removed, player handles next or stops.
+                // If the playlist becomes empty, clear context.
+                if (playlist.songs.length === 0) {
+                    clearPlaylistContext();
+                } else {
+                    // Check if currentTrackIndex is now out of bounds
+                    if (currentPlaylistTrackIndex >= playlist.songs.length) {
+                        currentPlaylistTrackIndex = playlist.songs.length - 1; // Point to new last song
+                    }
+                    // If the song removed was *before* the current one, the index of the current playing song
+                    // in the modified array would have shifted.
+                    const stillPlayingSong = playlist.songs.find(s => s.id === currentTrack.id);
+                    if (stillPlayingSong) {
+                        currentPlaylistTrackIndex = playlist.songs.findIndex(s => s.id === currentTrack.id);
+                    } else {
+                        // Current track was the one removed, and playlist not empty,
+                        // player will likely stop or try to play next based on its ENDED logic.
+                        // No direct action needed here other than the render.
+                    }
+                }
             }
         }
     }
