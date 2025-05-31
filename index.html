@@ -130,10 +130,23 @@
       </div>
   </div>
 
+   <!-- Create Playlist Modal -->
   <div id="createPlaylistModal" class="modal" style="display:none;">
     <div class="modal-content">
         <span class="close-modal-btn" id="closeCreatePlaylistModal">×</span>
         <h4 id="createPlaylistModalTitle">Create New Playlist</h4>
+        <div class="modal-artwork-section">
+            <div class="playlist-artwork-editor" id="createPlaylistArtworkEditor">
+                <img src="img/empty_art.png" alt="Playlist Artwork" id="createPlaylistArtworkPreview" class="modal-artwork-preview">
+                <div class="edit-overlay">
+                    <i class="icon icon-edit"></i>
+                    <span>Click or drag image</span>
+                </div>
+            </div>
+            <button id="clearCreatePlaylistArtworkBtn" class="modal-button tertiary clear-artwork-btn" style="display:none;">Clear Artwork</button>
+        </div>
+        <input type="file" id="createPlaylistArtworkInput" accept="image/*" style="display:none;">
+
         <div class="form-group" style="margin-bottom: 20px;">
             <label for="newPlaylistNameInput" style="display: block; margin-bottom: 8px; font-weight: 500;">Playlist Name:</label>
             <input type="text" id="newPlaylistNameInput" class="modal-input" placeholder="My Awesome Playlist">
@@ -145,17 +158,30 @@
     </div>
   </div>
 
-  <div id="renamePlaylistModal" class="modal" style="display:none;">
+  <!-- Edit Playlist Modal (formerly Rename Playlist Modal) -->
+  <div id="editPlaylistModal" class="modal" style="display:none;">
     <div class="modal-content">
-        <span class="close-modal-btn" id="closeRenamePlaylistModal">×</span>
-        <h4 id="renamePlaylistModalTitle">Rename Playlist</h4>
-        <div class="form-group" style="margin-bottom: 20px;">
-            <label for="renamePlaylistNameInput" style="display: block; margin-bottom: 8px; font-weight: 500;">New Playlist Name:</label>
-            <input type="text" id="renamePlaylistNameInput" class="modal-input" placeholder="Enter new name">
+        <span class="close-modal-btn" id="closeEditPlaylistModal">×</span>
+        <h4 id="editPlaylistModalTitle">Edit Playlist</h4>
+        <div class="modal-artwork-section">
+            <div class="playlist-artwork-editor" id="editPlaylistArtworkEditor">
+                <img src="img/empty_art.png" alt="Playlist Artwork" id="editPlaylistArtworkPreview" class="modal-artwork-preview">
+                <div class="edit-overlay">
+                    <i class="icon icon-edit"></i>
+                    <span>Click or drag image</span>
+                </div>
+            </div>
+            <button id="clearEditPlaylistArtworkBtn" class="modal-button tertiary clear-artwork-btn" style="display:none;">Clear Artwork</button>
         </div>
-        <div id="renamePlaylistModalActions" style="text-align: right;">
-            <button id="cancelRenamePlaylistBtn" class="modal-button secondary" style="margin-right: 10px;">Cancel</button>
-            <button id="confirmRenamePlaylistBtn" class="modal-button success">Save</button>
+        <input type="file" id="editPlaylistArtworkInput" accept="image/*" style="display:none;">
+
+        <div class="form-group" style="margin-bottom: 20px;">
+            <label for="editPlaylistNameInput" style="display: block; margin-bottom: 8px; font-weight: 500;">Playlist Name:</label>
+            <input type="text" id="editPlaylistNameInput" class="modal-input" placeholder="Enter new name">
+        </div>
+        <div id="editPlaylistModalActions" style="text-align: right;">
+            <button id="cancelEditPlaylistBtn" class="modal-button secondary" style="margin-right: 10px;">Cancel</button>
+            <button id="confirmEditPlaylistBtn" class="modal-button success">Save Changes</button>
         </div>
     </div>
   </div>

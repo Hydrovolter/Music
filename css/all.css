@@ -1087,6 +1087,95 @@ background: rgba(255,255,255,0.2);
   gap: 10px;
 }
 
+/* Adjust modal content for new layout if needed */
+#createPlaylistModal .modal-content,
+#editPlaylistModal .modal-content {
+    max-width: 420px; /* Slightly wider if needed */
+}
+
+/* Styles for Modal Artwork Editor */
+.modal-artwork-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.playlist-artwork-editor {
+  width: 120px; /* Adjust size as needed */
+  height: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  background-color: rgba(0,0,0,0.2); /* Placeholder bg */
+  margin-bottom: 10px;
+  border: 1px dashed rgba(255,255,255,0.2); /* Visual cue for drop */
+}
+
+.modal-artwork-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: filter 0.2s ease-in-out;
+}
+
+.playlist-artwork-editor .edit-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  color: white;
+  text-align: center;
+  pointer-events: none; /* Let clicks pass through to editor div */
+}
+
+.playlist-artwork-editor:hover .edit-overlay {
+  opacity: 1;
+}
+.playlist-artwork-editor:hover .modal-artwork-preview {
+  filter: brightness(0.7);
+}
+
+.playlist-artwork-editor .edit-overlay .icon {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 5px;
+}
+.playlist-artwork-editor .edit-overlay span {
+  font-size: 12px;
+  padding: 0 5px;
+}
+
+.playlist-artwork-editor.drag-over {
+  border-color: #00ff88; /* Highlight when dragging over */
+  background-color: rgba(0,255,136,0.1);
+}
+
+.clear-artwork-btn {
+  font-size: 13px;
+  padding: 6px 12px !important; /* Ensure smaller padding */
+  min-width: auto; /* Override general modal button min-width */
+}
+
+.modal-button.tertiary { /* For "Clear Artwork" button */
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ccc;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.modal-button.tertiary:hover {
+  background-color: rgba(255, 255, 255, 0.18);
+  color: white;
+}
+
 .form-group label { /* Style for labels above inputs */
     color: #ccc; /* Lighter than main text */
 }

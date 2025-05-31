@@ -158,20 +158,28 @@ function updateLikeButtonState(isLikedOverride) {
 
 // --- DATA MANAGEMENT (USER PLAYLISTS) ---
 function loadUserPlaylists() {
-    const stored = localStorage.getItem(USER_PLAYLISTS_STORAGE_KEY); // From init.js
+    const stored = localStorage.getItem(USER_PLAYLISTS_STORAGE_KEY);
     userPlaylists = stored ? JSON.parse(stored) : [];
+    // Ensure existing playlists have the customArtwork property
+    userPlaylists.forEach(p => {
+        if (p.customArtwork === undefined) {
+            p.customArtwork = null;
+        }
+    });
 }
+
 
 function saveUserPlaylists() {
     localStorage.setItem(USER_PLAYLISTS_STORAGE_KEY, JSON.stringify(userPlaylists));
 }
 
-function createPlaylist(name) {
+// Modified createPlaylist
+function createPlaylist(name, customArtworkDataUrl = null) { // Added customArtworkDataUrl
     const newPlaylist = {
         id: `playlist_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         name: name || "New Playlist",
         songs: [],
-        // artwork: 'img/empty_art.png' // Placeholder for future custom artwork
+        customArtwork: customArtworkDataUrl // Store it
     };
     userPlaylists.push(newPlaylist);
     saveUserPlaylists();
@@ -180,29 +188,38 @@ function createPlaylist(name) {
 
 function getPlaylistById(playlistId) {
     if (playlistId === LIKED_SONGS_PLAYLIST_ID) {
-        return { id: LIKED_SONGS_PLAYLIST_ID, name: "Liked Songs", songs: [...likedPlaylist] }; // Return a copy for safety
+        // Liked Songs playlist doesn't have custom artwork editable by user
+        return { id: LIKED_SONGS_PLAYLIST_ID, name: "Liked Songs", songs: [...likedPlaylist], customArtwork: null };
     }
     return userPlaylists.find(p => p.id === playlistId);
 }
 
-function renamePlaylist(playlistId, newName) {
+// Renamed from renamePlaylist and updated
+function updatePlaylistDetails(playlistId, newName, newCustomArtworkDataUrl) {
     const playlist = userPlaylists.find(p => p.id === playlistId);
-    if (playlist && newName.trim() !== "") {
-        playlist.name = newName.trim();
-        saveUserPlaylists();
-       // Always re-render the current sidebar view to reflect the name change
-        if (currentSidebarView === 'all_playlists') {
-            renderAllPlaylistsView();
-        } else if (currentSidebarView === 'single_playlist_view') {
-            if (selectedPlaylistToViewId === playlistId) {
-                // If viewing the renamed playlist, update its title and re-render its content
-                if (sidebarTitleElement) sidebarTitleElement.textContent = escapeHtml(playlist.name);
-                renderSinglePlaylistView(playlistId); // Re-render to show updated name potentially in header or list item
+    if (playlist) {
+        let changed = false;
+        if (newName && newName.trim() !== "" && playlist.name !== newName.trim()) {
+            playlist.name = newName.trim();
+            changed = true;
+        }
+        // Check if newCustomArtworkDataUrl is explicitly passed (it could be null to clear it)
+        if (newCustomArtworkDataUrl !== undefined && playlist.customArtwork !== newCustomArtworkDataUrl) {
+            playlist.customArtwork = newCustomArtworkDataUrl;
+            changed = true;
+        }
+
+        if (changed) {
+            saveUserPlaylists();
+            // Re-render views
+            if (currentSidebarView === 'all_playlists') {
+                renderAllPlaylistsView();
+            } else if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === playlistId) {
+                if (sidebarTitleElement) sidebarTitleElement.textContent = escapeHtml(playlist.name); // Update title if viewing
+                renderSinglePlaylistView(playlistId);
             }
-            // If viewing a different playlist, but the renamed one is in the overview,
-            // renderAllPlaylistsView would be needed if the change should reflect there immediately
-            // without navigating back. For simplicity now, it will update when navigating back.
-            // A more robust solution would be a pub/sub or state management.
+            // If the currently playing playlist was edited, its display in the sidebar might need an update too
+            // This is generally covered by the above re-renders.
         }
     }
 }
@@ -212,7 +229,6 @@ function deletePlaylist(playlistId) {
     if (!playlist) return;
     const playlistName = playlist.name || "this playlist";
 
-    // Uses global showGeneralModal and escapeModalHtml (if needed within message)
     showGeneralModal(
         "Confirm Deletion",
         `Are you sure you want to delete the playlist "<strong>${escapeModalHtml(playlistName)}</strong>"?<br>This action cannot be undone.`,
@@ -227,6 +243,7 @@ function deletePlaylist(playlistId) {
                     else if (currentSidebarView === 'all_playlists') renderAllPlaylistsView();
                     if (currentPlayingPlaylistId === playlistId) clearPlaylistContext();
                     console.log(`Playlist "${escapeModalHtml(playlistName)}" deleted.`);
+                    showToast(`Playlist "${escapeModalHtml(playlistName)}" deleted.`, 3000);
                 }
             },
             { text: 'Cancel', class: 'secondary', callback: () => console.log('Deletion cancelled.') }
@@ -362,18 +379,21 @@ function createPlaylistOverviewItem(playlistData) {
     let artworkSrc;
 
     if (playlistData.id === LIKED_SONGS_PLAYLIST_ID) {
-        artworkSrc = 'img/liked_songs.png';
-        // "Liked Songs" is not draggable
+        artworkSrc = 'img/liked_songs.png'; // Specific art for Liked Songs
     } else {
-        // This is a user-created playlist
-        li.setAttribute('draggable', true); // <<< MAKE USER PLAYLISTS DRAGGABLE
-        artworkSrc = playlistData.artwork ||
-                     (playlistData.songs.length > 0 && playlistData.songs[0].artwork ? playlistData.songs[0].artwork : 'img/empty_art.png');
-        
-        // Add drag event listeners for user playlists
+        li.setAttribute('draggable', true);
+        // New artwork logic: custom > first song > empty
+        if (playlistData.customArtwork) {
+            artworkSrc = playlistData.customArtwork;
+        } else if (playlistData.songs.length > 0 && playlistData.songs[0].artwork) {
+            artworkSrc = playlistData.songs[0].artwork;
+        } else {
+            artworkSrc = 'img/empty_art.png';
+        }
+
         li.addEventListener('dragstart', (event) => handlePlaylistDragStart(event, playlistData.id));
         li.addEventListener('dragover', handlePlaylistDragOver);
-        li.addEventListener('drop', (event) => handlePlaylistDrop(event, playlistData.id)); // Pass targetPlaylistId
+        li.addEventListener('drop', (event) => handlePlaylistDrop(event, playlistData.id));
         li.addEventListener('dragend', handlePlaylistDragEnd);
     }
 
@@ -383,7 +403,7 @@ function createPlaylistOverviewItem(playlistData) {
     if (playlistData.id !== LIKED_SONGS_PLAYLIST_ID) {
         actionsHtml = `
             <div class="playlist-item-actions">
-                <button class="rename-playlist-btn" title="Rename"><i class="icon icon-edit"></i></button>
+                <button class="edit-playlist-btn" title="Edit Playlist"><i class="icon icon-edit"></i></button>
                 <button class="delete-playlist-btn" title="Delete"><i class="icon icon-trash"></i></button>
             </div>`;
     }
@@ -397,30 +417,26 @@ function createPlaylistOverviewItem(playlistData) {
         ${actionsHtml}
     `;
 
-    // Keep existing click handlers for viewing playlist and actions, ensuring they don't interfere with drag
     const infoSection = li.querySelector('.playlist-overview-item-info');
     const artworkSection = li.querySelector('.playlist-overview-item-artwork');
     const viewPlaylistHandler = () => switchSidebarView('single_playlist_view', playlistData.id);
 
-    // Modify click handlers to prevent triggering view change during a drag operation
     const combinedClickHandler = (e) => {
-        // Check if the click originated from an action button or if a drag might be starting/active
-        if (e.target.closest('.playlist-item-actions') || 
-            e.target.closest('.playlist-name-input') ||
-            (draggedPlaylistElement && draggedPlaylistElement.classList.contains('dragging'))) { // Check if currently dragging
+        if (e.target.closest('.playlist-item-actions') ||
+            (draggedPlaylistElement && draggedPlaylistElement.classList.contains('dragging'))) {
             return;
         }
         viewPlaylistHandler();
     };
-    
+
     if (infoSection) infoSection.addEventListener('click', combinedClickHandler);
     if (artworkSection) artworkSection.addEventListener('click', combinedClickHandler);
 
 
     if (playlistData.id !== LIKED_SONGS_PLAYLIST_ID) {
-        const renameBtn = li.querySelector('.rename-playlist-btn');
+        const editBtn = li.querySelector('.edit-playlist-btn'); // Changed from .rename-playlist-btn
         const deleteBtn = li.querySelector('.delete-playlist-btn');
-        if(renameBtn) renameBtn.addEventListener('click', (e) => { e.stopPropagation(); handleRenamePlaylist(playlistData.id); });
+        if(editBtn) editBtn.addEventListener('click', (e) => { e.stopPropagation(); handleEditPlaylist(playlistData.id); }); // Changed handler
         if(deleteBtn) deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); deletePlaylist(playlistData.id); });
     }
     return li;
@@ -822,26 +838,23 @@ function handleCreateNewPlaylist() {
     }
 }
 
-function handleRenamePlaylist(playlistIdToEdit /*, listItemElement - no longer needed */) {
-    const playlist = getPlaylistById(playlistIdToEdit); // getPlaylistById is in this file
-    if (!playlist || playlist.id === LIKED_SONGS_PLAYLIST_ID) { // Can't rename Liked Songs
-        console.warn("Attempted to rename Liked Songs or non-existent playlist.");
+// Renamed from handleRenamePlaylist
+function handleEditPlaylist(playlistIdToEdit) {
+    const playlist = getPlaylistById(playlistIdToEdit);
+    if (!playlist || playlist.id === LIKED_SONGS_PLAYLIST_ID) {
+        console.warn("Attempted to edit Liked Songs or non-existent playlist.");
         return;
     }
 
-    // NEW: Call the function to open the dedicated modal
-    // openRenamePlaylistModal is from modals.js
-    if (typeof openRenamePlaylistModal === 'function') {
-        openRenamePlaylistModal(playlist.id, playlist.name);
+    if (typeof openEditPlaylistModal === 'function') { // openEditPlaylistModal is from modals.js
+        openEditPlaylistModal(playlist.id, playlist.name); // Pass ID and current name
     } else {
-        console.error("openRenamePlaylistModal function not found!");
-        // Fallback to prompt if modal function isn't available (optional)
+        console.error("openEditPlaylistModal function not found!");
+        // Fallback could be more complex here, maybe just rename via prompt
         const newNameFallback = prompt(`Enter new name for "${escapeHtml(playlist.name)}":`, playlist.name);
         if (newNameFallback && newNameFallback.trim() !== "" && newNameFallback.trim() !== playlist.name) {
-            renamePlaylist(playlist.id, newNameFallback.trim());
-            // renamePlaylist itself will call renderAllPlaylistsView or update title
+            updatePlaylistDetails(playlist.id, newNameFallback.trim(), playlist.customArtwork); // Pass existing artwork
         } else if (newNameFallback && newNameFallback.trim() === "") {
-            // Using global showGeneralModal for error
             if(typeof showGeneralModal === 'function') showGeneralModal("Invalid Name", "Playlist name cannot be empty.");
             else alert("Playlist name cannot be empty.");
         }

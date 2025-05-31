@@ -89,11 +89,26 @@ let confirmCreatePlaylistBtnElement;
 let cancelCreatePlaylistBtnElement;
 let closeCreatePlaylistModalBtnElement;
 
-// DOM Elements for Rename Playlist Modal
-let renamePlaylistModalElement;
-let renamePlaylistModalTitleElement; // If you want to include the old name in the title
-let renamePlaylistNameInputElement;
-let confirmRenamePlaylistBtnElement;
-let cancelRenamePlaylistBtnElement;
-let closeRenamePlaylistModalBtnElement;
-let playlistIdToRename = null; // To store the ID of the playlist being renamed
+let createPlaylistArtworkEditorElement;
+let createPlaylistArtworkPreviewElement;
+let createPlaylistArtworkInputElement;
+let clearCreatePlaylistArtworkBtnElement;
+
+// DOM Elements for Edit Playlist Modal (formerly Rename Playlist Modal)
+let editPlaylistModalElement;         // Was renamePlaylistModalElement
+let editPlaylistModalTitleElement;    // Was renamePlaylistModalTitleElement
+let editPlaylistNameInputElement;     // Was renamePlaylistNameInputElement
+let confirmEditPlaylistBtnElement;    // Was confirmRenamePlaylistBtnElement
+let cancelEditPlaylistBtnElement;     // Was cancelRenamePlaylistBtnElement
+let closeEditPlaylistModalBtnElement; // Was closeRenamePlaylistModalBtnElement
+let playlistIdToEdit = null;          // Was playlistIdToRename
+// New for edit playlist artwork
+let editPlaylistArtworkEditorElement;
+let editPlaylistArtworkPreviewElement;
+let editPlaylistArtworkInputElement;
+let clearEditPlaylistArtworkBtnElement;
+
+
+// This variable will be used by modals.js to store the Data URL of
+// the image selected in the currently active modal's artwork editor.
+let currentModalArtworkDataUrl = null;
