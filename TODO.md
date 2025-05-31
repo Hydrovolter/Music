@@ -325,3 +325,20 @@ Integrate with a popular music tracking service.
     * **OAuth Implementation:** Securely connecting with the Last.fm API using OAuth for user authentication and authorization.
     * **API Interaction:** Sending playback data (track, artist, album, duration, timestamp) to the Last.fm API according to their specifications.
     * **User Interface:** Providing a way for users to link/unlink their Last.fm account within your player.
+
+
+    II. Enhancing the "Now Playing" Experience:
+Artist/Album Links to External Services:
+When a song is playing, make the artist and album name (if you fetch album info) clickable links that go to that artist/album on Spotify, Apple Music, or even a Google search.
+Implementation: Construct search URLs (e.g., https://open.spotify.com/search/artist%3A${artistName}).
+Visual Cue for Song Duration/Progress on Album Art:
+Subtly overlay a thin progress bar directly on the album art image itself, in addition to the main seekbar. Could be a circular progress bar around a circular album art, or a line at the bottom.
+"Add to new playlist" directly from "Add to playlist" modal:
+In the "Add to Playlist" modal, alongside the list of existing playlists, have a small "+" button or a "Create new playlist & add" option that takes them to the create playlist flow, and then automatically adds the current song to it.
+
+
+Explicit Content Indicator:
+iTunes API provides trackExplicitness ("explicit" or "notExplicit"). Show a small "E" icon or similar if a track is explicit, like many music services do.
+
+Simple Text-Based "Up Next" Display:
+If a playlist or queue is active, subtly show the title of the next song somewhere in the UI (e.g., faded below the current timecodes).
