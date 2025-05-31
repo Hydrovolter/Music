@@ -2,61 +2,59 @@
 
 // artworkUrl is expected to be the 100x100 version
 // trackId should be a string if provided
-function playSong(title, artist, artworkUrl, trackId = null) {
-  // Generate a fallback ID if trackId is not provided (less reliable for liking/uniqueness)
-  const newTrackId = trackId ? trackId.toString() : `${title}-${artist}`.toLowerCase().replace(/\s+/g, '-');
-
-  currentTrack = {
-      id: newTrackId,
-      title: title,
-      artist: artist,
-      artwork: artworkUrl, // Store the 100x100
-      artworkLarge: artworkUrl ? artworkUrl.replace("100x100", "600x600") : 'img/empty_art.png'
-  };
-
-  trackTitle.textContent = currentTrack.title;
-  artistName.textContent = currentTrack.artist;
-
-  lyricsSongTitle.textContent = currentTrack.title;
-  lyricsArtistName.textContent = currentTrack.artist;
-
-  if (showingLyrics) { // showingLyrics is global from init.js
-      fetchLyrics(currentTrack.artist, currentTrack.title); // fetchLyrics is global from lyrics.js
+function playSong(title, artist, artworkUrl, trackId = null, durationSeconds = 0) {
+    const newTrackId = trackId ? trackId.toString() : `${title}-${artist}`.toLowerCase().replace(/\s+/g, '-');
+  
+    currentTrack = {
+        id: newTrackId,
+        title: title,
+        artist: artist,
+        artwork: artworkUrl,
+        artworkLarge: artworkUrl ? artworkUrl.replace("100x100", "600x600") : 'img/empty_art.png',
+        // --- BEGIN MODIFICATION: Store durationSeconds ---
+        durationSeconds: durationSeconds || 0 // Store it, default to 0 if not provided
+        // --- END MODIFICATION ---
+    };
+  
+    trackTitle.textContent = currentTrack.title;
+    artistName.textContent = currentTrack.artist;
+  
+    lyricsSongTitle.textContent = currentTrack.title;
+    lyricsArtistName.textContent = currentTrack.artist;
+  
+    if (showingLyrics) {
+        fetchLyrics(currentTrack.artist, currentTrack.title);
+    }
+  
+    albumCover.crossOrigin = "anonymous";
+    albumCover.src = currentTrack.artworkLarge;
+  
+    albumCover.onload = function () {
+        if (albumCover.src && !albumCover.src.endsWith('img/empty_art.png')) {
+            try {
+                const dominantColor = colorThief.getColor(albumCover);
+                applyColors(dominantColor);
+            } catch (e) {
+                console.error("Color extraction failed (onload):", e);
+                applyColors([100, 100, 100]);
+            }
+        } else {
+             applyColors([115, 98, 86]);
+        }
+    };
+    albumCover.onerror = function() {
+        console.error("Failed to load album art:", currentTrack.artworkLarge);
+        applyColors([100, 100, 100]);
+        albumCover.src = 'img/empty_art.png';
+    };
+  
+    if (typeof updateLikeButtonState === 'function') {
+        updateLikeButtonState();
+    }
+  
+    const searchQuery = `${currentTrack.title} - ${currentTrack.artist}`;
+    getYT(searchQuery);
   }
-
-  albumCover.crossOrigin = "anonymous";
-  albumCover.src = currentTrack.artworkLarge;
-
-  albumCover.onload = function () {
-      // Check if the source is not the default empty art before trying colorThief
-      if (albumCover.src && !albumCover.src.endsWith('img/empty_art.png')) {
-          try {
-              const dominantColor = colorThief.getColor(albumCover); // colorThief is global
-              applyColors(dominantColor); // applyColors is global from bg.js
-          } catch (e) {
-              console.error("Color extraction failed (onload):", e);
-              applyColors([100, 100, 100]); // Fallback color
-          }
-      } else {
-           applyColors([115, 98, 86]); // Default for empty art
-      }
-  };
-  albumCover.onerror = function() {
-      console.error("Failed to load album art:", currentTrack.artworkLarge);
-      applyColors([100, 100, 100]); // Fallback color on error
-      albumCover.src = 'img/empty_art.png'; // Revert to default art on error
-  };
-
-  // Update UI elements that depend on the current track
-  if (typeof updateLikeButtonState === 'function') { // From playlist.js
-      updateLikeButtonState();
-  }
-  // updatePlaylistControlsVisibility is called by playSongFromCurrentPlaylist or clearPlaylistContext
-  // If playSong is called from search, clearPlaylistContext (in search.js) should have been called first.
-
-  const searchQuery = `${currentTrack.title} - ${currentTrack.artist}`;
-  getYT(searchQuery); // getYT is global from getYT.js
-}
 
 function loadVid(videoId) {
   // player is global from init.js (and player.js)

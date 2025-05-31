@@ -73,82 +73,83 @@ function searchSongs(query) {
 // Renamed your original displaySearchResults to avoid conflict with the new one for history
 // This function displays actual song search results from iTunes.
 function displaySongSearchResults(results) {
-  if (!searchResults) return; 
-
-  if (!results || results.length === 0) {
-      searchResults.innerHTML = '<div class="loading">No results found</div>';
-      // showSearchResults(); // Already called by searchSongs which calls this
-      return;
+    if (!searchResults) return;
+  
+    if (!results || results.length === 0) {
+        searchResults.innerHTML = '<div class="loading">No results found</div>';
+        return;
+    }
+  
+    searchResults.innerHTML = "";
+  
+    results.forEach((item) => {
+        if (!item.trackName || !item.artistName || !item.trackId || !item.artworkUrl100) {
+            console.warn("Skipping search result due to missing data:", item);
+            return;
+        }
+  
+        const resultElement = document.createElement("div");
+        resultElement.className = "result-item";
+  
+        // --- BEGIN MODIFICATION: Store duration ---
+        const durationSeconds = item.trackTimeMillis ? Math.round(item.trackTimeMillis / 1000) : 0; // Default to 0 if not present
+        // --- END MODIFICATION ---
+  
+        resultElement.dataset.trackId = item.trackId.toString();
+        resultElement.dataset.trackName = item.trackName;
+        resultElement.dataset.artistName = item.artistName;
+        resultElement.dataset.artworkUrl100 = item.artworkUrl100;
+        resultElement.dataset.durationSeconds = durationSeconds.toString(); // Store as string in dataset
+  
+        resultElement.innerHTML = `
+            <div class="result-img">
+                <img src="${item.artworkUrl100}" alt="${escapeHtml(item.trackName)}" crossorigin="anonymous">
+            </div>
+            <div class="result-info">
+                <div class="result-title">${escapeHtml(item.trackName)}</div>
+                <div class="result-artist">${escapeHtml(item.artistName)}</div>
+            </div>
+            <button class="add-to-playlist-search-btn icon-action-btn" title="Add to playlist">
+                <i class="icon icon-plus-circle"></i>
+            </button>
+        `;
+        
+        resultElement.addEventListener("click", (event) => {
+            if (event.target.closest('.add-to-playlist-search-btn')) {
+                return;
+            }
+            if (typeof clearPlaylistContext === 'function') clearPlaylistContext();
+            // --- MODIFICATION: Pass durationSeconds to playSong ---
+            playSong(item.trackName, item.artistName, item.artworkUrl100, item.trackId.toString(), durationSeconds);
+            // --- END MODIFICATION ---
+            hideSearchResults();
+            if (searchInput) searchInput.value = "";
+            event.stopPropagation();
+        });
+  
+        const addToPlaylistBtnForResult = resultElement.querySelector('.add-to-playlist-search-btn');
+        if (addToPlaylistBtnForResult) {
+            addToPlaylistBtnForResult.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const songDataForModal = {
+                    id: item.trackId.toString(),
+                    title: item.trackName,
+                    artist: item.artistName,
+                    artwork: item.artworkUrl100,
+                    // --- MODIFICATION: Add durationSeconds to songDataForModal ---
+                    durationSeconds: parseInt(resultElement.dataset.durationSeconds, 10) || 0
+                    // --- END MODIFICATION ---
+                };
+                if (typeof openAddToPlaylistModal === 'function') {
+                    openAddToPlaylistModal(songDataForModal);
+                } else {
+                    console.error("openAddToPlaylistModal function not found");
+                }
+            });
+        }
+        searchResults.appendChild(resultElement);
+    });
   }
-
-  searchResults.innerHTML = ""; // Clear loading message or recent searches
-
-  results.forEach((item) => {
-      if (!item.trackName || !item.artistName || !item.trackId || !item.artworkUrl100) {
-          console.warn("Skipping search result due to missing data:", item);
-          return;
-      }
-
-      const resultElement = document.createElement("div");
-      resultElement.className = "result-item"; // For actual song results
-
-      resultElement.dataset.trackId = item.trackId.toString();
-      resultElement.dataset.trackName = item.trackName;
-      resultElement.dataset.artistName = item.artistName;
-      resultElement.dataset.artworkUrl100 = item.artworkUrl100;
-
-      resultElement.innerHTML = `
-          <div class="result-img">
-              <img src="${item.artworkUrl100}" alt="${escapeHtml(item.trackName)}" crossorigin="anonymous">
-          </div>
-          <div class="result-info">
-              <div class="result-title">${escapeHtml(item.trackName)}</div>
-              <div class="result-artist">${escapeHtml(item.artistName)}</div>
-          </div>
-          <button class="add-to-playlist-search-btn icon-action-btn" title="Add to playlist">
-              <i class="icon icon-plus-circle"></i>
-          </button>
-      `;
-      
-      // Click listener for the main result item (plays the song)
-      resultElement.addEventListener("click", (event) => {
-          // Only play if the click was not on the "add to playlist" button
-          if (event.target.closest('.add-to-playlist-search-btn')) {
-              // The button's own click listener (below) will handle its action and stop propagation.
-              return; 
-          }
-
-          // Clicked on song info/artwork area to play
-          if (typeof clearPlaylistContext === 'function') clearPlaylistContext();
-          playSong(item.trackName, item.artistName, item.artworkUrl100, item.trackId.toString());
-          hideSearchResults();
-          if (searchInput) searchInput.value = "";
-
-          // IMPORTANT: Stop this click from bubbling up to the document listener
-          event.stopPropagation();
-      });
-
-      const addToPlaylistBtnForResult = resultElement.querySelector('.add-to-playlist-search-btn');
-      if (addToPlaylistBtnForResult) {
-          addToPlaylistBtnForResult.addEventListener('click', (event) => {
-              event.stopPropagation(); // Crucial: Prevent parent (resultElement) click and document click
-              const songDataForModal = {
-                  id: item.trackId.toString(),
-                  title: item.trackName,
-                  artist: item.artistName,
-                  artwork: item.artworkUrl100
-              };
-              if (typeof openAddToPlaylistModal === 'function') {
-                  openAddToPlaylistModal(songDataForModal);
-              } else {
-                  console.error("openAddToPlaylistModal function not found");
-              }
-          });
-      }
-      searchResults.appendChild(resultElement);
-  });
-  // showSearchResults(); // Already called by searchSongs which calls this
-}
 
 // --- Utility functions (showSearchResults, hideSearchResults) ---
 // These should be your existing functions:

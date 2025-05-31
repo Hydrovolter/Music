@@ -61,25 +61,29 @@ function addSongToLikedPlaylist(songData) {
         console.error("Cannot add to liked: missing song data or ID.", songData);
         return;
     }
-    if (!likedPlaylist.find(s => s.id === songData.id)) {
-        likedPlaylist.push(songData);
-        saveLikedPlaylist();
+    // Ensure durationSeconds is part of songData being pushed
+    if (songData.durationSeconds === undefined) {
+        console.warn(`Song "${songData.title}" added to Liked without duration. Defaulting to 0.`);
+        songData.durationSeconds = 0; // Or fetch it if critical, but for now default
+    }
 
+    if (!likedPlaylist.find(s => s.id === songData.id)) {
+        likedPlaylist.push(songData); // songData now includes durationSeconds
+        saveLikedPlaylist();
+        // ... (toast and re-render logic from previous step)
         if (typeof showToast === 'function') {
             const message = `"${escapeHtml(songData.title)}" added to Liked Songs!`;
             showToast(message, 3000);
         }
-
-        // --- BEGIN MODIFICATION ---
         if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === LIKED_SONGS_PLAYLIST_ID) {
             renderSinglePlaylistView(LIKED_SONGS_PLAYLIST_ID);
-        } else if (currentSidebarView === 'all_playlists') { // If viewing the overview
-            renderAllPlaylistsView(); // Refresh the overview
+        } else if (currentSidebarView === 'all_playlists') {
+            renderAllPlaylistsView();
         }
-        // --- END MODIFICATION ---
-
         updateLikeButtonState(true);
+
     } else {
+        // ... (toast for already liked)
         if (typeof showToast === 'function') {
             const message = `"${escapeHtml(songData.title)}" is already in Liked Songs.`;
             showToast(message, 3000);
@@ -134,19 +138,37 @@ function isSongLiked(songId) {
 function toggleLikeCurrentSong() {
     if (!currentTrack || currentTrack.id == null) {
         console.warn("No current track to like/unlike, or track has no ID.");
+        // Optionally show a toast or modal if currentTrack.id is null
+        if (currentTrack && currentTrack.id == null && typeof showToast === 'function') {
+            showToast("Cannot like: Track information incomplete.", 3000);
+        }
         return;
     }
+
     if (isSongLiked(currentTrack.id)) {
         removeSongFromLikedPlaylist(currentTrack.id);
+        // Toast for unliking is handled inside removeSongFromLikedPlaylist if songBeingRemoved exists
     } else {
+        // --- BEGIN MODIFICATION: Ensure durationSeconds is included ---
+        if (currentTrack.durationSeconds === undefined) {
+            // This case should be rare if playSong always populates it.
+            // Could happen if currentTrack was somehow set without a preceding playSong call that included duration.
+            console.warn(`Liking current track "${currentTrack.title}" but its duration is undefined. Defaulting to 0.`);
+        }
         addSongToLikedPlaylist({
-            id: currentTrack.id,
+            id: currentTrack.id, // Already a string from playSong
             title: currentTrack.title,
             artist: currentTrack.artist,
-            artwork: currentTrack.artwork // Ensure this is the 100x100 artwork
+            artwork: currentTrack.artwork, // Ensure this is the 100x100 artwork
+            durationSeconds: currentTrack.durationSeconds || 0 // Add durationSeconds here
         });
+        // --- END MODIFICATION ---
+        // Toast for liking is handled inside addSongToLikedPlaylist
     }
+    // updateLikeButtonState is called by addSongToLikedPlaylist/removeSongFromLikedPlaylist
+    // when currentTrack matches the modified song.
 }
+
 
 function updateLikeButtonState(isLikedOverride) {
     if (!likeBtnElement) return;
@@ -259,31 +281,35 @@ function deletePlaylist(playlistId) {
 function addSongToUserPlaylist(playlistId, songData) {
     const playlist = userPlaylists.find(p => p.id === playlistId);
     if (playlist && songData && songData.id) {
-        if (!playlist.songs.find(s => s.id === songData.id)) {
-            playlist.songs.push(songData);
-            saveUserPlaylists();
+        // Ensure durationSeconds is part of songData being pushed
+        if (songData.durationSeconds === undefined) {
+            console.warn(`Song "${songData.title}" added to playlist "${playlist.name}" without duration. Defaulting to 0.`);
+            songData.durationSeconds = 0;
+        }
 
-            if (typeof showToast === 'function') {
+        if (!playlist.songs.find(s => s.id === songData.id)) {
+            playlist.songs.push(songData); // songData now includes durationSeconds
+            saveUserPlaylists();
+            // ... (toast and re-render logic from previous step)
+             if (typeof showToast === 'function') {
                 const message = `"${escapeHtml(songData.title)}" added to ${escapeHtml(playlist.name)}!`;
                 showToast(message, 3000);
             }
-
-            // --- BEGIN MODIFICATION ---
             if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === playlistId) {
                 renderSinglePlaylistView(playlistId);
-            } else if (currentSidebarView === 'all_playlists') { // If viewing the overview
-                renderAllPlaylistsView(); // Refresh the overview
+            } else if (currentSidebarView === 'all_playlists') {
+                renderAllPlaylistsView();
             }
-            // --- END MODIFICATION ---
-
             console.log(`Song "${songData.title}" added to playlist "${playlist.name}"`);
         } else {
+            // ... (toast for song already in playlist)
             if (typeof showToast === 'function') {
                 const message = `"${escapeHtml(songData.title)}" is already in ${escapeHtml(playlist.name)}.`;
                 showToast(message, 3000);
             }
         }
     } else {
+        // ... (error handling)
         if (!playlist) console.error("Playlist not found for ID:", playlistId);
         if (!songData || !songData.id) console.error("Invalid song data for addSongToUserPlaylist:", songData);
         if (typeof showToast === 'function') {
@@ -423,15 +449,29 @@ function renderAllPlaylistsView() {
     // --- END MODIFICATION ---
 }
 
+// Modify createPlaylistOverviewItem to use actual durations
 function createPlaylistOverviewItem(playlistData) {
     const li = document.createElement('li');
     li.className = 'playlist-overview-item';
     li.setAttribute('data-playlist-id', playlistData.id);
 
-    const songsText = playlistData.songs.length === 1 ? "1 song" : `${playlistData.songs.length} songs`;
-    let artworkSrc;
+    const songCount = playlistData.songs.length;
+    const songsText = songCount === 1 ? "1 song" : `${songCount} songs`;
 
-    if (playlistData.id === LIKED_SONGS_PLAYLIST_ID) {
+    // --- BEGIN MODIFICATION: Calculate total duration from actual song data ---
+    let totalDurationSeconds = 0;
+    if (songCount > 0) {
+        totalDurationSeconds = playlistData.songs.reduce((sum, song) => {
+            return sum + (song.durationSeconds || 0); // Use stored durationSeconds, fallback to 0
+        }, 0);
+    }
+    const formattedDuration = formatPlaylistDuration(totalDurationSeconds);
+    const countAndDurationText = songCount > 0 ? `${songsText} • ${formattedDuration}` : songsText;
+    // --- END MODIFICATION ---
+
+    let artworkSrc;
+    // ... (artwork logic remains the same)
+     if (playlistData.id === LIKED_SONGS_PLAYLIST_ID) {
         artworkSrc = 'img/liked_songs.png';
     } else {
         li.setAttribute('draggable', true);
@@ -448,15 +488,15 @@ function createPlaylistOverviewItem(playlistData) {
         li.addEventListener('dragend', handlePlaylistDragEnd);
     }
 
-    // --- BEGIN MODIFICATION: Add class if this is the playing playlist ---
+
     let nameDisplayClasses = "playlist-overview-item-name";
     if (currentPlayingPlaylistId === playlistData.id) {
         nameDisplayClasses += " playing-playlist-title";
     }
     let nameDisplay = `<div class="${nameDisplayClasses}">${escapeHtml(playlistData.name)}</div>`;
-    // --- END MODIFICATION ---
 
     let actionsHtml = '';
+    // ... (actionsHtml logic remains the same)
     if (playlistData.id !== LIKED_SONGS_PLAYLIST_ID) {
         actionsHtml = `
             <div class="playlist-item-actions">
@@ -465,16 +505,17 @@ function createPlaylistOverviewItem(playlistData) {
             </div>`;
     }
 
+
     li.innerHTML = `
         <img src="${artworkSrc}" alt="${escapeHtml(playlistData.name)}" class="playlist-overview-item-artwork">
         <div class="playlist-overview-item-info">
             ${nameDisplay}
-            <div class="playlist-overview-item-count">${songsText}</div>
+            <div class="playlist-overview-item-count">${countAndDurationText}</div>
         </div>
         ${actionsHtml}
     `;
 
-    // ... (rest of the event listeners in this function remain the same)
+    // ... (event listeners in this function remain the same)
     const infoSection = li.querySelector('.playlist-overview-item-info');
     const artworkSection = li.querySelector('.playlist-overview-item-artwork');
     const viewPlaylistHandler = () => switchSidebarView('single_playlist_view', playlistData.id);
@@ -640,6 +681,7 @@ function renderSinglePlaylistView(playlistId) {
 }
 
 // --- PLAYBACK LOGIC ADAPTATIONS ---
+// When playing a song from a playlist, ensure duration is passed to playSong
 function playSongFromCurrentPlaylist(playlistId, songIndexInOriginalPlaylist) {
     const playlist = getPlaylistById(playlistId);
     if (!playlist || !playlist.songs || songIndexInOriginalPlaylist < 0 || songIndexInOriginalPlaylist >= playlist.songs.length) {
@@ -650,45 +692,39 @@ function playSongFromCurrentPlaylist(playlistId, songIndexInOriginalPlaylist) {
 
     const songToPlay = playlist.songs[songIndexInOriginalPlaylist];
 
+    // ... (shuffle logic) ...
     if (isShuffleActive && currentPlayingPlaylistId === playlistId) {
-        // User manually selected a song from the playlist view while shuffle is on.
-        // This song "jumps the queue" and becomes the current one.
-        // It should be removed from upcoming and added to played.
-
         const upcomingIndex = shuffleUpcomingQueue.findIndex(s => s.id === songToPlay.id);
-        if (upcomingIndex > -1) {
-            shuffleUpcomingQueue.splice(upcomingIndex, 1);
-        }
-
+        if (upcomingIndex > -1) shuffleUpcomingQueue.splice(upcomingIndex, 1);
         const playedIndex = shufflePlayedQueue.findIndex(s => s.id === songToPlay.id);
-        if (playedIndex > -1) {
-            // If it was already played, remove it to avoid duplicate in playedQueue later
-            // (though push will add it as most recent)
-            shufflePlayedQueue.splice(playedIndex, 1);
-        }
-        shufflePlayedQueue.push(songToPlay); // Add to end of played queue (most recent)
-        console.log(`Shuffle: User selected "${songToPlay.title}". Upcoming: ${shuffleUpcomingQueue.length}, Played: ${shufflePlayedQueue.length}`);
+        if (playedIndex > -1) shufflePlayedQueue.splice(playedIndex, 1);
+        shufflePlayedQueue.push(songToPlay);
     } else if (isShuffleActive && currentPlayingPlaylistId !== playlistId) {
-        // User started a new playlist while shuffle was on from a previous one.
-        // Or, shuffle was just turned on by toggleShuffle before this call (less likely path here)
         initializeShuffleQueues(playlist.songs, songToPlay.id);
     }
-    // If shuffle is NOT active OR shuffle was just initialized for THIS song:
-    // The currentTrack, currentPlayingPlaylistId, currentPlaylistTrackIndex will be set below.
 
-    const previousPlayingPlaylistId = currentPlayingPlaylistId;
+
     currentPlayingPlaylistId = playlistId;
-    currentPlaylistTrackIndex = songIndexInOriginalPlaylist; // Always store original index
+    currentPlaylistTrackIndex = songIndexInOriginalPlaylist;
 
     if (typeof playSong === 'function') {
-        playSong(songToPlay.title, songToPlay.artist, songToPlay.artwork, songToPlay.id.toString());
+        // --- MODIFICATION: Pass durationSeconds from the playlist song object ---
+        playSong(
+            songToPlay.title,
+            songToPlay.artist,
+            songToPlay.artwork,
+            songToPlay.id.toString(),
+            songToPlay.durationSeconds || 0 // Pass stored duration
+        );
+        // --- END MODIFICATION ---
     } else {
         console.error("Global playSong function not found!");
     }
 
     renderSidebar();
-    updatePlaylistControlsVisibility(); // This now also updates shuffle button visibility
+    updatePlaylistControlsVisibility();
 }
+
 
 function playNextTrackInCurrentPlaylist() {
     if (!currentPlayingPlaylistId) return;
@@ -851,65 +887,45 @@ function clearPlaylistContext() {
 }
 
 // --- "ADD TO PLAYLIST" MODAL ---
+// In openAddToPlaylistModal: ensure currentTrack has durationSeconds
 function openAddToPlaylistModal(songDataOverride = null) {
-    const songToAdd = songDataOverride || currentTrack; // Use override if provided, else global currentTrack
+    const songToAdd = songDataOverride || currentTrack;
 
-    if (!songToAdd || songToAdd.id == null) { // Check songToAdd.id
+    if (!songToAdd || songToAdd.id == null) {
         showGeneralModal("Cannot Add Song", "No song selected or currently playing to add to a playlist.");
         return;
     }
-    // Ensure songToAdd has all necessary properties (id, title, artist, artwork)
-    if (!songToAdd.title || !songToAdd.artist || !songToAdd.artwork) {
-        console.error("Song data for modal is incomplete:", songToAdd);
-        showGeneralModal("Error", "Cannot add song due to incomplete data.");
-        return;
-    }
-
-
-    modalPlaylistListElement.innerHTML = '';
-
-    // Option to add to Liked Songs
-    const likedItem = document.createElement('div');
-    likedItem.className = 'modal-playlist-item';
-    likedItem.textContent = "Liked Songs";
-    likedItem.onclick = () => {
-        // Use the data from songToAdd
-        addSongToLikedPlaylist({
-            id: songToAdd.id.toString(),
-            title: songToAdd.title,
-            artist: songToAdd.artist,
-            artwork: songToAdd.artwork
-        });
-        closeAddToPlaylistModal();
-    };
-    modalPlaylistListElement.appendChild(likedItem);
-
-    userPlaylists.forEach(playlist => {
-        const playlistItem = document.createElement('div');
-        playlistItem.className = 'modal-playlist-item';
-        playlistItem.textContent = escapeHtml(playlist.name);
-        playlistItem.onclick = () => {
-            // Use the data from songToAdd
-            addSongToUserPlaylist(playlist.id, {
-                id: songToAdd.id.toString(),
-                title: songToAdd.title,
-                artist: songToAdd.artist,
-                artwork: songToAdd.artwork
-            });
-            closeAddToPlaylistModal();
+    if (!songToAdd.title || !songToAdd.artist || !songToAdd.artwork || songToAdd.durationSeconds === undefined) { // Check duration
+        console.error("Song data for modal is incomplete (missing duration?):", songToAdd);
+        // Attempt to find duration if it's the currentTrack and it might have been populated by playSong
+        let duration = songToAdd.durationSeconds;
+        if (songToAdd.id === currentTrack.id && currentTrack.durationSeconds !== undefined) {
+            duration = currentTrack.durationSeconds;
+        } else if (songToAdd.durationSeconds === undefined) {
+            // Fallback or error - for now, let's alert and maybe default
+            // This scenario should be rare if data flow is correct from search/playSong
+             console.warn("Duration missing for song in 'Add to Playlist' modal. Defaulting to 0. Song:", songToAdd.title);
+             duration = 0; // Or some average
+        }
+        
+        // Rebuild songToAdd with potentially found/defaulted duration
+        const completeSongToAdd = {
+            ...songToAdd,
+            durationSeconds: duration
         };
-        modalPlaylistListElement.appendChild(playlistItem);
-    });
+        
+        // If critical data still missing after attempt:
+        if (!completeSongToAdd.title || !completeSongToAdd.artist || !completeSongToAdd.artwork) {
+            showGeneralModal("Error", "Cannot add song due to incomplete data.");
+            return;
+        }
+        // Proceed with completeSongToAdd
+        _populateAndShowAddToPlaylistModal(completeSongToAdd);
 
-    if (modalPlaylistListElement.children.length === 1 && userPlaylists.length === 0) {
-         const noUserPlaylistsMsg = document.createElement('p');
-         noUserPlaylistsMsg.textContent = 'No other playlists. Create one first!';
-         noUserPlaylistsMsg.style.textAlign = 'center';
-         noUserPlaylistsMsg.style.marginTop = '10px';
-         modalPlaylistListElement.appendChild(noUserPlaylistsMsg);
+    } else {
+        // songToAdd already has duration and other necessary fields
+        _populateAndShowAddToPlaylistModal(songToAdd);
     }
-
-    addToPlaylistModalElement.style.display = 'flex';
 }
 
 function closeAddToPlaylistModal() {
@@ -1188,8 +1204,93 @@ function initializeShuffleQueues(playlistSongs, currentlyPlayingSongId = null) {
 }
 
 
+// --- Helper Function to Format Duration (same as your previous request) ---
+function formatPlaylistDuration(totalSeconds) {
+    if (isNaN(totalSeconds) || totalSeconds <= 0) { // Changed to <= 0
+        return "0s";
+    }
 
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.floor(totalSeconds % 60);
 
+    let durationStr = "";
+    if (hours > 0) {
+        durationStr += `${hours}hr`;
+        if (minutes > 0) {
+            durationStr += ` ${minutes}m`;
+        }
+    } else if (minutes > 0) {
+        durationStr += `${minutes}m`;
+        if (seconds > 0) { // Only show seconds if there are minutes but no hours
+            durationStr += ` ${seconds}s`;
+        }
+    } else if (seconds > 0) {
+        durationStr += `${seconds}s`;
+    } else {
+        return "0s"; // Should ideally not be reached if totalSeconds > 0
+    }
+    return durationStr.trim();
+}
+
+// Helper for openAddToPlaylistModal to avoid code duplication
+function _populateAndShowAddToPlaylistModal(songToAddWithDuration) {
+    if (!modalPlaylistListElement || !addToPlaylistModalElement) {
+        console.error("Add to playlist modal elements not found.");
+        return;
+    }
+    modalPlaylistListElement.innerHTML = '';
+
+    const createClickHandler = (addFunction, playlistContextId = null) => {
+        return () => {
+            addFunction(playlistContextId ? playlistContextId : songToAddWithDuration, playlistContextId ? songToAddWithDuration : undefined);
+            closeAddToPlaylistModal();
+        };
+    };
+    
+    // Option to add to Liked Songs
+    const likedItem = document.createElement('div');
+    likedItem.className = 'modal-playlist-item';
+    likedItem.textContent = "Liked Songs";
+    likedItem.onclick = () => {
+        addSongToLikedPlaylist({ // Pass the full song object
+            id: songToAddWithDuration.id.toString(),
+            title: songToAddWithDuration.title,
+            artist: songToAddWithDuration.artist,
+            artwork: songToAddWithDuration.artwork,
+            durationSeconds: songToAddWithDuration.durationSeconds
+        });
+        closeAddToPlaylistModal();
+    };
+    modalPlaylistListElement.appendChild(likedItem);
+
+    userPlaylists.forEach(playlist => {
+        const playlistItem = document.createElement('div');
+        playlistItem.className = 'modal-playlist-item';
+        playlistItem.textContent = escapeHtml(playlist.name);
+        playlistItem.onclick = () => {
+            addSongToUserPlaylist(playlist.id, { // Pass the full song object
+                id: songToAddWithDuration.id.toString(),
+                title: songToAddWithDuration.title,
+                artist: songToAddWithDuration.artist,
+                artwork: songToAddWithDuration.artwork,
+                durationSeconds: songToAddWithDuration.durationSeconds
+            });
+            closeAddToPlaylistModal();
+        };
+        modalPlaylistListElement.appendChild(playlistItem);
+    });
+
+    if (modalPlaylistListElement.children.length === 1 && userPlaylists.length === 0) {
+         const noUserPlaylistsMsg = document.createElement('p');
+         noUserPlaylistsMsg.textContent = 'No other playlists. Create one first!';
+         noUserPlaylistsMsg.style.textAlign = 'center';
+         noUserPlaylistsMsg.style.marginTop = '10px';
+         modalPlaylistListElement.appendChild(noUserPlaylistsMsg);
+    }
+
+    addToPlaylistModalElement.style.display = 'flex';
+}
 
 // Helper to prevent XSS
 function escapeHtml(unsafe) {
