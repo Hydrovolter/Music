@@ -581,6 +581,12 @@ mask-image: url('../img/icons/heart-filled.svg');
 background-color: #ff6b6b; /* Liked color */
 
 }
+
+.icon-action-btn .icon-heart-filled {
+  background-color: #ff6b6b; /* Use !important as a last resort, but often needed if other .icon styles are too general */
+                                      /* Or try without !important first if the specificity is enough */
+}
+
 .icon-prev {
 mask-image: url('../img/icons/prev.svg');
 -webkit-mask-image: url('../img/icons/prev.svg');

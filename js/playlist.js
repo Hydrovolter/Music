@@ -491,49 +491,52 @@ function renderSinglePlaylistView(playlistId) {
         return;
     }
 
-    // --- BEGIN MODIFICATION: Store scroll position ---
     let currentScrollTop = 0;
     if (playlistDisplayAreaElement) {
         currentScrollTop = playlistDisplayAreaElement.scrollTop;
     }
-    // --- END MODIFICATION ---
 
-    playlistDisplayAreaElement.innerHTML = ''; // This is the action that often resets scroll
+    playlistDisplayAreaElement.innerHTML = '';
     sidebarTitleElement.textContent = escapeHtml(playlist.name);
     backToPlaylistsBtnElement.style.display = 'inline-block';
     createNewPlaylistBtnElement.style.display = 'none';
 
     if (playlist.songs.length === 0) {
         playlistDisplayAreaElement.innerHTML = `<p class="empty-playlist-message">This playlist is empty.</p>`;
-        // --- BEGIN MODIFICATION: Restore scroll position (even for empty message) ---
         if (playlistDisplayAreaElement) {
             playlistDisplayAreaElement.scrollTop = currentScrollTop;
         }
-        // --- END MODIFICATION ---
         return;
     }
 
     const ul = document.createElement('ul');
-    // ul.className = 'playlist-list'; // Ensure this class is in CSS
 
     playlist.songs.forEach((song, index) => {
         const li = document.createElement('li');
         li.className = 'playlist-item';
         li.setAttribute('data-song-id', song.id.toString());
-        li.setAttribute('draggable', true);
+        li.setAttribute('draggable', true); // Still draggable to reorder liked songs
 
         if (currentPlayingPlaylistId === playlistId && currentPlaylistTrackIndex === index && currentTrack && currentTrack.id === song.id) {
             li.classList.add('playing');
         }
 
-        let removeButtonHtml = '';
-        // For user playlists (not "Liked Songs"), show remove button.
-        // Note: Liked Songs playlist object from getPlaylistById doesn't have customArtwork or other user-playlist specific props
-        // so checking playlist.id !== LIKED_SONGS_PLAYLIST_ID is the most direct way.
-        if (playlist.id !== LIKED_SONGS_PLAYLIST_ID) {
-            removeButtonHtml = `<button class="remove-song-from-playlist-btn icon-action-btn" title="Remove from playlist"><i class="icon icon-trash"></i></button>`;
+        // --- BEGIN MODIFICATION: Conditional button for liked songs ---
+        let actionButtonHtml = '';
+        if (playlistId === LIKED_SONGS_PLAYLIST_ID) {
+            // For "Liked Songs", use a filled heart icon to "unlike"
+            actionButtonHtml = `
+                <button class="unlike-song-from-liked-playlist-btn icon-action-btn" title="Remove from Liked Songs">
+                    <i class="icon icon-heart-filled"></i>
+                </button>`;
+        } else {
+            // For user-created playlists, use the trash icon
+            actionButtonHtml = `
+                <button class="remove-song-from-playlist-btn icon-action-btn" title="Remove from playlist">
+                    <i class="icon icon-trash"></i>
+                </button>`;
         }
-
+        // --- END MODIFICATION ---
 
         li.innerHTML = `
             <img src="${song.artwork || 'img/empty_art.png'}" alt="${escapeHtml(song.title)}" class="playlist-item-artwork">
@@ -541,23 +544,24 @@ function renderSinglePlaylistView(playlistId) {
                 <div class="playlist-item-title">${escapeHtml(song.title)}</div>
                 <div class="playlist-item-artist">${escapeHtml(song.artist)}</div>
             </div>
-            ${removeButtonHtml}
+            ${actionButtonHtml}
         `;
 
         li.addEventListener('click', (e) => {
-            // Check if the click was on the remove button icon or the button itself
+            // --- BEGIN MODIFICATION: Update click handler for new button ---
+            const unlikeButton = e.target.closest('.unlike-song-from-liked-playlist-btn');
             const removeButton = e.target.closest('.remove-song-from-playlist-btn');
-            if (removeButton) {
-                e.stopPropagation(); // Prevent playing the song
-                if (playlist.id === LIKED_SONGS_PLAYLIST_ID) {
-                    // This path should not be taken if button is hidden for Liked Songs
-                    removeSongFromLikedPlaylist(song.id);
-                } else {
-                    removeSongFromUserPlaylist(playlistId, song.id);
-                }
-            } else {
+
+            if (unlikeButton) { // Clicked on the heart ("unlike") button in Liked Songs
+                e.stopPropagation();
+                removeSongFromLikedPlaylist(song.id); // This already updates the like button in the player
+            } else if (removeButton) { // Clicked on the trash button in a user playlist
+                e.stopPropagation();
+                removeSongFromUserPlaylist(playlistId, song.id);
+            } else { // Clicked to play the song
                 playSongFromCurrentPlaylist(playlistId, index);
             }
+            // --- END MODIFICATION ---
         });
 
         li.addEventListener('dragstart', (event) => handleSongDragStart(event, index, playlistId));
@@ -569,11 +573,9 @@ function renderSinglePlaylistView(playlistId) {
     });
     playlistDisplayAreaElement.appendChild(ul);
 
-    // --- BEGIN MODIFICATION: Restore scroll position ---
     if (playlistDisplayAreaElement) {
         playlistDisplayAreaElement.scrollTop = currentScrollTop;
     }
-    // --- END MODIFICATION ---
 }
 
 // --- PLAYBACK LOGIC ADAPTATIONS ---
