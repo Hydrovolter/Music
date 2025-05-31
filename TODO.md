@@ -1,5 +1,3 @@
-
-
 # TODO
 
 * []  volume slider
