@@ -95,6 +95,10 @@ function initializeModals() {
         });
         console.log("Edit Playlist Modal system initialized.");
     }
+
+
+    // Initialize Settings Modal
+    initializeSettingsModal();
 }
 
 // --- Image Resizing Utility ---
@@ -237,24 +241,33 @@ function setupArtworkEditor(
     };
 }
 
-function showGeneralModal(title, message, buttonsConfig = []) {
+function showGeneralModal(title, message, buttonsConfig = [], options = {}) { // Added options
     if (!generalModalElement || !generalModalTitleElement || !generalModalMessageElement || !generalModalActionsElement) {
         console.error("Cannot show general modal: elements not initialized.");
-        // Fallback to alert if modal elements aren't ready (though they should be if init is called)
         alert(`${title}\n${message.replace(/<br\s*\/?>/gi, "\n").replace(/<strong>|<\/strong>/gi, "")}`);
         return;
     }
 
+    // --- Z-INDEX FIX ---
+    // If this modal is being shown 'on-top' of another, give it a higher z-index
+    if (options.isOverlay) {
+        generalModalElement.style.zIndex = '1001'; // Or higher if settingsModal is 1000
+    } else {
+        generalModalElement.style.zIndex = '1000'; // Default z-index
+    }
+    // --- END Z-INDEX FIX ---
+
+
     generalModalTitleElement.textContent = title;
-    generalModalMessageElement.innerHTML = message; // Use innerHTML if message might contain simple HTML like <br>, <strong>
-    generalModalActionsElement.innerHTML = ''; // Clear previous buttons
+    generalModalMessageElement.innerHTML = message;
+    generalModalActionsElement.innerHTML = '';
 
     if (buttonsConfig.length === 0) {
-        // Default OK button if no buttons are specified (for simple alerts)
+        // ... (okButton logic)
         const okButton = document.createElement('button');
         okButton.textContent = 'OK';
-        okButton.className = 'modal-button secondary'; // Assumes .modal-button and .secondary are globally styled
-        okButton.onclick = closeGeneralModal;
+        okButton.className = 'modal-button secondary';
+        okButton.onclick = () => closeGeneralModal(options.isOverlay); // Pass overlay status
         generalModalActionsElement.appendChild(okButton);
     } else {
         buttonsConfig.forEach(btnConfig => {
@@ -262,7 +275,7 @@ function showGeneralModal(title, message, buttonsConfig = []) {
             button.textContent = btnConfig.text;
             button.className = `modal-button ${btnConfig.class || 'secondary'}`;
             button.onclick = () => {
-                closeGeneralModal(); // Always close modal on button click
+                closeGeneralModal(options.isOverlay); // Pass overlay status & always close on button click
                 if (btnConfig.callback && typeof btnConfig.callback === 'function') {
                     btnConfig.callback();
                 }
@@ -273,10 +286,15 @@ function showGeneralModal(title, message, buttonsConfig = []) {
     generalModalElement.style.display = 'flex';
 }
 
-function closeGeneralModal() {
+function closeGeneralModal(wasOverlay = false) { // Added wasOverlay
     if (!generalModalElement) return;
     generalModalElement.style.display = 'none';
-    // Callbacks are tied to buttons, so no need to reset module-level generalModalConfirmCallback here
+    // --- Z-INDEX FIX ---
+    // Reset z-index if it was an overlay, so it doesn't interfere next time
+    if (wasOverlay) {
+        generalModalElement.style.zIndex = '1000'; // Reset to default
+    }
+    // --- END Z-INDEX FIX ---
 }
 
 function openCreatePlaylistModal() {
@@ -405,6 +423,296 @@ function handleConfirmEditPlaylist() {
     }
 }
 
+// --- Settings Modal ---
+function initializeSettingsModal() {
+    settingsToggleElement = document.getElementById('settingsToggle');
+    settingsModalElement = document.getElementById('settingsModal');
+    closeSettingsModalBtnElement = document.getElementById('closeSettingsModal');
+    exportDataBtnElement = document.getElementById('exportDataBtn');
+    importFileDropZoneElement = document.getElementById('importFileDropZone');
+    importDataInputElement = document.getElementById('importDataInput');
+    importDataBtnElement = document.getElementById('importDataBtn');
+    selectedFileNameElement = document.getElementById('selectedFileName');
+
+
+    if (!settingsToggleElement || !settingsModalElement || !closeSettingsModalBtnElement ||
+        !exportDataBtnElement || !importFileDropZoneElement || !importDataInputElement ||
+        !importDataBtnElement || !selectedFileNameElement) {
+        console.error("One or more settings modal DOM elements not found. Settings functionality disabled.");
+        return;
+    }
+
+    settingsToggleElement.addEventListener('click', openSettingsModal);
+    closeSettingsModalBtnElement.addEventListener('click', closeSettingsModal);
+    settingsModalElement.addEventListener('click', (event) => {
+        if (event.target === settingsModalElement) closeSettingsModal();
+    });
+
+    exportDataBtnElement.addEventListener('click', exportUserData);
+
+    // Import File Handling
+    importFileDropZoneElement.addEventListener('click', () => importDataInputElement.click());
+    importDataInputElement.addEventListener('change', handleFileSelectedForImport);
+
+    importFileDropZoneElement.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        importFileDropZoneElement.classList.add('drag-over');
+    });
+    importFileDropZoneElement.addEventListener('dragleave', () => {
+        importFileDropZoneElement.classList.remove('drag-over');
+    });
+    importFileDropZoneElement.addEventListener('drop', (event) => {
+        event.preventDefault();
+        importFileDropZoneElement.classList.remove('drag-over');
+        if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+            handleFileSelectedForImport({ target: { files: event.dataTransfer.files } });
+            event.dataTransfer.clearData();
+        }
+    });
+
+    importDataBtnElement.addEventListener('click', confirmAndProcessImport);
+
+    console.log("Settings Modal system initialized.");
+}
+
+function openSettingsModal() {
+    if (!settingsModalElement) return;
+    // Reset import UI
+    importedFileContent = null;
+    if(importDataInputElement) importDataInputElement.value = ''; // Clear file input
+    if(selectedFileNameElement) selectedFileNameElement.textContent = '';
+    if(importDataBtnElement) importDataBtnElement.disabled = true;
+    settingsModalElement.style.display = 'flex';
+}
+
+function closeSettingsModal() {
+    if (!settingsModalElement) return;
+    settingsModalElement.style.display = 'none';
+    importedFileContent = null; // Clear any pending import data
+}
+
+// --- Export Functionality ---
+function exportUserData() {
+    const dataToExport = {};
+    APP_STORAGE_KEYS.forEach(key => { // APP_STORAGE_KEYS from init.js
+        const item = localStorage.getItem(key);
+        if (item !== null) { // Only include keys that actually exist
+            try {
+                // Attempt to parse to ensure it's valid JSON if we want to store it as object,
+                // but for export, storing raw string is fine. For re-importing as JSON later, it's good.
+                dataToExport[key] = JSON.parse(item);
+            } catch (e) {
+                dataToExport[key] = item; // Store as string if not parseable (shouldn't happen for our app data)
+            }
+        }
+    });
+
+    if (Object.keys(dataToExport).length === 0) {
+        showToast("No data to export.", 3000);
+        return;
+    }
+
+    const jsonString = JSON.stringify(dataToExport, null, 2); // Pretty print JSON
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const timestamp = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+    a.download = `music_player_data_${timestamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast("Data exported successfully!", 3000);
+}
+
+// --- Import Functionality ---
+function handleFileSelectedForImport(event) {
+    const file = event.target.files[0];
+    if (file) {
+        if (file.type === "application/json" || file.name.endsWith(".json")) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                importedFileContent = e.target.result; // Store the raw string content
+                if(selectedFileNameElement) selectedFileNameElement.textContent = `Selected: ${file.name}`;
+                if(importDataBtnElement) importDataBtnElement.disabled = false;
+            };
+            reader.onerror = (e) => {
+                showToast("Error reading file.", 3000);
+                importedFileContent = null;
+                if(selectedFileNameElement) selectedFileNameElement.textContent = '';
+                if(importDataBtnElement) importDataBtnElement.disabled = true;
+            };
+            reader.readAsText(file);
+        } else {
+            showToast("Invalid file type. Please select a .json file.", 3000);
+            importedFileContent = null;
+            if(selectedFileNameElement) selectedFileNameElement.textContent = '';
+            if(importDataBtnElement) importDataBtnElement.disabled = true;
+            if(importDataInputElement) importDataInputElement.value = ''; // Clear file input
+        }
+    }
+}
+
+function confirmAndProcessImport() {
+    const fileContentToProcess = importedFileContent; // Capture current value
+    console.log("confirmAndProcessImport called. fileContentToProcess CAPTURED:", fileContentToProcess ? fileContentToProcess.substring(0,50) + "..." : "null");
+
+    if (!fileContentToProcess) {
+        showToast("No file selected for import.", 3000);
+        return;
+    }
+
+    showGeneralModal(
+        "Confirm Import",
+        "Warning: Importing data will override your current playlists and app data. This action cannot be undone.<br><br>Are you sure you want to proceed?",
+        [
+            {
+                text: 'Proceed with Import',
+                class: 'primary',
+                callback: () => { // Use an arrow function to ensure 'this' context if needed, and to pass the captured content
+                    processImportedData(fileContentToProcess); // Pass the captured content
+                }
+            },
+            {
+                text: 'Cancel',
+                class: 'secondary'
+            }
+        ],
+        { isOverlay: true }
+    );
+}
+
+function processImportedData(fileContentForProcessing) {
+    console.log("processImportedData CALLED. fileContentForProcessing:", fileContentForProcessing ? fileContentForProcessing.substring(0, 50) + "..." : "null");
+    if (!fileContentForProcessing) {
+        showToast("Import failed: No file content was provided to process.", 3000);
+        return;
+    }
+
+    let parsedDataFromFile; // Declare here to be accessible in finally if needed for reset
+
+    try {
+        parsedDataFromFile = JSON.parse(fileContentForProcessing);
+
+        // --- BEGIN ENHANCED VALIDATION ---
+        if (typeof parsedDataFromFile !== 'object' || parsedDataFromFile === null) {
+            throw new Error("Invalid file structure: Data is not a valid JSON object.");
+        }
+
+        // Check if at least one of the expected app storage keys exists at the top level of the imported object.
+        const hasAtLeastOneAppKey = APP_STORAGE_KEYS.some(key => parsedDataFromFile.hasOwnProperty(key));
+        if (!hasAtLeastOneAppKey) {
+            throw new Error("Invalid file structure: Does not contain recognizable application data.");
+        }
+
+        // Optional: More specific validation for each key's expected type (e.g., arrays)
+        APP_STORAGE_KEYS.forEach(key => {
+            if (parsedDataFromFile.hasOwnProperty(key)) {
+                const LIKED_PLAYLIST_STORAGE_KEY_CONST = "musicPlayer_likedSongsPlaylist";
+                const USER_PLAYLISTS_STORAGE_KEY_CONST = "musicPlayer_userPlaylists";
+                const RECENT_SEARCHES_KEY_CONST = "musicPlayer_recentSearches";
+
+                if ((key === LIKED_PLAYLIST_STORAGE_KEY_CONST ||
+                     key === USER_PLAYLISTS_STORAGE_KEY_CONST ||
+                     key === RECENT_SEARCHES_KEY_CONST) &&
+                    !Array.isArray(parsedDataFromFile[key])) {
+                    throw new Error(`Invalid file structure: Data for "${key}" is not an array.`);
+                }
+                // Add more type checks if other keys have specific expected types (e.g., object, string, number)
+            }
+        });
+        // --- END ENHANCED VALIDATION ---
+
+        // Clear existing app-specific localStorage data
+        APP_STORAGE_KEYS.forEach(key => {
+            localStorage.removeItem(key);
+        });
+
+        // Apply imported data to localStorage
+        APP_STORAGE_KEYS.forEach(key => {
+            if (parsedDataFromFile.hasOwnProperty(key)) {
+                localStorage.setItem(key, JSON.stringify(parsedDataFromFile[key]));
+                console.log(`Imported and set localStorage for: ${key}`);
+            }
+        });
+
+        // --- Crucial: Reset and Reload application state ---
+        // (Your extensive reset logic remains here...)
+        // 1. Stop current playback & clear player state
+        if (typeof player !== 'undefined' && player && typeof player.stopVideo === 'function') {
+            player.stopVideo();
+        }
+        if (typeof clearPlayerStateOnEnd === 'function') { clearPlayerStateOnEnd(); }
+        isPlaying = false;
+        if (playPauseBtn) {
+            playPauseBtn.classList.remove("icon-pause"); playPauseBtn.classList.add("icon-play");
+        }
+
+        // 2. Reset current track displayed in player UI
+        currentTrack = {
+            id: null, title: "Not Playing", artist: "Not Playing",
+            artwork: "img/empty_art.png", artworkLarge: "img/empty_art.png", durationSeconds: 0
+        };
+        if(trackTitle) trackTitle.textContent = currentTrack.title;
+        if(artistName) artistName.textContent = currentTrack.artist;
+        if(albumCover) {
+            albumCover.src = currentTrack.artworkLarge;
+            albumCover.onload = () => { if(typeof applyColors === 'function') applyColors([115, 98, 86]); };
+        }
+        if(typeof applyColors === 'function') applyColors([115, 98, 86]);
+        if (showingLyrics && typeof lyricsContent !== 'undefined') {
+            if(lyricsSongTitle) lyricsSongTitle.textContent = "Not Playing";
+            if(lyricsArtistName) lyricsArtistName.textContent = "Not Playing";
+            lyricsContent.textContent = "No lyrics available.";
+        }
+        if(typeof updateLikeButtonState === 'function') updateLikeButtonState();
+
+        // 3. Clear any active playlist context
+        if (typeof clearPlaylistContext === 'function') {
+            clearPlaylistContext();
+        } else {
+            currentPlayingPlaylistId = null; currentPlaylistTrackIndex = -1;
+            isShuffleActive = false; loopState = 'none';
+            if(typeof updatePlaylistControlsVisibility === 'function') updatePlaylistControlsVisibility();
+            if(typeof updateShuffleButtonIcon === 'function') updateShuffleButtonIcon();
+            if(typeof updateLoopButtonIcon === 'function') updateLoopButtonIcon();
+        }
+
+        // 4. Re-initialize the playlist system
+        if (typeof initializePlaylistSystem === 'function') {
+            initializePlaylistSystem();
+        } else {
+            console.error("initializePlaylistSystem function not found.");
+        }
+
+        // 5. Refresh recent searches
+        if (typeof searchInput !== 'undefined' && searchInput === document.activeElement && searchInput.value.trim() === "" && typeof displayRecentSearches === 'function') {
+            displayRecentSearches();
+        }
+        
+        // This toast is only reached if all try block operations succeed
+        showToast("Data imported successfully! UI refreshed.", 3500);
+        closeSettingsModal(); 
+
+    } catch (error) { // Catch JSON.parse errors or errors thrown by custom validation
+        console.error("Error processing imported file:", error);
+        // Provide a more user-friendly message, potentially including parts of the error message
+        let userErrorMessage = "Import failed: Invalid file format or content.";
+        if (error.message.startsWith("Invalid file structure:")) {
+            userErrorMessage = `Import failed: ${error.message}`;
+        } else if (error instanceof SyntaxError) { // Specifically for JSON.parse errors
+             userErrorMessage = "Import failed: File is not valid JSON.";
+        }
+        showToast(userErrorMessage, 4000);
+    } finally {
+        // This block always runs, regardless of try/catch outcome
+        importedFileContent = null;
+        if(importDataInputElement) importDataInputElement.value = '';
+        if(selectedFileNameElement) selectedFileNameElement.textContent = '';
+        if(importDataBtnElement) importDataBtnElement.disabled = true;
+    }
+}
 
 
 

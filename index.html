@@ -100,8 +100,14 @@
     </div>
 
 
-    <div class="lyrics-toggle" id="lyricsToggle">
-      <i class="icon icon-lyrics"></i>
+    <!-- Bottom Controls Bar -->
+    <div class="bottom-controls-bar">
+      <div class="lyrics-toggle" id="lyricsToggle">
+          <i class="icon icon-lyrics"></i>
+      </div>
+      <div class="settings-toggle" id="settingsToggle" title="Settings">
+          <i class="icon icon-settings"></i>
+      </div>
     </div>
 
 
@@ -185,6 +191,35 @@
         </div>
     </div>
   </div>
+
+  <!-- Settings Modal -->
+    <div id="settingsModal" class="modal" style="display:none;">
+      <div class="modal-content">
+          <span class="close-modal-btn" id="closeSettingsModal">×</span>
+          <h4 id="settingsModalTitle">Settings</h4>
+          
+          <div class="settings-section">
+              <h5>Export Data</h5>
+              <p class="settings-description">Download your playlists and app data as a JSON file.</p>
+              <button id="exportDataBtn" class="modal-button secondary">Export My Data</button>
+          </div>
+
+          <!-- <hr class="settings-divider"> -->
+
+          <div class="settings-section">
+              <h5>Import Data</h5>
+              <p class="settings-description">Import data from a previously exported file.
+                  <br><strong>Warning:</strong> This will overwrite your current playlists and data. This action cannot be undone.
+              </p>
+              <div id="importFileDropZone" class="file-drop-zone">
+                  <input type="file" id="importDataInput" accept=".json,application/json" style="display: none;">
+                  <span class="drop-zone-prompt">Drag & drop your .json file here, or click to select</span>
+              </div>
+              <button id="importDataBtn" class="modal-button primary" style="margin-top: 10px;" disabled>Import Selected File</button>
+              <p id="selectedFileName" class="selected-file-name-display"></p>
+          </div>
+      </div>
+    </div>
 
   <div id="toastContainer" class="toast-container">
     <!-- Toasts will be dynamically added here -->

@@ -52,6 +52,14 @@ const LIKED_SONGS_PLAYLIST_ID = 'liked_songs';
 const USER_PLAYLISTS_STORAGE_KEY = 'musicPlayer_userPlaylists';
 const LIKED_PLAYLIST_STORAGE_KEY = 'musicPlayer_likedSongsPlaylist'; // Keep this for liked songs
 
+// Storage Keys (already defined but good to list them here for context of what to export/import)
+const APP_STORAGE_KEYS = [
+  'musicPlayer_likedSongsPlaylist',
+  'musicPlayer_userPlaylists',
+  'musicPlayer_recentSearches'
+  // Add any other localStorage keys specific to your app here
+];
+
 let likedPlaylist = []; // Holds {id, title, artist, artwork} for liked songs
 let userPlaylists = []; // Holds {id, name, songs: [...]} for user-created playlists
 
@@ -112,3 +120,16 @@ let clearEditPlaylistArtworkBtnElement;
 // This variable will be used by modals.js to store the Data URL of
 // the image selected in the currently active modal's artwork editor.
 let currentModalArtworkDataUrl = null;
+
+// NEW: DOM Elements for Settings
+let settingsToggleElement;
+let settingsModalElement;
+let closeSettingsModalBtnElement;
+let exportDataBtnElement;
+let importFileDropZoneElement;
+let importDataInputElement;
+let importDataBtnElement;
+let selectedFileNameElement;
+
+let importedFileContent = null; // To store content of file selected for import
+
