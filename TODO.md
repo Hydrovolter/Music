@@ -1,1 +1,5 @@
 - volume slider
+- no. of tracks and duration under playlist
+- import/export (localstorage) [playlists / data]
+- "import playlists from spotify" feature
+- preferences / settings (bg, store recent searches)
