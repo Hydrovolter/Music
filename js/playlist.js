@@ -491,13 +491,25 @@ function renderSinglePlaylistView(playlistId) {
         return;
     }
 
-    playlistDisplayAreaElement.innerHTML = '';
+    // --- BEGIN MODIFICATION: Store scroll position ---
+    let currentScrollTop = 0;
+    if (playlistDisplayAreaElement) {
+        currentScrollTop = playlistDisplayAreaElement.scrollTop;
+    }
+    // --- END MODIFICATION ---
+
+    playlistDisplayAreaElement.innerHTML = ''; // This is the action that often resets scroll
     sidebarTitleElement.textContent = escapeHtml(playlist.name);
     backToPlaylistsBtnElement.style.display = 'inline-block';
     createNewPlaylistBtnElement.style.display = 'none';
 
     if (playlist.songs.length === 0) {
         playlistDisplayAreaElement.innerHTML = `<p class="empty-playlist-message">This playlist is empty.</p>`;
+        // --- BEGIN MODIFICATION: Restore scroll position (even for empty message) ---
+        if (playlistDisplayAreaElement) {
+            playlistDisplayAreaElement.scrollTop = currentScrollTop;
+        }
+        // --- END MODIFICATION ---
         return;
     }
 
@@ -506,7 +518,7 @@ function renderSinglePlaylistView(playlistId) {
 
     playlist.songs.forEach((song, index) => {
         const li = document.createElement('li');
-        li.className = 'playlist-item'; // Re-use for songs in a playlist
+        li.className = 'playlist-item';
         li.setAttribute('data-song-id', song.id.toString());
         li.setAttribute('draggable', true);
 
@@ -515,7 +527,10 @@ function renderSinglePlaylistView(playlistId) {
         }
 
         let removeButtonHtml = '';
-        if (playlistId !== LIKED_SONGS_PLAYLIST_ID) {
+        // For user playlists (not "Liked Songs"), show remove button.
+        // Note: Liked Songs playlist object from getPlaylistById doesn't have customArtwork or other user-playlist specific props
+        // so checking playlist.id !== LIKED_SONGS_PLAYLIST_ID is the most direct way.
+        if (playlist.id !== LIKED_SONGS_PLAYLIST_ID) {
             removeButtonHtml = `<button class="remove-song-from-playlist-btn icon-action-btn" title="Remove from playlist"><i class="icon icon-trash"></i></button>`;
         }
 
@@ -530,9 +545,13 @@ function renderSinglePlaylistView(playlistId) {
         `;
 
         li.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-song-from-playlist-btn')) {
-                if (playlistId === LIKED_SONGS_PLAYLIST_ID) { // Should not happen due to button conditional
-                    // removeSongFromLikedPlaylist(song.id); // This path should ideally not be taken
+            // Check if the click was on the remove button icon or the button itself
+            const removeButton = e.target.closest('.remove-song-from-playlist-btn');
+            if (removeButton) {
+                e.stopPropagation(); // Prevent playing the song
+                if (playlist.id === LIKED_SONGS_PLAYLIST_ID) {
+                    // This path should not be taken if button is hidden for Liked Songs
+                    removeSongFromLikedPlaylist(song.id);
                 } else {
                     removeSongFromUserPlaylist(playlistId, song.id);
                 }
@@ -543,13 +562,18 @@ function renderSinglePlaylistView(playlistId) {
 
         li.addEventListener('dragstart', (event) => handleSongDragStart(event, index, playlistId));
         li.addEventListener('dragover', handleSongDragOver);
-        li.addEventListener('drop', (event) => handleSongDrop(event, index, playlistId)); // index here is the one dropped ON
+        li.addEventListener('drop', (event) => handleSongDrop(event, index, playlistId));
         li.addEventListener('dragend', handleSongDragEnd);
 
         ul.appendChild(li);
     });
     playlistDisplayAreaElement.appendChild(ul);
-    playlistDisplayAreaElement.scrollTop = 0;
+
+    // --- BEGIN MODIFICATION: Restore scroll position ---
+    if (playlistDisplayAreaElement) {
+        playlistDisplayAreaElement.scrollTop = currentScrollTop;
+    }
+    // --- END MODIFICATION ---
 }
 
 // --- PLAYBACK LOGIC ADAPTATIONS ---
