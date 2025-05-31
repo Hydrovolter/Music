@@ -133,3 +133,9 @@ let selectedFileNameElement;
 
 let importedFileContent = null; // To store content of file selected for import
 
+// --- START: New variables for GitHub commit info ---
+let commitUpdateIntervalId = null;
+let latestCommitTimestamp = null; // Stores the fetched commit date string
+let githubCommitLinkElement = null; // To store the <a> tag reference
+let latestCommitShaElement = null;
+let latestCommitTimeAgoElement = null;

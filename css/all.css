@@ -507,6 +507,15 @@ transform: scale(0.94);
   height: 18px; /* Match width */
 }
 
+.icon-github {
+  mask-image: url('../img/icons/github.svg');
+  -webkit-mask-image: url('../img/icons/github.svg');
+  width: 16px; /* Adjust size as needed */
+  height: 16px;
+  background-color: rgba(255, 255, 255, 0.6); /* Adjust color for visibility in modal */
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
 .icon-settings {
   mask-image: url('../img/icons/settings.svg');
   -webkit-mask-image: url('../img/icons/settings.svg');
@@ -1158,9 +1167,19 @@ background: rgba(255,255,255,0.2);
 .settings-section {
   margin-bottom: 20px;
   padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255,255,255,0.1); /* Apply border to ALL sections by default */
 }
-.settings-section:not(:last-child) {
-    border-bottom: 1px solid rgba(255,255,255,0.1); /* Soft divider */
+
+/* Now, specifically REMOVE the border from the section we marked */
+.settings-section.last-content-section {
+  border-bottom: none;
+}
+
+/* The footer's top border is still active and will create the line */
+.settings-modal-footer {
+  margin-top: 25px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1); /* This is the key separator */
 }
 
 
@@ -1180,6 +1199,48 @@ background: rgba(255,255,255,0.2);
 }
 .settings-description strong {
     color: #ffc107; /* Warning yellow or similar */
+}
+
+/* Settings Modal Footer for GitHub Info */
+.settings-modal-footer {
+  margin-top: 25px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.settings-modal-footer .icon-github {
+  margin-right: 2px; /* Slight adjustment from gap for visual balance */
+}
+
+.settings-modal-footer .commit-link {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.settings-modal-footer .commit-link:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.settings-modal-footer #latestCommitSha {
+  font-family: 'Courier New', Courier, monospace; /* Monospaced for SHA */
+  background-color: rgba(255,255,255,0.08);
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+
+.settings-modal-footer .commit-separator {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.settings-modal-footer #latestCommitTimeAgo {
+  min-width: 50px; /* Prevent layout jump as time string changes */
+  text-align: left;
 }
 
 

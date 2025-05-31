@@ -424,6 +424,7 @@ function handleConfirmEditPlaylist() {
 }
 
 // --- Settings Modal ---
+// --- Settings Modal ---
 function initializeSettingsModal() {
     settingsToggleElement = document.getElementById('settingsToggle');
     settingsModalElement = document.getElementById('settingsModal');
@@ -434,11 +435,17 @@ function initializeSettingsModal() {
     importDataBtnElement = document.getElementById('importDataBtn');
     selectedFileNameElement = document.getElementById('selectedFileName');
 
+    // --- START: Initialize GitHub info elements ---
+    githubCommitLinkElement = document.getElementById('githubCommitLink');
+    latestCommitShaElement = document.getElementById('latestCommitSha');
+    latestCommitTimeAgoElement = document.getElementById('latestCommitTimeAgo');
+    // --- END: Initialize GitHub info elements ---
 
     if (!settingsToggleElement || !settingsModalElement || !closeSettingsModalBtnElement ||
         !exportDataBtnElement || !importFileDropZoneElement || !importDataInputElement ||
-        !importDataBtnElement || !selectedFileNameElement) {
-        console.error("One or more settings modal DOM elements not found. Settings functionality disabled.");
+        !importDataBtnElement || !selectedFileNameElement ||
+        !githubCommitLinkElement || !latestCommitShaElement || !latestCommitTimeAgoElement) { // Add new elements to check
+        console.error("One or more settings modal DOM elements not found. Settings functionality disabled/limited.");
         return;
     }
 
@@ -451,6 +458,7 @@ function initializeSettingsModal() {
     exportDataBtnElement.addEventListener('click', exportUserData);
 
     // Import File Handling
+    // ... (existing import event listeners) ...
     importFileDropZoneElement.addEventListener('click', () => importDataInputElement.click());
     importDataInputElement.addEventListener('change', handleFileSelectedForImport);
 
@@ -472,23 +480,97 @@ function initializeSettingsModal() {
 
     importDataBtnElement.addEventListener('click', confirmAndProcessImport);
 
+
     console.log("Settings Modal system initialized.");
+}
+
+async function fetchLatestCommitInfo() {
+    if (!latestCommitShaElement || !latestCommitTimeAgoElement || !githubCommitLinkElement) return;
+
+    latestCommitShaElement.textContent = 'loading...';
+    latestCommitTimeAgoElement.textContent = '';
+    githubCommitLinkElement.href = "https://github.com/Hydrovolter/Music"; // Default link
+
+    try {
+        const response = await fetch('https://api.github.com/repos/Hydrovolter/Music/commits?per_page=1');
+        if (!response.ok) {
+            throw new Error(`GitHub API error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        if (data && data.length > 0) {
+            const commit = data[0];
+            const shortSha = commit.sha.substring(0, 7);
+            latestCommitTimestamp = commit.commit.committer.date; // Store for ticking
+
+            latestCommitShaElement.textContent = shortSha;
+            githubCommitLinkElement.href = commit.html_url; // Link to the commit page
+            latestCommitTimeAgoElement.title = new Date(latestCommitTimestamp).toLocaleString(); // Full date in title
+
+            updateCommitTimeAgo(); // Initial display
+            if (commitUpdateIntervalId) clearInterval(commitUpdateIntervalId); // Clear previous interval if any
+            commitUpdateIntervalId = setInterval(updateCommitTimeAgo, 1000); // Update every second
+        } else {
+            throw new Error("No commit data received.");
+        }
+    } catch (error) {
+        console.error("Failed to fetch latest commit info:", error);
+        latestCommitShaElement.textContent = 'unavailable';
+        latestCommitTimeAgoElement.textContent = '';
+        if(githubCommitLinkElement) githubCommitLinkElement.href = "https://github.com/Hydrovolter/Music/commits";
+    }
+}
+
+function formatTimeAgoSimple(dateString) {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.round((now - date) / 1000);
+    const minutes = Math.round(seconds / 60);
+    const hours = Math.round(minutes / 60);
+    const days = Math.round(hours / 24);
+    const months = Math.round(days / 30.44); // Average days in month
+    const years = Math.round(days / 365.25);
+
+    if (seconds < 60) return `${seconds}s`;
+    if (minutes < 60) return `${minutes}m`;
+    if (hours < 24) return `${hours}h`;
+    if (days < 30) return `${days}d`;
+    if (months < 12) return `${months}mo`;
+    return `${years}y`;
+}
+
+function updateCommitTimeAgo() {
+    if (latestCommitTimestamp && latestCommitTimeAgoElement) {
+        latestCommitTimeAgoElement.textContent = formatTimeAgoSimple(latestCommitTimestamp);
+    }
 }
 
 function openSettingsModal() {
     if (!settingsModalElement) return;
     // Reset import UI
     importedFileContent = null;
-    if(importDataInputElement) importDataInputElement.value = ''; // Clear file input
+    if(importDataInputElement) importDataInputElement.value = '';
     if(selectedFileNameElement) selectedFileNameElement.textContent = '';
     if(importDataBtnElement) importDataBtnElement.disabled = true;
+    
     settingsModalElement.style.display = 'flex';
+    fetchLatestCommitInfo(); // Fetch commit info when modal opens
 }
 
 function closeSettingsModal() {
     if (!settingsModalElement) return;
     settingsModalElement.style.display = 'none';
-    importedFileContent = null; // Clear any pending import data
+    importedFileContent = null;
+
+    // --- START: Clear GitHub interval and reset info ---
+    if (commitUpdateIntervalId) {
+        clearInterval(commitUpdateIntervalId);
+        commitUpdateIntervalId = null;
+    }
+    latestCommitTimestamp = null;
+    if (latestCommitShaElement) latestCommitShaElement.textContent = '';
+    if (latestCommitTimeAgoElement) latestCommitTimeAgoElement.textContent = '';
+    if (githubCommitLinkElement) githubCommitLinkElement.href = "https://github.com/Hydrovolter/Music"; // Reset link
 }
 
 // --- Export Functionality ---

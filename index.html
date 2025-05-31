@@ -206,7 +206,7 @@
 
           <!-- <hr class="settings-divider"> -->
 
-          <div class="settings-section">
+          <div class="settings-section last-content-section">
               <h5>Import Data</h5>
               <p class="settings-description">Import data from a previously exported file.
                   <br><strong>Warning:</strong> This will overwrite your current playlists and data. This action cannot be undone.
@@ -218,6 +218,18 @@
               <button id="importDataBtn" class="modal-button primary" style="margin-top: 10px;" disabled>Import Selected File</button>
               <p id="selectedFileName" class="selected-file-name-display"></p>
           </div>
+          
+
+          <!-- GitHub Commit Info Footer -->
+          <div class="settings-modal-footer">
+            <i class="icon icon-github"></i>
+            <a href="https://github.com/Hydrovolter/Music" target="_blank" rel="noopener noreferrer" class="commit-link" id="githubCommitLink">
+                <span id="latestCommitSha" title="View commit on GitHub"></span>
+            </a>
+            <span class="commit-separator">·</span>
+            <span id="latestCommitTimeAgo" title=""></span>
+          </div>
+
       </div>
     </div>
 
