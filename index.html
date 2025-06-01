@@ -18,6 +18,7 @@
       rel="stylesheet"
     />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/color-thief/2.4.0/color-thief.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
     <link rel="stylesheet" href="css/all.css" />
 
     <link rel="icon" href="img/favicon.png" type="image/x-icon">
@@ -134,6 +135,8 @@
     <div id="player-container">
       <div id="ytPlayer"></div>
     </div>
+
+    <audio id="html5AudioPlayer" style="display: none;"></audio>
 
     <div id="addToPlaylistModal" class="modal" style="display:none;">
       <div class="modal-content">
@@ -253,6 +256,8 @@
       </div>
     </div>
 
+  <input type="file" id="localFilesInput" multiple accept="audio/*,.mp3,.m4a,.ogg,.wav,.flac" style="display: none;">
+
   <div id="toastContainer" class="toast-container">
     <!-- Toasts will be dynamically added here -->
   </div>
@@ -299,6 +304,135 @@
         } else {
             console.error("initializePlaylistSystem function not found.");
         }
+
+              // +++ START: ADD HTML5 AUDIO PLAYER AND YOUTUBE PLAYER INITIALIZATION +++
+
+      // Get reference to the HTML5 audio player (declared in init.js)
+      html5AudioPlayer = document.getElementById('html5AudioPlayer');
+
+      if (html5AudioPlayer) {
+          console.log("HTML5 Audio Player element found. Attaching listeners.");
+
+          html5AudioPlayer.addEventListener('play', () => {
+              // This event fires when playback begins or resumes.
+              if (currentPlayingWith === 'html5') {
+                  isPlaying = true;
+                  if (playPauseBtn) {
+                      playPauseBtn.classList.remove("icon-play");
+                      playPauseBtn.classList.add("icon-pause");
+                  }
+                  console.log("HTML5 Audio: Play event");
+              }
+          });
+
+          html5AudioPlayer.addEventListener('pause', () => {
+              // This event fires when playback is paused.
+              if (currentPlayingWith === 'html5') {
+                  isPlaying = false;
+                  if (playPauseBtn) {
+                      playPauseBtn.classList.remove("icon-pause");
+                      playPauseBtn.classList.add("icon-play");
+                  }
+                  console.log("HTML5 Audio: Pause event");
+              }
+          });
+
+          html5AudioPlayer.addEventListener('ended', () => {
+              console.log("HTML5 Audio: Ended event. Loop:", loopState, "PlaylistID:", currentPlayingPlaylistId);
+              if (currentPlayingWith === 'html5') {
+                  isPlaying = false;
+                  if (playPauseBtn) {
+                      playPauseBtn.classList.remove("icon-pause");
+                      playPauseBtn.classList.add("icon-play");
+                  }
+
+                  if (loopState === 'song' && currentTrack && currentTrack.isLocalFile) {
+                      console.log("HTML5 Audio: Looping current song.");
+                      html5AudioPlayer.currentTime = 0;
+                      html5AudioPlayer.play().catch(e => {
+                          console.error("Error re-playing local file on loop:", e);
+                          showToast("Error looping track.", 3000);
+                      });
+                  } else if (currentPlayingPlaylistId && typeof playNextTrackInCurrentPlaylist === 'function') {
+                      const playlist = getPlaylistById(currentPlayingPlaylistId); // from playlist.js
+                      if (playlist && playlist.songs && playlist.songs.length > 0) {
+                          const isLastTrack = currentPlaylistTrackIndex >= playlist.songs.length - 1;
+                          if (isShuffleActive || loopState === 'playlist' || (loopState === 'none' && !isLastTrack)) {
+                              console.log("HTML5 Audio: Playing next track from playlist.");
+                              playNextTrackInCurrentPlaylist(); // This will call playSong()
+                          } else {
+                              console.log("HTML5 Audio: End of playlist, no loop/shuffle to continue.");
+                              if(typeof clearPlayerStateOnEnd === 'function') clearPlayerStateOnEnd();
+                          }
+                      } else {
+                          console.log("HTML5 Audio: Playlist context invalid or empty for 'ended' event.");
+                          if(typeof clearPlayerStateOnEnd === 'function') clearPlayerStateOnEnd();
+                      }
+                  } else {
+                      console.log("HTML5 Audio: No loop and no playlist context to continue.");
+                      if(typeof clearPlayerStateOnEnd === 'function') clearPlayerStateOnEnd();
+                  }
+              }
+          });
+
+          html5AudioPlayer.addEventListener('loadedmetadata', () => {
+              // This fires when metadata (including duration) is loaded.
+              if (currentPlayingWith === 'html5' && currentTrack && currentTrack.isLocalFile) {
+                  const newDuration = Math.round(html5AudioPlayer.duration);
+                  if (currentTrack.durationSeconds !== newDuration) {
+                       currentTrack.durationSeconds = newDuration;
+                       console.log(`HTML5 Audio: Metadata loaded, duration updated to ${newDuration}s for ${currentTrack.title}`);
+                  }
+                  // updateProgress() is called by a setInterval, so it will pick up the new duration.
+                  // Or you can call it here for immediate update:
+                  if(typeof updateProgress === 'function') updateProgress();
+              }
+          });
+
+          html5AudioPlayer.addEventListener('error', (e) => {
+              console.error("HTML5 Audio Player Error Event:", html5AudioPlayer.error, e);
+              if (currentPlayingWith === 'html5') {
+                  showToast("Error playing local audio file.", 3000);
+                  isPlaying = false;
+                  if (playPauseBtn) {
+                      playPauseBtn.classList.remove("icon-pause");
+                      playPauseBtn.classList.add("icon-play");
+                  }
+                  // Consider trying next song or clearing player state
+                  if(typeof clearPlayerStateOnEnd === 'function') clearPlayerStateOnEnd();
+              }
+          });
+           // `timeupdate` is frequent; `updateProgress` is handled by setInterval,
+           // which is generally fine for UI updates. If you need more precise sync,
+           // you could listen to `timeupdate` on `html5AudioPlayer` and call `updateProgress`.
+           // html5AudioPlayer.addEventListener('timeupdate', updateProgress); // Optional
+      } else {
+          console.error("HTML5 Audio Player element (#html5AudioPlayer) not found in the DOM!");
+      }
+
+      // YouTube Player Initialization
+      // The global onYouTubeIframeAPIReady function is defined in player.js
+      // The YouTube Iframe API script will call it automatically when it's ready.
+      // We just need to ensure player.js is loaded before this script block if onYouTubeIframeAPIReady is there.
+      // (Your script order seems correct for this)
+
+      // If you needed to manually trigger it (e.g., if player.js wasn't defining the global function directly):
+      /*
+      if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
+          console.log("YouTube API not ready yet, window.onYouTubeIframeAPIReady will handle it.");
+          // No explicit action here, player.js's global onYouTubeIframeAPIReady will be called
+      } else {
+          // API is already available (e.g., script re-run or very fast load)
+          console.log("YouTube API already ready, calling onPlayerReady setup manually (if needed).");
+          if (typeof onYouTubeIframeAPIReady === 'function' && !player) { // Ensure player isn't already init
+             // onYouTubeIframeAPIReady(); // This would create the YT.Player
+          }
+      }
+      */
+      // For your current setup, where player.js defines `onYouTubeIframeAPIReady` globally,
+      // you don't need the manual check/call here. The YouTube API script handles it.
+
+      console.log("Base initializations complete (modals, playlist, audio players setup).");
 
       });
     </script>

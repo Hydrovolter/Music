@@ -28,6 +28,11 @@ let loopState = 'none';
 let isShuffleActive = false;
 
 let player; // YouTube player instance
+
+let html5AudioPlayer; // HTML5 Audio element instance
+let currentPlayingWith = null; // 'youtube' or 'html5'
+let localFileBlobUrl = null; // To store the Blob URL for the current local file
+
 let isPlaying = false; // Player's playing state
 let isDragging = false; // Seekbar dragging state
 let searchTimeout;
@@ -52,16 +57,21 @@ const LIKED_SONGS_PLAYLIST_ID = 'liked_songs';
 const USER_PLAYLISTS_STORAGE_KEY = 'musicPlayer_userPlaylists';
 const LIKED_PLAYLIST_STORAGE_KEY = 'musicPlayer_likedSongsPlaylist'; // Keep this for liked songs
 
+const LOCAL_FILES_PLAYLIST_ID = 'local_files_playlist';
+const LOCAL_FILES_PLAYLIST_STORAGE_KEY = 'musicPlayer_localFilesPlaylist';
+
 // Storage Keys (already defined but good to list them here for context of what to export/import)
 const APP_STORAGE_KEYS = [
   'musicPlayer_likedSongsPlaylist',
   'musicPlayer_userPlaylists',
-  'musicPlayer_recentSearches'
+  'musicPlayer_recentSearches',
+  'musicPlayer_localFilesPlaylist'
   // Add any other localStorage keys specific to your app here
 ];
 
 let likedPlaylist = []; // Holds {id, title, artist, artwork} for liked songs
 let userPlaylists = []; // Holds {id, name, songs: [...]} for user-created playlists
+let localFilesPlaylist = [];
 
 let currentPlayingPlaylistId = null; // ID of the playing playlist (e.g., 'liked_songs', or a user playlist ID)
 let currentPlaylistTrackIndex = -1;   // Index in the currentPlayingPlaylistId's song array

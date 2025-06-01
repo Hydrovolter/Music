@@ -51,3 +51,81 @@ function applyColors(color) {
     }
   }
   
+
+  function setAlbumArtAndBackgroundColor(artworkSrc) {
+    if (!albumCover || !colorThief) {
+        console.error("Album cover element or ColorThief not initialized.");
+        applyColors([115, 98, 86]); // Default
+        return;
+    }
+
+    // Reset previous onload/onerror to avoid multiple firings if called rapidly
+    albumCover.onload = null;
+    albumCover.onerror = null;
+
+    const isDataUrl = artworkSrc && artworkSrc.startsWith('data:image');
+
+    // For Data URLs, crossorigin attribute is not needed and can sometimes cause issues.
+    // For external URLs, it's needed if the server doesn't send appropriate CORS headers
+    // and ColorThief needs pixel access. iTunes artwork URLs generally work well with it.
+    if (!isDataUrl) {
+        albumCover.crossOrigin = "anonymous";
+    } else {
+        albumCover.removeAttribute('crossorigin'); // Remove if previously set
+    }
+
+    const attemptColorExtraction = () => {
+        if (albumCover.src && !albumCover.src.endsWith('img/empty_art.png') && albumCover.naturalWidth > 0) {
+            try {
+                // Ensure the image is actually loaded and has dimensions
+                // For very fast loading images (like data URLs), 'load' might fire before this check
+                const dominantColor = colorThief.getColor(albumCover);
+                applyColors(dominantColor);
+            } catch (e) {
+                console.error("Color extraction failed for:", albumCover.src, e);
+                applyColors([100, 100, 100]); // Fallback color
+            }
+        } else if (albumCover.src && albumCover.src.endsWith('img/empty_art.png')) {
+            applyColors([115, 98, 86]); // Default for placeholder
+        } else {
+            // This case might happen if the image source is invalid or loading fails before onerror
+            console.warn("Album art source is empty or not the placeholder, applying default colors.");
+            applyColors([115, 98, 86]);
+        }
+    };
+
+    albumCover.onload = () => {
+        console.log("Album art loaded:", albumCover.src.substring(0,100));
+        attemptColorExtraction();
+    };
+
+    albumCover.onerror = () => {
+        console.error("Failed to load album art from src:", artworkSrc ? artworkSrc.substring(0,100) : "undefined");
+        albumCover.src = 'img/empty_art.png'; // Set to placeholder
+        // The onload for 'img/empty_art.png' will then trigger default color
+    };
+
+    if (artworkSrc) {
+        // Check if the new source is different from the current one
+        // or if the current one is the placeholder and we're setting a real image.
+        // This helps avoid unnecessary reloads if the art is the same.
+        if (albumCover.src !== artworkSrc || albumCover.src.endsWith('img/empty_art.png')) {
+            albumCover.src = artworkSrc;
+            // If the image is already complete (e.g., cached or very fast data URL),
+            // onload might not fire. So, try to extract colors directly.
+            if (albumCover.complete && albumCover.naturalWidth > 0) {
+                 console.log("Album art already complete, attempting color extraction directly:", artworkSrc.substring(0,100));
+                 attemptColorExtraction();
+            } else if (!artworkSrc.endsWith('img/empty_art.png') && albumCover.complete && albumCover.naturalWidth === 0) {
+                // Image is "complete" but has no dimensions (likely error state for a non-placeholder)
+                console.warn("Album art reported complete but has no dimensions. Triggering error handler logic.");
+                albumCover.onerror(); // Manually trigger error handling
+            }
+        } else {
+            // Source is the same and it's not the placeholder, colors should already be set.
+            // console.log("Album art source is the same, skipping reload and color extraction.");
+        }
+    } else {
+        albumCover.src = 'img/empty_art.png'; // This will trigger its own onload
+    }
+}

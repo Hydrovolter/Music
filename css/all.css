@@ -507,6 +507,15 @@ transform: scale(0.94);
   height: 18px; /* Match width */
 }
 
+.icon-local-file-remove {
+  mask-image: url('../img/icons/download.svg');
+  -webkit-mask-image: url('../img/icons/download.svg');
+  background-color: #00ff88; /* Green color */
+}
+.icon-action-btn:hover .icon-local-file-remove {
+  background-color: #00dd77; /* Slightly darker green on hover */
+}
+
 .icon-github {
   mask-image: url('../img/icons/github.svg');
   -webkit-mask-image: url('../img/icons/github.svg');
@@ -1279,6 +1288,26 @@ background: rgba(255,255,255,0.2);
     word-break: break-all;
 }
 
+.local-files-upload-area {
+  border: 2px dashed #00ff88; /* Green dashed border */
+  border-radius: 8px;
+  padding: 25px;
+  text-align: center;
+  cursor: pointer;
+  background-color: rgba(0, 255, 136, 0.05); /* Very light green background */
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  margin: 15px 0; /* Spacing below title / before song list */
+  color: rgba(255, 255, 255, 0.7);
+}
+.local-files-upload-area:hover, .local-files-upload-area.drag-over {
+  background-color: rgba(0, 255, 136, 0.1);
+  border-color: #00dd77; /* Slightly darker green on hover/drag */
+}
+.local-files-upload-area .drop-zone-prompt-local {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  pointer-events: none; /* Allow clicks to pass to parent uploadArea */
+}
 
 
 .playlist-artwork-editor {

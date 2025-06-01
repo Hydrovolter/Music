@@ -25,6 +25,7 @@ function initializePlaylistSystem() {
 
     loadLikedPlaylist();
     loadUserPlaylists();
+    loadLocalFilesPlaylist();
 
     renderSidebar(); // Initial render
 
@@ -136,9 +137,18 @@ function isSongLiked(songId) {
 }
 
 function toggleLikeCurrentSong() {
+    // +++ START: ADD THIS GUARD +++
+    if (currentTrack && currentTrack.isLocalFile) {
+        if (typeof showToast === 'function') {
+            showToast("Local files cannot be added to 'Liked Songs'.", 3500);
+        }
+        console.log("Attempted to like a local file. Aborted.");
+        return; // Prevent liking
+    }
+    // +++ END: ADD THIS GUARD +++
+
     if (!currentTrack || currentTrack.id == null) {
         console.warn("No current track to like/unlike, or track has no ID.");
-        // Optionally show a toast or modal if currentTrack.id is null
         if (currentTrack && currentTrack.id == null && typeof showToast === 'function') {
             showToast("Cannot like: Track information incomplete.", 3000);
         }
@@ -147,26 +157,22 @@ function toggleLikeCurrentSong() {
 
     if (isSongLiked(currentTrack.id)) {
         removeSongFromLikedPlaylist(currentTrack.id);
-        // Toast for unliking is handled inside removeSongFromLikedPlaylist if songBeingRemoved exists
     } else {
-        // --- BEGIN MODIFICATION: Ensure durationSeconds is included ---
         if (currentTrack.durationSeconds === undefined) {
-            // This case should be rare if playSong always populates it.
-            // Could happen if currentTrack was somehow set without a preceding playSong call that included duration.
             console.warn(`Liking current track "${currentTrack.title}" but its duration is undefined. Defaulting to 0.`);
         }
         addSongToLikedPlaylist({
-            id: currentTrack.id, // Already a string from playSong
+            id: currentTrack.id,
             title: currentTrack.title,
             artist: currentTrack.artist,
-            artwork: currentTrack.artwork, // Ensure this is the 100x100 artwork
-            durationSeconds: currentTrack.durationSeconds || 0 // Add durationSeconds here
+            artwork: currentTrack.artwork,
+            durationSeconds: currentTrack.durationSeconds || 0,
+            // IMPORTANT: Do NOT add isLocalFile: true or fileObject here.
+            // Liked Songs playlist should only store metadata as if it were an online track.
+            // The fact that its origin was local is irrelevant once it's "liked" in this simplified model.
         });
-        // --- END MODIFICATION ---
-        // Toast for liking is handled inside addSongToLikedPlaylist
     }
-    // updateLikeButtonState is called by addSongToLikedPlaylist/removeSongFromLikedPlaylist
-    // when currentTrack matches the modified song.
+    // updateLikeButtonState is called within add/remove if currentTrack matches
 }
 
 
@@ -180,6 +186,115 @@ function updateLikeButtonState(isLikedOverride) {
     } else {
         likeBtnElement.classList.remove('icon-heart-filled');
         likeBtnElement.classList.add('icon-heart-empty');
+    }
+}
+
+// --- DATA MANAGEMENT (LOCAL FILES) ---
+function loadLocalFilesPlaylist() {
+    const stored = localStorage.getItem(LOCAL_FILES_PLAYLIST_STORAGE_KEY);
+    localFilesPlaylist = stored ? JSON.parse(stored) : [];
+    // After loading, songs in localFilesPlaylist will NOT have the .fileObject property.
+    // They WILL have .isLocalFile = true.
+}
+
+function saveLocalFilesPlaylist() {
+    const playlistToSave = localFilesPlaylist.map(song => {
+        const { fileObject, ...rest } = song; // Destructure to remove fileObject
+        return rest; // Only 'rest' (metadata) is saved
+    });
+    localStorage.setItem(LOCAL_FILES_PLAYLIST_STORAGE_KEY, JSON.stringify(playlistToSave));
+}
+
+function addSongToLocalFilesPlaylist(songData) {
+    if (!songData || !songData.id) {
+        console.error("Cannot add to Local Files: missing song data or ID.", songData);
+        return;
+    }
+    if (songData.durationSeconds === undefined) {
+        songData.durationSeconds = 0;
+    }
+    songData.isLocalFile = true; // Ensure this flag is always set
+
+    const existingSongIndex = localFilesPlaylist.findIndex(s => s.id === songData.id);
+
+    if (existingSongIndex !== -1) {
+        // Song with this ID already exists. Update it.
+        console.log(`Updating existing local file entry: "${songData.title}" with new file data.`);
+        // Merge, ensuring new fileObject and potentially updated metadata are used
+        localFilesPlaylist[existingSongIndex] = {
+            ...localFilesPlaylist[existingSongIndex], // Keep old stable properties like ID
+            title: songData.title,                   // Update metadata from new file
+            artist: songData.artist,
+            album: songData.album,
+            artwork: songData.artwork,
+            artworkLarge: songData.artworkLarge,
+            durationSeconds: songData.durationSeconds,
+            originalFileName: songData.originalFileName, // Could also update if file name changed but ID matched
+            fileObject: songData.fileObject,         // Crucially, update the fileObject
+            isLocalFile: true                        // Re-affirm
+        };
+        
+        saveLocalFilesPlaylist(); // Save updated metadata (if any) to localStorage
+
+        if (typeof showToast === 'function') {
+            const message = `"${escapeHtml(songData.title)}" re-selected and updated!`;
+            showToast(message, 3000);
+        }
+    } else {
+        // New song, add it
+        localFilesPlaylist.push(songData);
+        saveLocalFilesPlaylist(); // Save new entry's metadata to localStorage
+
+        if (typeof showToast === 'function') {
+            const message = `"${escapeHtml(songData.title)}" added to Local Files!`;
+            showToast(message, 3000);
+        }
+    }
+
+    // Re-render the view
+    if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === LOCAL_FILES_PLAYLIST_ID) {
+        renderSinglePlaylistView(LOCAL_FILES_PLAYLIST_ID);
+    } else if (currentSidebarView === 'all_playlists') {
+        renderAllPlaylistsView();
+    }
+}
+
+function removeSongFromLocalFilesPlaylist(songId) {
+    const initialLength = localFilesPlaylist.length;
+    const songBeingRemoved = localFilesPlaylist.find(s => s.id === songId);
+
+    localFilesPlaylist = localFilesPlaylist.filter(s => s.id !== songId);
+
+    if (localFilesPlaylist.length < initialLength) {
+        saveLocalFilesPlaylist();
+
+        if (currentSidebarView === 'single_playlist_view' && selectedPlaylistToViewId === LOCAL_FILES_PLAYLIST_ID) {
+            renderSinglePlaylistView(LOCAL_FILES_PLAYLIST_ID);
+        } else if (currentSidebarView === 'all_playlists') {
+            renderAllPlaylistsView();
+        }
+
+        if (songBeingRemoved && typeof showToast === 'function') {
+            showToast(`"${escapeHtml(songBeingRemoved.title)}" removed from Local Files.`, 3000);
+        }
+
+        // Update playback context if needed
+        if (currentPlayingPlaylistId === LOCAL_FILES_PLAYLIST_ID && currentTrack && currentTrack.id === songId) {
+            if (localFilesPlaylist.length === 0) {
+                clearPlaylistContext();
+            } else {
+                // If the removed song was currently playing, advance or adjust index
+                const newIndex = localFilesPlaylist.findIndex(s => s.id === currentTrack.id); // Check if still there (shouldn't be)
+                if (newIndex === -1) { // Song removed was current
+                    if (currentPlaylistTrackIndex >= localFilesPlaylist.length) {
+                        currentPlaylistTrackIndex = Math.max(0, localFilesPlaylist.length - 1);
+                    }
+                    // Player's ENDED state or next/prev logic will handle what to play next if anything.
+                    // Or, you could explicitly try to play the song now at currentPlaylistTrackIndex
+                    // if you want immediate continuation. For now, let player.js handle it.
+                }
+            }
+        }
     }
 }
 
@@ -218,6 +333,17 @@ function getPlaylistById(playlistId) {
         // Liked Songs playlist doesn't have custom artwork editable by user
         return { id: LIKED_SONGS_PLAYLIST_ID, name: "Liked Songs", songs: [...likedPlaylist], customArtwork: null };
     }
+
+    if (playlistId === LOCAL_FILES_PLAYLIST_ID) {
+        return {
+            id: LOCAL_FILES_PLAYLIST_ID,
+            name: "Local Files",
+            songs: [...localFilesPlaylist], // Return a copy
+            customArtwork: 'img/local_files.png', // Fixed artwork path
+            isLocalFilesPlaylist: true // Flag for easy identification
+        };
+    }
+
     return userPlaylists.find(p => p.id === playlistId);
 }
 
@@ -264,6 +390,12 @@ function deletePlaylist(playlistId) {
                 text: 'Delete',
                 class: 'primary',
                 callback: () => {
+                    if (playlistId === LIKED_SONGS_PLAYLIST_ID || playlistId === LOCAL_FILES_PLAYLIST_ID) {
+                        console.warn("Attempted to delete a special playlist:", playlistId);
+                        if(typeof showToast === 'function') showToast("This playlist cannot be deleted.", 3000);
+                        return;
+                    }
+                    
                     userPlaylists = userPlaylists.filter(p => p.id !== playlistId);
                     saveUserPlaylists();
                     if (selectedPlaylistToViewId === playlistId) switchSidebarView('all_playlists');
@@ -436,6 +568,9 @@ function renderAllPlaylistsView() {
     const likedSongsData = { id: LIKED_SONGS_PLAYLIST_ID, name: "Liked Songs", songs: likedPlaylist };
     ul.appendChild(createPlaylistOverviewItem(likedSongsData));
 
+    const localFilesData = { id: LOCAL_FILES_PLAYLIST_ID, name: "Local Files", songs: localFilesPlaylist };
+    ul.appendChild(createPlaylistOverviewItem(localFilesData));
+
     userPlaylists.forEach(playlist => {
         ul.appendChild(createPlaylistOverviewItem(playlist));
     });
@@ -470,10 +605,11 @@ function createPlaylistOverviewItem(playlistData) {
     // --- END MODIFICATION ---
 
     let artworkSrc;
-    // ... (artwork logic remains the same)
-     if (playlistData.id === LIKED_SONGS_PLAYLIST_ID) {
+    if (playlistData.id === LIKED_SONGS_PLAYLIST_ID) {
         artworkSrc = 'img/liked_songs.png';
-    } else {
+    } else if (playlistData.id === LOCAL_FILES_PLAYLIST_ID) { // +++ ADD THIS ELSE IF +++
+        artworkSrc = 'img/local_files.png';
+    } else { // User playlist
         li.setAttribute('draggable', true);
         if (playlistData.customArtwork) {
             artworkSrc = playlistData.customArtwork;
@@ -496,8 +632,7 @@ function createPlaylistOverviewItem(playlistData) {
     let nameDisplay = `<div class="${nameDisplayClasses}">${escapeHtml(playlistData.name)}</div>`;
 
     let actionsHtml = '';
-    // ... (actionsHtml logic remains the same)
-    if (playlistData.id !== LIKED_SONGS_PLAYLIST_ID) {
+    if (playlistData.id !== LIKED_SONGS_PLAYLIST_ID && playlistData.id !== LOCAL_FILES_PLAYLIST_ID) { // +++ ADD LOCAL_FILES CHECK +++
         actionsHtml = `
             <div class="playlist-item-actions">
                 <button class="edit-playlist-btn" title="Edit Playlist"><i class="icon icon-edit"></i></button>
@@ -532,7 +667,7 @@ function createPlaylistOverviewItem(playlistData) {
     if (artworkSection) artworkSection.addEventListener('click', combinedClickHandler);
 
 
-    if (playlistData.id !== LIKED_SONGS_PLAYLIST_ID) {
+    if (playlistData.id !== LIKED_SONGS_PLAYLIST_ID && playlistData.id !== LOCAL_FILES_PLAYLIST_ID) { // +++ ADD LOCAL_FILES CHECK +++
         const editBtn = li.querySelector('.edit-playlist-btn');
         const deleteBtn = li.querySelector('.delete-playlist-btn');
         if(editBtn) editBtn.addEventListener('click', (e) => { e.stopPropagation(); handleEditPlaylist(playlistData.id); });
@@ -595,22 +730,71 @@ function renderSinglePlaylistView(playlistId) {
         currentScrollTop = playlistDisplayAreaElement.scrollTop;
     }
 
-    playlistDisplayAreaElement.innerHTML = '';
+    playlistDisplayAreaElement.innerHTML = ''; // Clear previous content
     sidebarTitleElement.textContent = escapeHtml(playlist.name);
 
-    // --- BEGIN MODIFICATION: Add class to sidebar title if it's the playing playlist ---
-    sidebarTitleElement.classList.remove('playing-playlist-title'); // Remove first to handle deselection
+    sidebarTitleElement.classList.remove('playing-playlist-title');
     if (currentPlayingPlaylistId === playlistId) {
         sidebarTitleElement.classList.add('playing-playlist-title');
     }
-    // --- END MODIFICATION ---
 
     backToPlaylistsBtnElement.style.display = 'inline-block';
     createNewPlaylistBtnElement.style.display = 'none';
 
-    // ... (rest of renderSinglePlaylistView, including song list rendering, remains the same)
+    // +++ CREATE AND APPEND UPLOAD AREA FIRST (IF IT'S THE LOCAL FILES PLAYLIST) +++
+    if (playlistId === LOCAL_FILES_PLAYLIST_ID) {
+        const uploadArea = document.createElement('div');
+        uploadArea.className = 'local-files-upload-area';
+        uploadArea.id = 'localFilesDropZone';
+        uploadArea.innerHTML = `
+            <span class="drop-zone-prompt-local">Drag & drop audio files here, or click to select</span>
+        `;
+        playlistDisplayAreaElement.appendChild(uploadArea); // <<< ADD IT HERE
+
+        const localFilesInputElement = document.getElementById('localFilesInput');
+
+        if (localFilesInputElement) {
+            uploadArea.addEventListener('click', () => localFilesInputElement.click());
+            uploadArea.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                uploadArea.classList.add('drag-over');
+            });
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('drag-over');
+            });
+            uploadArea.addEventListener('drop', (event) => {
+                event.preventDefault();
+                uploadArea.classList.remove('drag-over');
+                if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+                    handleLocalFilesSelected(event.dataTransfer.files);
+                    if (event.dataTransfer.items) event.dataTransfer.items.clear(); // For Chromium
+                    else event.dataTransfer.clearData();
+                }
+            });
+            localFilesInputElement.addEventListener('change', (event) => {
+                if (event.target.files && event.target.files.length > 0) {
+                    handleLocalFilesSelected(event.target.files);
+                }
+                if (event.target) event.target.value = ''; // Reset file input
+            });
+        } else {
+            console.error("localFilesInput element not found!");
+            uploadArea.innerHTML = `<span class="drop-zone-prompt-local">Error: File input not found.</span>`;
+            uploadArea.style.borderColor = "red";
+        }
+    }
+    // +++ END UPLOAD AREA CREATION +++
+
     if (playlist.songs.length === 0) {
-        playlistDisplayAreaElement.innerHTML = `<p class="empty-playlist-message">This playlist is empty.</p>`;
+        // If it's the Local Files playlist, the upload area serves as the "empty" state.
+        // For other playlists, show the "This playlist is empty" message.
+        if (playlistId !== LOCAL_FILES_PLAYLIST_ID) {
+            const emptyMessageP = document.createElement('p');
+            emptyMessageP.className = 'empty-playlist-message';
+            emptyMessageP.textContent = 'This playlist is empty.';
+            playlistDisplayAreaElement.appendChild(emptyMessageP);
+        }
+        // Restore scroll position if needed, though likely 0 for empty.
         if (playlistDisplayAreaElement) {
             playlistDisplayAreaElement.scrollTop = currentScrollTop;
         }
@@ -623,7 +807,17 @@ function renderSinglePlaylistView(playlistId) {
         const li = document.createElement('li');
         li.className = 'playlist-item';
         li.setAttribute('data-song-id', song.id.toString());
-        li.setAttribute('draggable', true); 
+
+        // Local files songs are not draggable to reorder within the playlist FOR NOW
+        // If you want them draggable, remove this condition.
+        if (playlistId !== LOCAL_FILES_PLAYLIST_ID) {
+            li.setAttribute('draggable', true);
+            li.addEventListener('dragstart', (event) => handleSongDragStart(event, index, playlistId));
+            li.addEventListener('dragover', handleSongDragOver);
+            li.addEventListener('drop', (event) => handleSongDrop(event, index, playlistId));
+            li.addEventListener('dragend', handleSongDragEnd);
+        }
+
 
         if (currentPlayingPlaylistId === playlistId && currentPlaylistTrackIndex === index && currentTrack && currentTrack.id === song.id) {
             li.classList.add('playing');
@@ -635,7 +829,12 @@ function renderSinglePlaylistView(playlistId) {
                 <button class="unlike-song-from-liked-playlist-btn icon-action-btn" title="Remove from Liked Songs">
                     <i class="icon icon-heart-filled"></i> 
                 </button>`;
-        } else {
+        } else if (playlistId === LOCAL_FILES_PLAYLIST_ID) {
+            actionButtonHtml = `
+                <button class="remove-local-file-btn icon-action-btn" title="Remove from Local Files">
+                    <i class="icon icon-local-file-remove"></i>
+                </button>`;
+        } else { // User playlist
             actionButtonHtml = `
                 <button class="remove-song-from-playlist-btn icon-action-btn" title="Remove from playlist">
                     <i class="icon icon-trash"></i>
@@ -652,28 +851,31 @@ function renderSinglePlaylistView(playlistId) {
         `;
 
         li.addEventListener('click', (e) => {
+            // Prevent click if dragging over this item from another operation
+            if (e.target.closest('.show-gap-above') || e.target.closest('.show-gap-below')) {
+                 return;
+            }
+
             const unlikeButton = e.target.closest('.unlike-song-from-liked-playlist-btn');
-            const removeButton = e.target.closest('.remove-song-from-playlist-btn');
+            const removeUserPlaylistSongButton = e.target.closest('.remove-song-from-playlist-btn');
+            const removeLocalFileButton = e.target.closest('.remove-local-file-btn');
 
             if (unlikeButton) { 
                 e.stopPropagation();
                 removeSongFromLikedPlaylist(song.id); 
-            } else if (removeButton) { 
+            } else if (removeLocalFileButton) {
+                e.stopPropagation();
+                removeSongFromLocalFilesPlaylist(song.id);
+            } else if (removeUserPlaylistSongButton) { 
                 e.stopPropagation();
                 removeSongFromUserPlaylist(playlistId, song.id);
             } else { 
                 playSongFromCurrentPlaylist(playlistId, index);
             }
         });
-
-        li.addEventListener('dragstart', (event) => handleSongDragStart(event, index, playlistId));
-        li.addEventListener('dragover', handleSongDragOver);
-        li.addEventListener('drop', (event) => handleSongDrop(event, index, playlistId));
-        li.addEventListener('dragend', handleSongDragEnd);
-
         ul.appendChild(li);
     });
-    playlistDisplayAreaElement.appendChild(ul);
+    playlistDisplayAreaElement.appendChild(ul); // Append the song list UL *after* the upload area (if any)
 
     if (playlistDisplayAreaElement) {
         playlistDisplayAreaElement.scrollTop = currentScrollTop;
@@ -692,7 +894,14 @@ function playSongFromCurrentPlaylist(playlistId, songIndexInOriginalPlaylist) {
 
     const songToPlay = playlist.songs[songIndexInOriginalPlaylist];
 
-    // ... (shuffle logic) ...
+    // DEBUGGING (Keep these for now if you want to confirm)
+    console.log("playSongFromCurrentPlaylist: Attempting to play:", songToPlay.title);
+    console.log("playSongFromCurrentPlaylist: songToPlay object:", JSON.parse(JSON.stringify(songToPlay, (key, value) => key === 'fileObject' ? '[File Object Present]' : value)));
+    console.log("playSongFromCurrentPlaylist: songToPlay.isLocalFile:", songToPlay.isLocalFile);
+    console.log("playSongFromCurrentPlaylist: songToPlay.fileObject exists:", !!songToPlay.fileObject);
+
+
+    // ... (shuffle logic, if any, remains the same) ...
     if (isShuffleActive && currentPlayingPlaylistId === playlistId) {
         const upcomingIndex = shuffleUpcomingQueue.findIndex(s => s.id === songToPlay.id);
         if (upcomingIndex > -1) shuffleUpcomingQueue.splice(upcomingIndex, 1);
@@ -700,23 +909,27 @@ function playSongFromCurrentPlaylist(playlistId, songIndexInOriginalPlaylist) {
         if (playedIndex > -1) shufflePlayedQueue.splice(playedIndex, 1);
         shufflePlayedQueue.push(songToPlay);
     } else if (isShuffleActive && currentPlayingPlaylistId !== playlistId) {
+        // If starting a new playlist with shuffle active, or switching to a shuffled playlist
         initializeShuffleQueues(playlist.songs, songToPlay.id);
     }
+    // ... end shuffle logic ...
 
 
     currentPlayingPlaylistId = playlistId;
     currentPlaylistTrackIndex = songIndexInOriginalPlaylist;
 
     if (typeof playSong === 'function') {
-        // --- MODIFICATION: Pass durationSeconds from the playlist song object ---
+        // ***** THIS IS THE CRITICAL FIX *****
         playSong(
             songToPlay.title,
             songToPlay.artist,
             songToPlay.artwork,
             songToPlay.id.toString(),
-            songToPlay.durationSeconds || 0 // Pass stored duration
+            songToPlay.durationSeconds || 0,
+            songToPlay.isLocalFile || false,  // Pass the isLocalFile flag
+            songToPlay.isLocalFile ? songToPlay.fileObject : null // Pass the fileObject if it's a local file
         );
-        // --- END MODIFICATION ---
+        // ***** END OF FIX *****
     } else {
         console.error("Global playSong function not found!");
     }
@@ -891,45 +1104,168 @@ function clearPlaylistContext() {
 function openAddToPlaylistModal(songDataOverride = null) {
     const songToAdd = songDataOverride || currentTrack;
 
+    // +++ START: ADD THIS GUARD +++
+    if (songToAdd && songToAdd.isLocalFile) {
+        if (typeof showToast === 'function') {
+            showToast("Local files cannot be added to other playlists.", 3500);
+        }
+        console.log("Attempted to open 'Add to Playlist' modal for a local file. Aborted.");
+        return; // Prevent modal from opening
+    }
+    // +++ END: ADD THIS GUARD +++
+
     if (!songToAdd || songToAdd.id == null) {
         showGeneralModal("Cannot Add Song", "No song selected or currently playing to add to a playlist.");
         return;
     }
-    if (!songToAdd.title || !songToAdd.artist || !songToAdd.artwork || songToAdd.durationSeconds === undefined) { // Check duration
+    // ... (rest of the function for handling incomplete song data and populating the modal)
+    // The existing logic for songToAdd.durationSeconds etc. can remain.
+     if (!songToAdd.title || !songToAdd.artist || !songToAdd.artwork || songToAdd.durationSeconds === undefined) {
         console.error("Song data for modal is incomplete (missing duration?):", songToAdd);
-        // Attempt to find duration if it's the currentTrack and it might have been populated by playSong
         let duration = songToAdd.durationSeconds;
         if (songToAdd.id === currentTrack.id && currentTrack.durationSeconds !== undefined) {
             duration = currentTrack.durationSeconds;
         } else if (songToAdd.durationSeconds === undefined) {
-            // Fallback or error - for now, let's alert and maybe default
-            // This scenario should be rare if data flow is correct from search/playSong
              console.warn("Duration missing for song in 'Add to Playlist' modal. Defaulting to 0. Song:", songToAdd.title);
-             duration = 0; // Or some average
+             duration = 0;
         }
         
-        // Rebuild songToAdd with potentially found/defaulted duration
         const completeSongToAdd = {
             ...songToAdd,
             durationSeconds: duration
         };
         
-        // If critical data still missing after attempt:
         if (!completeSongToAdd.title || !completeSongToAdd.artist || !completeSongToAdd.artwork) {
             showGeneralModal("Error", "Cannot add song due to incomplete data.");
             return;
         }
-        // Proceed with completeSongToAdd
         _populateAndShowAddToPlaylistModal(completeSongToAdd);
 
     } else {
-        // songToAdd already has duration and other necessary fields
         _populateAndShowAddToPlaylistModal(songToAdd);
     }
 }
 
 function closeAddToPlaylistModal() {
     addToPlaylistModalElement.style.display = 'none';
+}
+
+async function handleLocalFilesSelected(files) {
+    if (!window.jsmediatags) {
+        console.error("jsmediatags library not loaded.");
+        showToast("Error: Could not process local files (library missing).", 4000);
+        return;
+    }
+
+    let filesProcessed = 0;
+    let filesSuccessfullyAdded = 0;
+
+    showToast(`Processing ${files.length} file(s)...`, 2000);
+
+    for (const file of files) {
+        if (!file.type.startsWith('audio/')) {
+            console.warn(`Skipping non-audio file: ${file.name}`);
+            showToast(`Skipped non-audio file: ${escapeHtml(file.name)}`, 3000);
+            filesProcessed++;
+            if (filesProcessed === files.length && filesProcessed > filesSuccessfullyAdded) {
+                showToast(`Finished processing. ${filesSuccessfullyAdded} audio file(s) added.`, 3000);
+            }
+            continue;
+        }
+
+        try {
+            const tagData = await new Promise((resolve, reject) => {
+                new window.jsmediatags.Reader(file)
+                    .read({
+                        onSuccess: (tag) => resolve(tag),
+                        onError: (error) => reject(error)
+                    });
+            });
+
+            let artworkDataUrl = 'img/local_files_song_default.png'; // Default
+            if (tagData.tags.picture) {
+                const { data, format } = tagData.tags.picture;
+                let base64String = "";
+                for (let i = 0; i < data.length; i++) {
+                    base64String += String.fromCharCode(data[i]);
+                }
+                artworkDataUrl = `data:${format};base64,${window.btoa(base64String)}`;
+            }
+
+            const songId = `local_${file.name.replace(/[^a-zA-Z0-9-_]/g, '')}_${file.size}_${file.lastModified}`;
+
+            const songInfo = {
+                id: songId,
+                title: tagData.tags.title || file.name.replace(/\.[^/.]+$/, ""),
+                artist: tagData.tags.artist || "Unknown Artist",
+                album: tagData.tags.album || "Unknown Album",
+                artwork: artworkDataUrl,
+                artworkLarge: artworkDataUrl, // For local files, small and large art are often the same
+                durationSeconds: 0, // Placeholder
+                isLocalFile: true,
+                originalFileName: file.name,
+                fileObject: file
+            };
+
+            // Get duration
+            const audioEl = document.createElement('audio');
+            const durationPromise = new Promise((resolveDuration, rejectDuration) => {
+                audioEl.preload = 'metadata';
+                audioEl.onloadedmetadata = () => {
+                    songInfo.durationSeconds = Math.round(audioEl.duration);
+                    URL.revokeObjectURL(audioEl.src);
+                    resolveDuration();
+                };
+                audioEl.onerror = (e) => {
+                    console.error("Error loading audio for duration:", file.name, e);
+                    URL.revokeObjectURL(audioEl.src);
+                    // Resolve anyway, duration will be 0
+                    resolveDuration(); 
+                };
+                audioEl.src = URL.createObjectURL(file);
+            });
+
+            await durationPromise;
+            addSongToLocalFilesPlaylist(songInfo);
+            filesSuccessfullyAdded++;
+
+        } catch (error) {
+            console.warn("Could not read tags or get duration for:", file.name, error);
+            // Attempt to add with minimal info if tag reading failed
+            const songId = `local_err_${file.name.replace(/[^a-zA-Z0-9-_]/g, '')}_${file.size}_${file.lastModified}`;
+            const basicSongInfo = {
+                id: songId,
+                title: file.name.replace(/\.[^/.]+$/, ""),
+                artist: "Unknown Artist",
+                album: "Unknown Album",
+                artwork: 'img/local_files_song_default.png',
+                artworkLarge: 'img/local_files_song_default.png',
+                durationSeconds: 0,
+                isLocalFile: true,
+                originalFileName: file.name,
+                fileObject: file // Keep the file object for potential future use
+            };
+            // Try to get duration even if tags failed
+            const audioEl = document.createElement('audio');
+            const basicDurationPromise = new Promise((resolveDuration) => { /* simplified duration fetch */ 
+                 audioEl.preload = 'metadata';
+                 audioEl.onloadedmetadata = () => { 
+                     basicSongInfo.durationSeconds = Math.round(audioEl.duration);
+                     URL.revokeObjectURL(audioEl.src); resolveDuration();
+                 };
+                 audioEl.onerror = () => { URL.revokeObjectURL(audioEl.src); resolveDuration(); };
+                 audioEl.src = URL.createObjectURL(file);
+            });
+            await basicDurationPromise;
+            addSongToLocalFilesPlaylist(basicSongInfo);
+            filesSuccessfullyAdded++; // Still count as "added" to give user feedback
+            showToast(`Added "${escapeHtml(basicSongInfo.title)}" with limited info.`, 3500);
+        }
+        filesProcessed++;
+        if (filesProcessed === files.length && filesProcessed > 0) {
+             showToast(`Finished processing ${filesProcessed} file(s). ${filesSuccessfullyAdded} added.`, 3500);
+        }
+    }
 }
 
 // --- PLAYLIST MANAGEMENT UI HANDLERS ---
@@ -952,8 +1288,9 @@ function handleCreateNewPlaylist() {
 // Renamed from handleRenamePlaylist
 function handleEditPlaylist(playlistIdToEdit) {
     const playlist = getPlaylistById(playlistIdToEdit);
-    if (!playlist || playlist.id === LIKED_SONGS_PLAYLIST_ID) {
-        console.warn("Attempted to edit Liked Songs or non-existent playlist.");
+    if (!playlist || playlist.id === LIKED_SONGS_PLAYLIST_ID || playlist.id === LOCAL_FILES_PLAYLIST_ID) {
+        console.warn("Attempted to edit a special playlist or non-existent playlist.");
+        if(typeof showToast === 'function') showToast("This playlist cannot be edited.", 3000);
         return;
     }
 

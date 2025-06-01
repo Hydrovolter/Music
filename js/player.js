@@ -31,22 +31,21 @@ function onYouTubeIframeAPIReady() {
 function onPlayerReady(event) {
   console.log("Player is ready");
 
-  // playPauseBtn, volumeBtn, loopBtn are global from init.js
-  // seekBar is global from init.js
-  playPauseBtn.addEventListener("click", togglePlayback); // togglePlayback is global from playback.js
+  playPauseBtn.addEventListener("click", togglePlayback);
   volumeBtn.addEventListener("click", toggleMute);
   loopBtn.addEventListener("click", toggleLoop);
   if (shuffleBtn) shuffleBtn.addEventListener("click", toggleShuffle);
 
-  seekBar.addEventListener("mousedown", startSeek); // startSeek from playback.js
-  document.addEventListener("mousemove", dragSeek); // dragSeek from playback.js
-  document.addEventListener("mouseup", endSeek);   // endSeek from playback.js
+  seekBar.addEventListener("mousedown", startSeek);
+  document.addEventListener("mousemove", dragSeek);
+  document.addEventListener("mouseup", endSeek);
 
-  setInterval(updateProgress, 500); // updateProgress from playback.js
-  updateLoopButtonIcon(); // Initialize loop button icon based on global loopState
+  setInterval(updateProgress, 500);
+  updateLoopButtonIcon();
   updateShuffleButtonIcon();
 
-  // Initial color logic - unchanged
+  // --- REMOVE OR COMMENT OUT THIS INITIAL COLOR LOGIC ---
+  /*
   if (albumCover.complete && albumCover.src && !albumCover.src.endsWith('img/empty_art.png')) {
     try {
       const dominantColor = colorThief.getColor(albumCover);
@@ -57,6 +56,17 @@ function onPlayerReady(event) {
     }
   } else if (albumCover.src && albumCover.src.endsWith('img/empty_art.png')) {
     applyColors([115, 98, 86]);
+  }
+  */
+  // --- END REMOVAL ---
+
+  // When the app starts, the albumCover is 'img/empty_art.png'.
+  // We want the default background for this.
+  // Call setAlbumArtAndBackgroundColor with the default to initialize.
+  if (typeof setAlbumArtAndBackgroundColor === 'function') {
+      setAlbumArtAndBackgroundColor(albumCover.src); // This will handle the default art
+  } else {
+      applyColors([115, 98, 86]); // Fallback
   }
 }
 
@@ -139,18 +149,45 @@ function onPlayerStateChange(event) {
 }
 
 function clearPlayerStateOnEnd() {
-    // progressBar, currentTimeSpan, remainingTimeSpan are global
-    // formatTime is from playback.js
-    if(progressBar) progressBar.style.width = "0%";
-    if(currentTimeSpan) currentTimeSpan.textContent = formatTime(0);
-    if (player && typeof player.getDuration === 'function') {
-        const duration = player.getDuration();
-        if(remainingTimeSpan) remainingTimeSpan.textContent = "-" + formatTime(duration || 0);
-    } else {
-        if(remainingTimeSpan) remainingTimeSpan.textContent = "-0:00";
-    }
-    // Optionally, clear current track display if desired, but typically not needed
-    // as the UI still shows the last played song until a new one starts.
+  if (progressBar) progressBar.style.width = "0%";
+  if (currentTimeSpan) currentTimeSpan.textContent = formatTime(0);
+
+  let durationToDisplay = 0;
+  if (currentPlayingWith === 'youtube' && player && typeof player.getDuration === 'function') {
+      if (player.getPlayerState && (player.getPlayerState() !== YT.PlayerState.UNSTARTED && player.getPlayerState() !== -1)) {
+          durationToDisplay = player.getDuration() || 0;
+      }
+  } else if (currentPlayingWith === 'html5' && html5AudioPlayer) {
+      durationToDisplay = html5AudioPlayer.duration || 0;
+      if (isNaN(durationToDisplay)) durationToDisplay = 0;
+  }
+
+  if (remainingTimeSpan) remainingTimeSpan.textContent = "-" + formatTime(durationToDisplay);
+
+  // +++ START: MODIFICATION FOR BUTTON VISIBILITY ON CLEAR +++
+  // If currentTrack is truly reset (e.g., its ID becomes null)
+  // or if you have a specific "Not Playing" state check.
+  // For simplicity, let's assume if clearPlayerStateOnEnd is called,
+  // and we are not immediately playing another track, these buttons should be default.
+  // However, playSong will manage their state when a NEW song (or "Not Playing") is set.
+  // So, the most important part is that playSong handles it when transitioning *to* "Not Playing".
+
+  // To ensure buttons are visible when app loads or truly stops:
+  // This can be done when currentTrack is set to the initial "Not Playing" state.
+  // Let's adjust playSong to handle the "Not Playing" state explicitly for button visibility.
+  // No direct change here in clearPlayerStateOnEnd might be needed if playSong handles "Not Playing" correctly.
+  // However, if playSong for "Not Playing" isn't explicitly called, this is a good failsafe:
+  if (currentTrack && currentTrack.id === null) { // A good check for "Not Playing" state
+      if (likeBtnElement) {
+          likeBtnElement.style.display = 'inline-block';
+          updateLikeButtonState(); // Reset heart to empty
+      }
+      if (addToPlaylistBtnElement) {
+          addToPlaylistBtnElement.style.display = 'inline-block';
+      }
+      console.log("Reset Like/Add buttons to visible for 'Not Playing' state.");
+  }
+  // +++ END: MODIFICATION +++
 }
 
 function onPlayerError(event) {
@@ -192,19 +229,28 @@ function onPlayerError(event) {
 
 // Toggle Mute function
 function toggleMute() {
-  if (!player || typeof player.isMuted !== 'function') return;
-  // isMuted is global
-  // volumeBtn is global
-  if (player.isMuted()) {
-    player.unMute();
-    volumeBtn.classList.remove("icon-muted");
-    volumeBtn.classList.add("icon-volume");
-    isMuted = false;
-  } else {
-    player.mute();
-    volumeBtn.classList.remove("icon-volume");
-    volumeBtn.classList.add("icon-muted");
-    isMuted = true;
+  if (currentPlayingWith === 'youtube' && player && typeof player.isMuted === 'function') {
+      if (player.isMuted()) {
+          player.unMute();
+          volumeBtn.classList.remove("icon-muted");
+          volumeBtn.classList.add("icon-volume");
+          isMuted = false;
+      } else {
+          player.mute();
+          volumeBtn.classList.remove("icon-volume");
+          volumeBtn.classList.add("icon-muted");
+          isMuted = true;
+      }
+  } else if (currentPlayingWith === 'html5' && html5AudioPlayer) {
+      html5AudioPlayer.muted = !html5AudioPlayer.muted;
+      isMuted = html5AudioPlayer.muted;
+      if (isMuted) {
+          volumeBtn.classList.remove("icon-volume");
+          volumeBtn.classList.add("icon-muted");
+      } else {
+          volumeBtn.classList.remove("icon-muted");
+          volumeBtn.classList.add("icon-volume");
+      }
   }
 }
 
@@ -249,4 +295,37 @@ function toggleShuffle() {
   updateShuffleButtonIcon();
   // No need to immediately play next song; current song continues.
   // The next/prev or song end logic will use the new shuffle state.
+}
+
+
+function clearPlayerStateOnEnd() {
+  if (progressBar) progressBar.style.width = "0%";
+  if (currentTimeSpan) currentTimeSpan.textContent = formatTime(0); // formatTime from playback.js
+
+  let durationToDisplay = 0;
+  if (currentPlayingWith === 'youtube' && player && typeof player.getDuration === 'function') {
+      // Check if player is loaded and has a duration
+      if (player.getPlayerState && (player.getPlayerState() !== YT.PlayerState.UNSTARTED && player.getPlayerState() !== -1) ) {
+           durationToDisplay = player.getDuration() || 0;
+      }
+  } else if (currentPlayingWith === 'html5' && html5AudioPlayer) {
+      durationToDisplay = html5AudioPlayer.duration || 0;
+      if (isNaN(durationToDisplay)) durationToDisplay = 0; // Handle NaN case
+  }
+
+  if (remainingTimeSpan) remainingTimeSpan.textContent = "-" + formatTime(durationToDisplay);
+
+  // Optionally, if you want to reset the track title/artist display to "Not Playing"
+  // when playback truly stops and doesn't auto-advance:
+  /*
+  if (!currentPlayingPlaylistId || (loopState === 'none' && isLastTrackInPlaylist())) { // Add isLastTrackInPlaylist helper
+      if (trackTitle) trackTitle.textContent = "Not Playing";
+      if (artistName) artistName.textContent = "Not Playing";
+      if (albumCover) albumCover.src = "img/empty_art.png";
+      if (typeof applyColors === 'function') applyColors([115, 98, 86]); // Reset background
+      currentTrack = { id: null, title: "Not Playing", artist: "Not Playing", artwork: "img/empty_art.png", artworkLarge: "img/empty_art.png", isLocalFile: false, localFileReference: null, durationSeconds: 0 };
+      currentPlayingWith = null;
+      if(typeof updateLikeButtonState === 'function') updateLikeButtonState();
+  }
+  */
 }
