@@ -29,3 +29,5 @@ const LYRIC_EP = "https://api.lyrics.ovh/v1/";
 const YT_EP = "https://www.googleapis.com/youtube/v3/search?part=snippet&q=";
 //const YT_EP = "https://api.hydrovolter.workers.dev/music/?part=snippet&q=";
 const SEARCH_EP = "https://itunes.apple.com/search?term=";
+
+const workerUrl = "https://music.hydrovolter.workers.dev"; // Worker URL 

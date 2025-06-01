@@ -149,3 +149,8 @@ let latestCommitTimestamp = null; // Stores the fetched commit date string
 let githubCommitLinkElement = null; // To store the <a> tag reference
 let latestCommitShaElement = null;
 let latestCommitTimeAgoElement = null;
+
+// NEW: DOM Elements for Spotify Import in Settings Modal
+let spotifyPlaylistUrlInputElement = null;
+let importSpotifyPlaylistBtnElement = null;
+let spotifyImportStatusElement = null; // For displaying status/errors

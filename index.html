@@ -220,6 +220,19 @@
       <div class="modal-content">
           <span class="close-modal-btn" id="closeSettingsModal">×</span>
           <h4 id="settingsModalTitle">Settings</h4>
+
+          <div class="settings-section">
+            <h5>Import Spotify Playlist</h5>
+            <p class="settings-description">
+                Enter the public Spotify playlist URL to import it.
+                <br>This will create a new playlist in your app.
+            </p>
+            <div class="form-group" style="margin-bottom: 10px;">
+                <input type="text" id="spotifyPlaylistUrlInput" class="modal-input" placeholder="https://open.spotify.com/playlist/...">
+            </div>
+           <button id="importSpotifyPlaylistBtn" class="modal-button success">Import Playlist</button>
+            <p id="spotifyImportStatus" class="selected-file-name-display" style="margin-top: 8px;"></p>
+          </div>
           
           <div class="settings-section">
               <h5>Export Data</h5>

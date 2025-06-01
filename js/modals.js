@@ -435,6 +435,10 @@ function initializeSettingsModal() {
     importDataBtnElement = document.getElementById('importDataBtn');
     selectedFileNameElement = document.getElementById('selectedFileName');
 
+    spotifyPlaylistUrlInputElement = document.getElementById('spotifyPlaylistUrlInput');
+    importSpotifyPlaylistBtnElement = document.getElementById('importSpotifyPlaylistBtn');
+    spotifyImportStatusElement = document.getElementById('spotifyImportStatus');
+
     // --- START: Initialize GitHub info elements ---
     githubCommitLinkElement = document.getElementById('githubCommitLink');
     latestCommitShaElement = document.getElementById('latestCommitSha');
@@ -444,7 +448,10 @@ function initializeSettingsModal() {
     if (!settingsToggleElement || !settingsModalElement || !closeSettingsModalBtnElement ||
         !exportDataBtnElement || !importFileDropZoneElement || !importDataInputElement ||
         !importDataBtnElement || !selectedFileNameElement ||
-        !githubCommitLinkElement || !latestCommitShaElement || !latestCommitTimeAgoElement) { // Add new elements to check
+        !githubCommitLinkElement || !latestCommitShaElement || !latestCommitTimeAgoElement ||
+        !spotifyPlaylistUrlInputElement || !importSpotifyPlaylistBtnElement ||
+        !spotifyImportStatusElement ) {
+        // Add new elements to check
         console.error("One or more settings modal DOM elements not found. Settings functionality disabled/limited.");
         return;
     }
@@ -477,6 +484,8 @@ function initializeSettingsModal() {
             event.dataTransfer.clearData();
         }
     });
+
+    importSpotifyPlaylistBtnElement.addEventListener('click', handleSpotifyPlaylistImport);
 
     importDataBtnElement.addEventListener('click', confirmAndProcessImport);
 
@@ -796,6 +805,106 @@ function processImportedData(fileContentForProcessing) {
     }
 }
 
+// --- NEW: Spotify Playlist Import Logic ---
+
+// Function to extract playlist ID from various Spotify URL formats
+function extractSpotifyPlaylistId(url) {
+    if (!url || typeof url !== 'string') return null;
+    try {
+        const urlObj = new URL(url);
+        if (urlObj.hostname === 'open.spotify.com') {
+            const pathParts = urlObj.pathname.split('/');
+            // Expected format: /playlist/<ID>
+            if (pathParts.length >= 3 && pathParts[1] === 'playlist') {
+                return pathParts[2].split('?')[0]; // Remove query params like si=
+            }
+        }
+    } catch (e) {
+        console.warn("Invalid URL for Spotify ID extraction:", url, e);
+        // Fallback for simple regex if URL parsing fails or for non-standard URLs
+    }
+
+    // Regex fallback for common patterns
+    const regex = /spotify\.com\/playlist\/([a-zA-Z0-9]+)/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+}
+
+async function handleSpotifyPlaylistImport() {
+    if (!spotifyPlaylistUrlInputElement || !spotifyImportStatusElement || !importSpotifyPlaylistBtnElement) return;
+
+    const playlistUrl = spotifyPlaylistUrlInputElement.value.trim();
+    if (!playlistUrl) {
+        spotifyImportStatusElement.textContent = "Please enter a Spotify playlist URL.";
+        spotifyImportStatusElement.style.color = "#ffc107"; // Warning color
+        return;
+    }
+
+    const playlistId = extractSpotifyPlaylistId(playlistUrl);
+    if (!playlistId) {
+        spotifyImportStatusElement.textContent = "Invalid Spotify playlist URL format.";
+        spotifyImportStatusElement.style.color = "#e53e3e"; // Error color
+        return;
+    }
+
+    spotifyImportStatusElement.textContent = "Importing playlist...";
+    spotifyImportStatusElement.style.color = "rgba(255, 255, 255, 0.7)"; // Neutral color
+    importSpotifyPlaylistBtnElement.disabled = true;
+
+    try {
+
+        const response = await fetch(`${workerUrl}/?playlistId=${playlistId}`);
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: "Unknown error from importer." }));
+            throw new Error(errorData.error || `Failed to import playlist (HTTP ${response.status})`);
+        }
+
+        const importedPlaylistData = await response.json();
+        console.log("Received from worker:", importedPlaylistData);
+
+        if (importedPlaylistData && importedPlaylistData.name && importedPlaylistData.songs) {
+            // Create a new playlist in the app (using function from playlist.js)
+            if (typeof createPlaylist === 'function' && typeof addSongToUserPlaylist === 'function') {
+                const newAppPlaylist = createPlaylist(importedPlaylistData.name, importedPlaylistData.artworkUrl);
+
+                importedPlaylistData.songs.forEach(song => {
+                    addSongToUserPlaylist(newAppPlaylist.id, {
+                        id: song.id, // Spotify track ID + artist to make it unique if needed
+                        title: song.title,
+                        artist: song.artist,
+                        artwork: song.artwork, // Small artwork
+                        durationSeconds: song.durationSeconds
+                        // artworkLarge is not directly available, use small one or generate a default
+                    });
+                });
+
+                spotifyImportStatusElement.textContent = `Playlist "${escapeModalHtml(importedPlaylistData.name)}" imported successfully!`;
+                spotifyImportStatusElement.style.color = "#00ff88"; // Success color
+                spotifyPlaylistUrlInputElement.value = ""; // Clear input
+
+                // Optionally, refresh sidebar if open
+                if (typeof renderAllPlaylistsView === 'function' && currentSidebarView === 'all_playlists') {
+                    renderAllPlaylistsView();
+                }
+                showToast(`Spotify playlist "${escapeModalHtml(importedPlaylistData.name)}" imported!`, 3500);
+
+            } else {
+                throw new Error("Playlist creation functions not found in the app.");
+            }
+        } else {
+            throw new Error("Importer returned invalid data structure.");
+        }
+
+    } catch (error) {
+        console.error("Error importing Spotify playlist:", error);
+        spotifyImportStatusElement.textContent = `Error: ${error.message}`;
+        spotifyImportStatusElement.style.color = "#e53e3e"; // Error color
+        showToast(`Spotify import failed: ${error.message}`, 4000);
+    } finally {
+        importSpotifyPlaylistBtnElement.disabled = false;
+    }
+}
 
 
 
