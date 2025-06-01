@@ -1,0 +1,3 @@
+v1 = base 
+v2 = CORS allowed origins
+v3 = improve track artwork quality
