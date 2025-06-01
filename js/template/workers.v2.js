@@ -2,13 +2,26 @@
 
 // Define your allowed origins
 const ALLOWED_ORIGINS = [
-    'http://localhost:5503',
-    'http://localhost:7000',       // Your local development
-    'https://hydrovolter.com',
-    'https://hydrovolter.pages.dev',
-    'https://hydrovolter.vercel.app' // Assuming this is your Vercel deployment preview/prod
-    // Add any other specific subdomains or variations if needed
-];
+    "http://localhost:5503",
+    "http://localhost:7000",
+    "https://hydrovolter.pages.dev",
+    "http://hydrovolter.pages.dev",
+    "https://hydrovolter.vercel.app",
+    "http://hydrovolter.vercel.app",
+    "https://hydrovolter.com",
+    "http://hydrovolter.com",
+    "https://hydrovolter.github.io",
+    "http://hydrovolter.github.io",
+    "https://hydrovolter.netlify.app",
+    "http://hydrovolter.netlify.app",
+    "https://hydrovolter.web.app",
+    "http://hydrovolter.web.app",
+    "https://hydrovolter.firebaseapp.com",
+    "http://hydrovolter.firebaseapp.com",
+    "https://ko-fi.com",
+    "https://hydrovolters.pages.dev",
+    "http://hydrovolters.pages.dev"
+  ];
 
 export default {
     async fetch(request, env, ctx) {
