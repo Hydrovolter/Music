@@ -3,12 +3,8 @@
 // artworkUrl is expected to be the 100x100 version
 // trackId should be a string if provided
 function playSong(title, artist, artworkUrl, trackId = null, durationSeconds = 0, isLocal = false, localFileRef = null) {
-    // Debugging logs (can be removed later)
     console.log("------------------------------------");
-    console.log("playSong CALLED with:");
-    console.log("  Title:", title);
-    console.log("  isLocal FLAG:", isLocal); // Ensure this is correctly passed
-    console.log("  localFileRef EXISTS:", !!localFileRef);
+    console.log("playSong CALLED. Title:", title, "| isLocal:", isLocal, "| localFileRef exists:", !!localFileRef);
     if (localFileRef && localFileRef instanceof File) {
         console.log("  localFileRef Name:", localFileRef.name);
     }
@@ -16,11 +12,16 @@ function playSong(title, artist, artworkUrl, trackId = null, durationSeconds = 0
 
     const newTrackId = trackId ? trackId.toString() : `${title}-${artist}`.toLowerCase().replace(/\s+/g, '-');
 
-    if (localFileBlobUrl && (!currentTrack || currentTrack.id !== newTrackId || !currentTrack.isLocalFile || (currentTrack.isLocalFile && currentTrack.localFileReference !== localFileRef) )) {
+    // Revoke old Blob URL if necessary
+    if (localFileBlobUrl && 
+        (!currentTrack || currentTrack.id !== newTrackId || !isLocal || (isLocal && currentTrack.localFileReference !== localFileRef))) {
         URL.revokeObjectURL(localFileBlobUrl);
         localFileBlobUrl = null;
-        console.log("Revoked previous localFileBlobUrl because track changed or file ref changed.");
+        console.log("Revoked previous localFileBlobUrl (track or ref changed).");
     }
+
+    // Temporarily store passed-in local file reference
+    let directFileRef = isLocal ? localFileRef : null;
 
     currentTrack = {
         id: newTrackId,
@@ -29,111 +30,119 @@ function playSong(title, artist, artworkUrl, trackId = null, durationSeconds = 0
         artwork: artworkUrl,
         artworkLarge: (artworkUrl && artworkUrl.startsWith('data:image')) ? artworkUrl : (artworkUrl ? artworkUrl.replace("100x100", "600x600") : 'img/empty_art.png'),
         durationSeconds: durationSeconds || 0,
-        isLocalFile: isLocal,
-        localFileReference: isLocal ? localFileRef : null
+        isLocalFile: isLocal, // Based on the 'isLocal' argument
+        localFileReference: directFileRef // Initially set from argument
     };
 
+    // Update UI elements
     trackTitle.textContent = currentTrack.title;
     artistName.textContent = currentTrack.artist;
     lyricsSongTitle.textContent = currentTrack.title;
     lyricsArtistName.textContent = currentTrack.artist;
     if (showingLyrics) fetchLyrics(currentTrack.artist, currentTrack.title);
     if (typeof setAlbumArtAndBackgroundColor === 'function') setAlbumArtAndBackgroundColor(currentTrack.artworkLarge);
-    
-    // +++ START: MODIFICATION FOR BUTTON VISIBILITY +++
+
+    // --- BUTTON VISIBILITY LOGIC ---
     if (likeBtnElement && addToPlaylistBtnElement) {
         if (currentTrack.isLocalFile) {
-            console.log("Hiding Like and AddToPlaylist buttons for local file.");
             likeBtnElement.style.display = 'none';
             addToPlaylistBtnElement.style.display = 'none';
         } else {
-            console.log("Showing Like and AddToPlaylist buttons for non-local file.");
-            likeBtnElement.style.display = 'inline-block'; // Or your default display value e.g. 'flex'
-            addToPlaylistBtnElement.style.display = 'inline-block'; // Or your default display value
-            // Only update like button state if it's NOT a local file
-            if (typeof updateLikeButtonState === 'function') {
-                 updateLikeButtonState(); // Sets heart to empty/filled
+            likeBtnElement.style.display = 'inline-block';
+            addToPlaylistBtnElement.style.display = 'inline-block';
+            if (typeof updateLikeButtonState === 'function') updateLikeButtonState();
+        }
+    }
+
+    // --- PLAYER DECISION LOGIC ---
+    if (currentTrack.isLocalFile) {
+        let fileToPlay = currentTrack.localFileReference; // Use the one passed in arguments first
+
+        // If no direct fileRef was passed (e.g., from a shuffled queue that might have lost it,
+        // or from localStorage after refresh), try to find it in the master in-memory localFilesPlaylist.
+        if (!fileToPlay && typeof localFilesPlaylist !== 'undefined' && Array.isArray(localFilesPlaylist)) {
+            const masterLocalEntry = localFilesPlaylist.find(lfSong => lfSong.id === currentTrack.id && lfSong.fileObject);
+            if (masterLocalEntry) {
+                fileToPlay = masterLocalEntry.fileObject;
+                currentTrack.localFileReference = fileToPlay; // Update currentTrack with the found File object
+                console.log(`PLAYSONG: Found active File object for "${currentTrack.title}" in master localFilesPlaylist.`);
             }
         }
-    } else {
-        console.warn("likeBtnElement or addToPlaylistBtnElement not found for visibility update.");
-    }
-    // +++ END: MODIFICATION FOR BUTTON VISIBILITY +++
 
-
-    // --- REVISED DECISION LOGIC (from previous step, this part should be fine) ---
-    if (currentTrack.isLocalFile && currentTrack.localFileReference) {
-        console.log("PLAYSONG: Choosing HTML5 player for local file:", currentTrack.title);
-        currentPlayingWith = 'html5';
-        playLocalFile(currentTrack.localFileReference);
-    } else if (currentTrack.isLocalFile && !currentTrack.localFileReference) {
-        currentPlayingWith = null;
-        console.warn(`PLAYSONG: Cannot play local file "${currentTrack.title}" directly. File reference lost (likely after refresh).`);
-        showToast(`"${escapeHtml(currentTrack.title)}" is a local file. Please re-select it from the 'Local Files' playlist to play.`, 4500);
-        isPlaying = false;
-        if (playPauseBtn) {
-            playPauseBtn.classList.remove("icon-pause");
-            playPauseBtn.classList.add("icon-play");
+        if (fileToPlay) { // We have a File object to play
+            console.log("PLAYSONG: Choosing HTML5 player for local file:", currentTrack.title);
+            currentPlayingWith = 'html5';
+            if (player && typeof player.pauseVideo === 'function' && player.getPlayerState() === YT.PlayerState.PLAYING) {
+                player.pauseVideo(); // Ensure YouTube player is paused
+            }
+            playLocalFile(fileToPlay);
+        } else {
+            // No File object available (e.g., after refresh and no re-selection, or truly missing)
+            currentPlayingWith = null;
+            console.warn(`PLAYSONG: Cannot play local file "${currentTrack.title}" directly. File reference not found.`);
+            showToast(`"${escapeHtml(currentTrack.title)}" is a local file. Please re-select it from the 'Local Files' playlist to play.`, 4500);
+            isPlaying = false;
+            if (playPauseBtn) {
+                playPauseBtn.classList.remove("icon-pause");
+                playPauseBtn.classList.add("icon-play");
+            }
+            if (likeBtnElement) likeBtnElement.style.display = 'none'; // Ensure hidden
+            if (addToPlaylistBtnElement) addToPlaylistBtnElement.style.display = 'none'; // Ensure hidden
+            if (typeof clearPlayerStateOnEnd === 'function') clearPlayerStateOnEnd();
         }
-        // Ensure buttons are hidden here too, as playback won't start
-        if (likeBtnElement) likeBtnElement.style.display = 'none';
-        if (addToPlaylistBtnElement) addToPlaylistBtnElement.style.display = 'none';
-        if (typeof clearPlayerStateOnEnd === 'function') clearPlayerStateOnEnd();
-    } else { // Not a local file
+    } else { // Not a local file, proceed with YouTube
         console.log("PLAYSONG: Choosing YouTube player for (non-local):", currentTrack.title);
         currentPlayingWith = 'youtube';
         if (html5AudioPlayer && !html5AudioPlayer.paused) {
-            html5AudioPlayer.pause();
+            html5AudioPlayer.pause(); // Ensure HTML5 player is paused
         }
         const searchQuery = `${currentTrack.title} - ${currentTrack.artist}`;
         getYT(searchQuery);
     }
 }
 
-// +++ ADD THIS NEW FUNCTION for playing local files +++
+// playLocalFile function - slightly ensure YouTube is paused before starting HTML5
 function playLocalFile(fileObject) {
     if (!html5AudioPlayer) {
         console.error("HTML5 Audio Player not initialized!");
         return;
     }
-
-    // Stop YouTube player if it was playing
-    if (player && typeof player.getPlayerState === 'function' && player.getPlayerState() === YT.PlayerState.PLAYING) {
-        player.pauseVideo(); // or stopVideo()
+    // Ensure YouTube player is paused
+    if (player && typeof player.pauseVideo === 'function' && typeof player.getPlayerState === 'function' && player.getPlayerState() === YT.PlayerState.PLAYING) {
+        player.pauseVideo();
     }
-    playPauseBtn.classList.remove("icon-pause"); // Reset UI just in case
-    playPauseBtn.classList.add("icon-play");
-
-
+    // (Rest of playLocalFile is likely fine)
+    // ...
     if (fileObject instanceof File) {
         localFileBlobUrl = URL.createObjectURL(fileObject);
         html5AudioPlayer.src = localFileBlobUrl;
     } else if (typeof fileObject === 'string' && fileObject.startsWith('blob:')) {
-        // If re-playing from a stored blob URL (less likely with current setup but good for future)
         html5AudioPlayer.src = fileObject;
-        localFileBlobUrl = fileObject; // Keep track to revoke later
+        localFileBlobUrl = fileObject; 
     } else {
-        console.error("Invalid local file reference:", fileObject);
+        console.error("Invalid local file reference for playLocalFile:", fileObject);
         showToast("Error: Could not load local file.", 3000);
         return;
     }
 
-    html5AudioPlayer.load(); // Important to re-load if src changes
+    html5AudioPlayer.load(); 
     html5AudioPlayer.play()
         .then(() => {
             isPlaying = true;
-            playPauseBtn.classList.remove("icon-play");
-            playPauseBtn.classList.add("icon-pause");
+            if(playPauseBtn) {
+                playPauseBtn.classList.remove("icon-play");
+                playPauseBtn.classList.add("icon-pause");
+            }
         })
         .catch(error => {
             console.error("Error playing local file:", error);
             showToast("Error: Could not play local file.", 3000);
             isPlaying = false;
-            playPauseBtn.classList.remove("icon-pause");
-            playPauseBtn.classList.add("icon-play");
+            if(playPauseBtn) {
+                playPauseBtn.classList.remove("icon-pause");
+                playPauseBtn.classList.add("icon-play");
+            }
         });
-
-    // Update isMuted state for html5 player
     html5AudioPlayer.muted = isMuted;
 }
 
