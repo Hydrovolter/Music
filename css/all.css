@@ -507,13 +507,17 @@ transform: scale(0.94);
   height: 18px; /* Match width */
 }
 
+
 .icon-local-file-remove {
   mask-image: url('../img/icons/download.svg');
   -webkit-mask-image: url('../img/icons/download.svg');
-  background-color: #00ff88; /* Green color */
+  /* background-color: #00ff88; /* REMOVE or COMMENT OUT this line from the general rule */
 }
-.icon-action-btn:hover .icon-local-file-remove {
-  background-color: #00dd77; /* Slightly darker green on hover */
+
+/* NEW RULE: Default state for the local file remove icon within an action button */
+/* This ensures it's green by default, overriding the generic .icon-action-btn .icon color */
+.icon-action-btn .icon.icon-local-file-remove {
+  background-color: #00ff88; /* Default Green color */
 }
 
 .icon-github {
